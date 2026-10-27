@@ -1,0 +1,140 @@
+import crypto from 'node:crypto';
+import { defaultContent } from '../../shared/default-content.js';
+import { collectUrls, validateContent } from '../../shared/schema.js';
+import { ConflictError } from './store-file.js';
+import { HttpError } from './http.js';
+
+const HISTORY_SIZE = 10;
+const ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000; // keep fresh, not-yet-saved uploads for a day
+
+/** Detects real image type from the file's first bytes (never trusts the filename). */
+export function sniffImage(buf) {
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return { ext: 'jpg', type: 'image/jpeg' };
+  if (buf.length >= 8 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { ext: 'png', type: 'image/png' };
+  if (buf.length >= 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return { ext: 'webp', type: 'image/webp' };
+  return null;
+}
+
+export function createContentService(store, log = console) {
+  // Retry loop for small bookkeeping documents (history, media index).
+  async function updateDoc(key, fn, init) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const cur = await store.getKV(key);
+      const next = fn(cur ? cur.value : init);
+      try {
+        return await store.putKV(key, next, cur ? cur.version : 0);
+      } catch (e) {
+        if (!(e instanceof ConflictError)) throw e;
+      }
+    }
+    throw new Error(`Could not update ${key}`);
+  }
+
+  async function get() {
+    let cur = await store.getKV('content');
+    if (!cur) {
+      // First start: seed with the approved website content.
+      const { value } = validateContent(structuredClone(defaultContent));
+      try {
+        await store.putKV('content', value, 0);
+        log.info?.('Seeded website content from shared/default-content.js');
+      } catch (e) {
+        if (!(e instanceof ConflictError)) throw e;
+      }
+      cur = await store.getKV('content');
+    }
+    return { data: cur.value, version: cur.version, updatedAt: cur.updatedAt };
+  }
+
+  async function cleanupMedia() {
+    const media = await store.getKV('media');
+    if (!media || !media.value.items.length) return;
+    const cur = await store.getKV('content');
+    const hist = await store.getKV('history');
+    const used = collectUrls(cur ? cur.value : {});
+    (hist ? hist.value.items : []).forEach((h) => collectUrls(h.data).forEach((u) => used.add(u)));
+    const now = Date.now();
+    const remove = media.value.items.filter((m) => !used.has(m.url) && now - Date.parse(m.createdAt) > ORPHAN_GRACE_MS);
+    if (!remove.length) return;
+    for (const m of remove) {
+      try {
+        await store.deleteObject(m.path);
+      } catch (e) {
+        log.warn?.(`Could not delete unused image ${m.path}: ${e.message}`);
+      }
+    }
+    const gone = new Set(remove.map((m) => m.url));
+    await updateDoc('media', (v) => ({ items: v.items.filter((m) => !gone.has(m.url)) }), { items: [] });
+  }
+
+  async function save(input, expectedVersion) {
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 1) throw new HttpError(400, 'Missing content version.');
+    const { ok, errors, value } = validateContent(input);
+    if (!ok) throw new HttpError(422, 'Some fields need attention.', { errors: errors.slice(0, 50) });
+
+    const prev = await store.getKV('content');
+    if (!prev || prev.version !== expectedVersion) {
+      throw new HttpError(409, 'The content was changed in another window or by another session. Reload to get the latest version.');
+    }
+    let saved;
+    try {
+      saved = await store.putKV('content', value, expectedVersion);
+    } catch (e) {
+      if (e instanceof ConflictError) throw new HttpError(409, 'The content was changed in another window or by another session. Reload to get the latest version.');
+      throw e;
+    }
+    // Keep the previous version so it can be restored.
+    try {
+      await updateDoc(
+        'history',
+        (v) => ({ items: [{ version: prev.version, updatedAt: prev.updatedAt, data: prev.value }, ...v.items].slice(0, HISTORY_SIZE) }),
+        { items: [] }
+      );
+    } catch (e) {
+      log.warn?.(`History not updated: ${e.message}`);
+    }
+    cleanupMedia().catch((e) => log.warn?.(`Media cleanup skipped: ${e.message}`));
+    return { data: value, version: saved.version, updatedAt: saved.updatedAt };
+  }
+
+  async function history() {
+    const h = await store.getKV('history');
+    return (h ? h.value.items : []).map((i) => ({
+      version: i.version,
+      updatedAt: i.updatedAt,
+      projects: i.data.projects.length,
+      heroLine: [i.data.text.hero.line1, i.data.text.hero.line2, i.data.text.hero.line3].join(' '),
+    }));
+  }
+
+  async function restore(version, currentVersion) {
+    const h = await store.getKV('history');
+    const item = (h ? h.value.items : []).find((i) => i.version === version);
+    if (!item) throw new HttpError(404, 'That version is no longer available.');
+    return save(structuredClone(item.data), currentVersion);
+  }
+
+  async function upload(buffer) {
+    const kind = sniffImage(buffer);
+    if (!kind) throw new HttpError(415, 'Only JPEG, PNG and WebP images can be uploaded.');
+    const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+    const name = `${hash}.${kind.ext}`;
+    const media = await store.getKV('media');
+    const existing = media && media.value.items.find((m) => m.path === name);
+    if (existing) return { url: existing.url, reused: true, size: buffer.length, type: kind.type };
+    const obj = await store.putObject(name, buffer, kind.type);
+    await updateDoc(
+      'media',
+      (v) => ({ items: [...v.items.filter((m) => m.path !== name), { url: obj.url, path: name, type: kind.type, size: buffer.length, createdAt: new Date().toISOString() }] }),
+      { items: [] }
+    );
+    return { url: obj.url, reused: false, size: buffer.length, type: kind.type };
+  }
+
+  async function mediaCount() {
+    const m = await store.getKV('media');
+    return m ? m.value.items.length : 0;
+  }
+
+  return { get, save, history, restore, upload, mediaCount, cleanupMedia };
+}

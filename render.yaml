@@ -1,0 +1,29 @@
+# One-click deploy on Render (render.com → New → Blueprint → pick this repository).
+# Fill in the secret values in the Render dashboard when asked.
+services:
+  - type: web
+    name: nourhane-thabet
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "true"
+      - key: STORAGE_DRIVER
+        value: supabase
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: portfolio
+      - key: VITE_FORM_ENDPOINT
+        sync: false
