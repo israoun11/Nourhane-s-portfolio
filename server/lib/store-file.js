@@ -9,6 +9,7 @@ export function createFileStore(dataDir) {
   const kvDir = path.join(dataDir, 'kv');
   const sessFile = path.join(dataDir, 'sessions.json');
   const upDir = path.join(dataDir, 'uploads');
+  const msgDir = path.join(dataDir, 'messages');
   let chain = Promise.resolve();
   const lock = (fn) => {
     const run = chain.then(fn, fn);
@@ -16,7 +17,18 @@ export function createFileStore(dataDir) {
     return run;
   };
 
-  const ready = Promise.all([fs.mkdir(kvDir, { recursive: true }), fs.mkdir(upDir, { recursive: true })]);
+  const ready = Promise.all([kvDir, upDir, msgDir].map((d) => fs.mkdir(d, { recursive: true })));
+  const msgFile = (id) => path.join(msgDir, `${String(id).replace(/[^a-f0-9-]/gi, '')}.json`);
+  async function allMessages() {
+    await ready;
+    const names = (await fs.readdir(msgDir)).filter((n) => n.endsWith('.json'));
+    const items = [];
+    for (const n of names) {
+      const m = await readJson(path.join(msgDir, n), null);
+      if (m) items.push(m);
+    }
+    return items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
   const file = (key) => path.join(kvDir, `${key.replace(/[^a-z0-9_-]/gi, '')}.json`);
   async function readJson(f, fallback) {
     try {
@@ -83,5 +95,37 @@ export function createFileStore(dataDir) {
       await fs.rm(path.join(upDir, path.basename(name)), { force: true });
     },
     uploadsDir: upDir,
+
+    // ── contact messages (one file per message) ──
+    async addMessage(msg) {
+      await ready;
+      await writeAtomic(msgFile(msg.id), msg);
+    },
+    listMessages: allMessages,
+    async countUnreadMessages() {
+      return (await allMessages()).filter((m) => !m.read).length;
+    },
+    async hasAtLeastMessages(n) {
+      await ready;
+      return (await fs.readdir(msgDir)).filter((x) => x.endsWith('.json')).length >= n;
+    },
+    updateMessage: (id, patch) =>
+      lock(async () => {
+        const cur = await readJson(msgFile(id), null);
+        if (!cur) return null;
+        const next = { ...cur, ...patch };
+        await writeAtomic(msgFile(id), next);
+        return next;
+      }),
+    deleteMessage: (id) =>
+      lock(async () => {
+        try {
+          await fs.unlink(msgFile(id));
+          return true;
+        } catch (e) {
+          if (e.code === 'ENOENT') return false;
+          throw e;
+        }
+      }),
   };
 }

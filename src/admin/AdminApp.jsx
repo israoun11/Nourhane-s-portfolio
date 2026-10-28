@@ -4,10 +4,14 @@ import { api, onSessionExpired } from './api.js';
 import { EditorProvider, ToastProvider, useEditor, useToast } from './state.jsx';
 import { ConfirmProvider, Modal, useConfirm } from './ui.jsx';
 import { History, Overview, ProjectEdit, Projects, SECTION_PAGES, SectionPage, SiteInfo, Texts } from './pages.jsx';
+import { Inbox } from './Inbox.jsx';
+import { AdminI18n, EditLangProvider, LANGS, inputLangProps, useAdminT, useEditLang, useErrorText } from './i18n.jsx';
+import LangSwitcher from '../components/LangSwitcher.jsx';
 import './admin.css';
 
 // ═════════════ Login ═════════════
 function LoginForm({ onDone, compact = false }) {
+  const t = useAdminT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +19,7 @@ function LoginForm({ onDone, compact = false }) {
   const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
-    if (!email.trim() || !password) return setError('Please enter your email and password.');
+    if (!email.trim() || !password) return setError(t('ad.login.missing'));
     setBusy(true);
     setError('');
     try {
@@ -23,78 +27,118 @@ function LoginForm({ onDone, compact = false }) {
       setPassword('');
       onDone(r);
     } catch (err) {
-      setError(err.message);
+      setError(err.status === 401 ? t('ad.login.wrong') : err.status === 429 ? t('ad.login.rate') : err.status === 0 ? t('ad.err.network') : err.message);
     } finally {
       setBusy(false);
     }
   };
   return (
     <form className="ad-login__form" onSubmit={submit} noValidate>
-      {!compact && <h1>Sign in</h1>}
-      <label className="ad-label" htmlFor="ad-email">Email</label>
-      <input id="ad-email" className="ad-input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
-      <label className="ad-label" htmlFor="ad-pass">Password</label>
-      <input id="ad-pass" className="ad-input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      {!compact && <h1>{t('ad.login.title')}</h1>}
+      <label className="ad-label" htmlFor="ad-email">{t('ad.login.email')}</label>
+      <input id="ad-email" className="ad-input" type="email" dir="ltr" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <label className="ad-label" htmlFor="ad-pass">{t('ad.login.password')}</label>
+      <input id="ad-pass" className="ad-input" type="password" dir="ltr" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       {error && <p className="ad-error" role="alert">{error}</p>}
-      <button className="ad-btn ad-btn--primary ad-btn--block" type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+      <button className="ad-btn ad-btn--primary ad-btn--block" type="submit" disabled={busy}>{busy ? t('ad.login.busy') : t('ad.login.submit')}</button>
     </form>
   );
 }
 
+function Brand() {
+  const t = useAdminT();
+  return <><span dir="ltr">NOURHANE THABET<sup>®</sup></span> <span className="ad-brand__tag">{t('ad.brand')}</span></>;
+}
+
 function LoginPage({ onDone, notConfigured }) {
+  const t = useAdminT();
+  const parts = t('ad.login.notConfigured', { cmd: '\u0001', vars: '\u0002' }).split(/[\u0001\u0002]/);
   return (
     <main className="ad-login">
       <div className="ad-login__card">
-        <p className="ad-brand">NOURHANE THABET<sup>®</sup> <span>Dashboard</span></p>
+        <div className="ad-login__top">
+          <p className="ad-brand"><Brand /></p>
+          <LangSwitcher />
+        </div>
         {notConfigured ? (
           <div className="ad-alert ad-alert--warn" role="alert">
-            The admin account is not set up yet. Run <code>npm run admin:password</code> and add <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD_HASH</code> to the server settings (see README).
+            {parts[0]}<code>npm run admin:password</code>{parts[1]}<code>ADMIN_EMAIL</code> / <code>ADMIN_PASSWORD_HASH</code>{parts[2]}
           </div>
         ) : (
           <LoginForm onDone={onDone} />
         )}
-        <a className="ad-link" href="/">← Back to the website</a>
+        <a className="ad-link" href="/">{t('ad.login.back')}</a>
       </div>
     </main>
   );
 }
 
 // ═════════════ Shell ═════════════
-const NAV = [
-  { to: '/admin', label: 'Overview' },
-  { to: '/admin/projects', label: 'Projects' },
-  { to: '/admin/texts', label: 'Page texts' },
-  { to: '/admin/site', label: 'Website info & photos' },
-  { group: 'Sections' },
-  ...SECTION_PAGES.map((s) => ({ to: `/admin/sections/${s.key}`, label: s.label })),
-  { group: 'Safety' },
-  { to: '/admin/history', label: 'History' },
-];
+function useNav() {
+  const t = useAdminT();
+  return [
+    { to: '/admin', label: t('ad.nav.overview') },
+    { to: '/admin/inbox', label: t('ad.nav.inbox'), badge: true },
+    { to: '/admin/projects', label: t('ad.nav.projects') },
+    { to: '/admin/texts', label: t('ad.nav.texts') },
+    { to: '/admin/site', label: t('ad.nav.site') },
+    { group: t('ad.nav.sections') },
+    ...SECTION_PAGES.map((k) => ({ to: `/admin/sections/${k}`, label: t(`ad.sec.${k}`) })),
+    { group: t('ad.nav.safety') },
+    { to: '/admin/history', label: t('ad.nav.history') },
+  ];
+}
+
+/** English · Français · العربية — which version of the texts is being edited. */
+function EditLangBar() {
+  const { editLang, setEditLang } = useEditLang();
+  const t = useAdminT();
+  const cur = LANGS.find((l) => l.code === editLang);
+  return (
+    <div className="ad-editlang" role="group" aria-label={t('ad.editLang')}>
+      <span className="ad-editlang__k">{t('ad.editLang')}</span>
+      <div className="ad-editlang__btns">
+        {LANGS.map((l) => (
+          <button key={l.code} type="button" {...inputLangProps(l.code)} className={`ad-chip${editLang === l.code ? ' is-on' : ''}`} aria-pressed={editLang === l.code} onClick={() => setEditLang(l.code)}>
+            {l.label}
+          </button>
+        ))}
+      </div>
+      <p className="ad-editlang__note">{editLang === 'en' ? t('ad.editLang.en') : t('ad.editLang.other', { lang: cur.label })}</p>
+    </div>
+  );
+}
 
 function SaveBar() {
   const { dirty, saving, save, discard, preview, draft } = useEditor();
+  const { editLang } = useEditLang();
   const confirm = useConfirm();
+  const t = useAdminT();
   const { path } = useRouter();
   if (!dirty) return null;
   const m = path.match(/^\/admin\/projects\/(\d+)$/);
   const proj = m && draft.projects[Number(m[1])];
   return (
-    <div className="ad-savebar" role="region" aria-label="Unsaved changes">
-      <span><b>Unsaved changes</b> — not visible on the website yet.</span>
+    <div className="ad-savebar" role="region" aria-label={t('ad.save.region')}>
+      <span><b>{t('ad.save.unsaved')}</b> {t('ad.save.unsavedText')}</span>
       <div className="ad-row">
-        <button type="button" className="ad-btn ad-btn--ghost ad-btn--light" onClick={async () => (await confirm({ title: 'Discard all unsaved changes?', body: 'Everything returns to the last saved version.', ok: 'Discard', danger: true })) && discard()} disabled={saving}>
-          Discard
+        <button type="button" className="ad-btn ad-btn--ghost ad-btn--light" onClick={async () => (await confirm({ title: t('ad.save.discardTitle'), body: t('ad.save.discardBody'), ok: t('ad.save.discard'), danger: true })) && discard()} disabled={saving}>
+          {t('ad.save.discard')}
         </button>
-        <button type="button" className="ad-btn ad-btn--ghost ad-btn--light" onClick={() => (proj ? preview(`/work/${proj.slug}`, proj.slug) : preview('/'))} disabled={saving}>Preview ↗</button>
-        <button type="button" className="ad-btn ad-btn--pink" onClick={save} disabled={saving} aria-busy={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+        <button type="button" className="ad-btn ad-btn--ghost ad-btn--light" onClick={() => (proj ? preview(`/work/${proj.slug}?lang=${editLang}`, proj.slug) : preview(`/?lang=${editLang}`))} disabled={saving}>{t('ad.save.preview')}</button>
+        <button type="button" className="ad-btn ad-btn--pink" onClick={save} disabled={saving} aria-busy={saving}>{saving ? t('ad.save.saving') : t('ad.save.save')}</button>
       </div>
     </div>
   );
 }
 
-function Route({ path, status, email }) {
+const EDITING = /^\/admin\/(projects\/\d+|texts|site|sections\/)/;
+
+function Route({ path, status, email, unread, setUnread }) {
+  const t = useAdminT();
   const clean = path.replace(/\/+$/, '');
-  if (clean === '/admin') return <Overview status={status} email={email} />;
+  if (clean === '/admin') return <Overview status={status} email={email} unread={unread} />;
+  if (clean === '/admin/inbox') return <Inbox onUnread={setUnread} />;
   if (clean === '/admin/projects') return <Projects />;
   const pm = clean.match(/^\/admin\/projects\/(\d+)$/);
   if (pm) return <ProjectEdit index={Number(pm[1])} />;
@@ -103,7 +147,7 @@ function Route({ path, status, email }) {
   if (clean === '/admin/history') return <History />;
   const sm = clean.match(/^\/admin\/sections\/([a-zA-Z]+)$/);
   if (sm) return <SectionPage k={sm[1]} />;
-  return <p className="ad-empty">Page not found. <Link to="/admin">Go to the overview</Link></p>;
+  return <p className="ad-empty">{t('ad.notFound')} <Link to="/admin">{t('ad.toOverview')}</Link></p>;
 }
 
 function Dashboard({ session, onLogout, expired, onRelogin }) {
@@ -111,13 +155,18 @@ function Dashboard({ session, onLogout, expired, onRelogin }) {
   const editor = useEditor();
   const toast = useToast();
   const confirm = useConfirm();
+  const t = useAdminT();
+  const errText = useErrorText();
+  const nav = useNav();
   const [status, setStatus] = useState(null);
+  const [unread, setUnread] = useState(null);
   const [menu, setMenu] = useState(false);
   const mainRef = useRef(null);
 
   useEffect(() => {
     api('/api/admin/status').then((s) => {
       setStatus(s);
+      setUnread(s.unreadMessages);
       window.__ntMaxUploadMb = s.maxUploadMb;
     }, () => {});
   }, [editor.saved && editor.saved.version]);
@@ -142,13 +191,13 @@ function Dashboard({ session, onLogout, expired, onRelogin }) {
   }, [editor]);
 
   const logout = async () => {
-    if (editor.dirty && !(await confirm({ title: 'Log out without saving?', body: 'Your unsaved changes will be lost.', ok: 'Log out', danger: true }))) return;
+    if (editor.dirty && !(await confirm({ title: t('ad.logout.title'), body: t('ad.logout.body'), ok: t('ad.logout.ok'), danger: true }))) return;
     try {
       await api('/api/auth/logout', { method: 'POST' });
     } catch {
       /* the cookie is cleared server-side when possible; continue */
     }
-    toast('You are logged out.');
+    toast(t('ad.logout.done'));
     onLogout();
   };
 
@@ -156,65 +205,71 @@ function Dashboard({ session, onLogout, expired, onRelogin }) {
     return (
       <main className="ad-login">
         <div className="ad-login__card">
-          <p className="ad-error" role="alert">Could not load your content: {editor.loadError}</p>
-          <button type="button" className="ad-btn ad-btn--primary" onClick={editor.load}>Try again</button>
+          <p className="ad-error" role="alert">{t('ad.loadError', { msg: editor.loadError })}</p>
+          <button type="button" className="ad-btn ad-btn--primary" onClick={editor.load}>{t('ad.tryAgain')}</button>
         </div>
       </main>
     );
   }
-  if (!editor.draft) return <div className="admin-loading" role="status">Loading your content…</div>;
+  if (!editor.draft) return <div className="admin-loading" role="status">{t('ad.loadingContent')}</div>;
 
   const current = (to) => (to === '/admin' ? path.replace(/\/+$/, '') === '/admin' : path.startsWith(to));
 
   return (
     <div className="ad-shell">
-      <a className="skip-link" href="#ad-main">Skip to content</a>
+      <a className="skip-link" href="#ad-main">{t('ad.skip')}</a>
       <aside className={`ad-side${menu ? ' is-open' : ''}`}>
         <div className="ad-side__top">
-          <Link to="/admin" className="ad-brand">NOURHANE THABET<sup>®</sup> <span>Dashboard</span></Link>
+          <Link to="/admin" className="ad-brand"><Brand /></Link>
           <button type="button" className="ad-menu-btn" aria-expanded={menu} aria-controls="ad-nav" onClick={() => setMenu((m) => !m)}>
-            {menu ? 'Close' : 'Menu'}
+            {menu ? t('ad.nav.close') : t('ad.nav.menu')}
           </button>
         </div>
-        <nav id="ad-nav" className="ad-nav" aria-label="Dashboard">
-          {NAV.map((n, i) =>
+        <nav id="ad-nav" className="ad-nav" aria-label={t('ad.nav.label')}>
+          <div className="ad-nav__lang">
+            <span>{t('ad.interfaceLang')}</span>
+            <LangSwitcher className="lang--light" />
+          </div>
+          {nav.map((n, i) =>
             n.group ? (
               <span key={i} className="ad-nav__group">{n.group}</span>
             ) : (
               <Link key={n.to} to={n.to} className="ad-nav__link" aria-current={current(n.to) ? 'page' : undefined}>
                 {n.label}
+                {n.badge && unread > 0 && <span className="ad-nav__badge" aria-label={t('ad.unreadBadge', { n: unread })}>{unread}</span>}
               </Link>
             )
           )}
           <div className="ad-nav__foot">
-            {editor.dirty && <span className="ad-dot" role="status">Unsaved changes</span>}
-            <a className="ad-nav__link" href="/" target="_blank" rel="noreferrer">View website ↗</a>
-            <button type="button" className="ad-nav__link ad-nav__logout" onClick={logout}>Log out</button>
+            {editor.dirty && <span className="ad-dot" role="status">{t('ad.unsavedDot')}</span>}
+            <a className="ad-nav__link" href="/" target="_blank" rel="noreferrer">{t('ad.nav.view')}</a>
+            <button type="button" className="ad-nav__link ad-nav__logout" onClick={logout}>{t('ad.nav.logout')}</button>
           </div>
         </nav>
       </aside>
       <main id="ad-main" ref={mainRef} tabIndex={-1} className="ad-main">
+        {EDITING.test(path) && <EditLangBar />}
         {editor.errors.length > 0 && (
           <div className="ad-alert ad-alert--error" role="alert">
-            <strong>Not saved yet — please fix:</strong>
-            <ul>{editor.errors.slice(0, 8).map((e, i) => <li key={i}>{e.message}</li>)}</ul>
+            <strong>{t('ad.save.fix')}</strong>
+            <ul>{editor.errors.slice(0, 8).map((e, i) => <li key={i}>{errText(e)}</li>)}</ul>
           </div>
         )}
-        <Route path={path} status={status} email={session.email} />
+        <Route path={path} status={status} email={session.email} unread={unread} setUnread={setUnread} />
       </main>
       <SaveBar />
 
       {editor.conflict && (
-        <Modal title="Content changed somewhere else" onClose={null}>
-          <p className="ad-modal__body">The website content was saved from another window or device since you opened the dashboard. To avoid overwriting those changes, reload the latest version. (Your unsaved edits here will be discarded.)</p>
+        <Modal title={t('ad.conflict.title')} onClose={null}>
+          <p className="ad-modal__body">{t('ad.conflict.body')}</p>
           <div className="ad-row ad-row--end">
-            <button type="button" className="ad-btn ad-btn--primary" onClick={editor.load} data-autofocus>Reload latest version</button>
+            <button type="button" className="ad-btn ad-btn--primary" onClick={editor.load} data-autofocus>{t('ad.conflict.reload')}</button>
           </div>
         </Modal>
       )}
       {expired && (
-        <Modal title="Please sign in again" onClose={null}>
-          <p className="ad-modal__body">Your session has ended. Sign in to continue — your unsaved changes are kept.</p>
+        <Modal title={t('ad.expired.title')} onClose={null}>
+          <p className="ad-modal__body">{t('ad.expired.body')}</p>
           <LoginForm compact onDone={onRelogin} />
         </Modal>
       )}
@@ -223,7 +278,8 @@ function Dashboard({ session, onLogout, expired, onRelogin }) {
 }
 
 // ═════════════ Root ═════════════
-export default function AdminApp() {
+function AdminRoot() {
+  const t = useAdminT();
   const [session, setSession] = useState(null); // null = checking
   const [expired, setExpired] = useState(false);
 
@@ -235,7 +291,6 @@ export default function AdminApp() {
     }
   }, []);
   useEffect(() => {
-    document.title = 'Dashboard — Nourhane Thabet';
     let m = document.querySelector('meta[name="robots"]');
     if (!m) {
       m = document.createElement('meta');
@@ -246,31 +301,42 @@ export default function AdminApp() {
     check();
     return onSessionExpired(() => setExpired(true));
   }, [check]);
+  useEffect(() => {
+    document.title = t('ad.title');
+  }, [t]);
 
   let body;
-  if (!session) body = <div className="admin-loading" role="status">Checking your session…</div>;
+  if (!session) body = <div className="admin-loading" role="status">{t('ad.checking')}</div>;
   else if (!session.authenticated)
     body = <LoginPage notConfigured={session.adminConfigured === false} onDone={(r) => setSession({ authenticated: true, email: r.email, expiresAt: r.expiresAt })} />;
   else
     body = (
       <EditorProvider>
-        <Dashboard
-          session={session}
-          expired={expired}
-          onRelogin={(r) => {
-            setSession({ authenticated: true, email: r.email, expiresAt: r.expiresAt });
-            setExpired(false);
-          }}
-          onLogout={() => setSession({ authenticated: false })}
-        />
+        <EditLangProvider>
+          <Dashboard
+            session={session}
+            expired={expired}
+            onRelogin={(r) => {
+              setSession({ authenticated: true, email: r.email, expiresAt: r.expiresAt });
+              setExpired(false);
+            }}
+            onLogout={() => setSession({ authenticated: false })}
+          />
+        </EditLangProvider>
       </EditorProvider>
     );
 
+  return <div className="admin">{body}</div>;
+}
+
+export default function AdminApp() {
   return (
-    <ToastProvider>
-      <ConfirmProvider>
-        <div className="admin">{body}</div>
-      </ConfirmProvider>
-    </ToastProvider>
+    <AdminI18n>
+      <ToastProvider>
+        <ConfirmProvider>
+          <AdminRoot />
+        </ConfirmProvider>
+      </ToastProvider>
+    </AdminI18n>
   );
 }

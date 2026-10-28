@@ -5,12 +5,15 @@ import { publicView } from '../shared/schema.js';
 import { HttpError, clientIp, cookie, parseCookies, readBody, readJson, securityHeaders, sendJson } from './lib/http.js';
 import { RateLimiter, newToken, safeEqual, tokenHash, verifyPassword } from './lib/auth.js';
 import { createContentService } from './lib/content.js';
+import { createMessageService, validateMessage } from './lib/messages.js';
+import { localize } from '../shared/i18n/localize.js';
+import { dirOf, isLang } from '../shared/i18n/langs.js';
 
 const SESSION_COOKIE = 'nt_session';
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',
-  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2',
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.woff': 'font/woff',
   '.txt': 'text/plain; charset=utf-8', '.pdf': 'application/pdf', '.map': 'application/json', '.mp3': 'audio/mpeg',
 };
 const UPLOAD_NAME = /^[a-f0-9]{64}\.(jpg|png|webp)$/;
@@ -22,7 +25,10 @@ export function createApp(cfg, store, log = console) {
   const loginIp = new RateLimiter({ max: 5, windowMs: 15 * 60 * 1000 });
   const loginGlobal = new RateLimiter({ max: 30, windowMs: 15 * 60 * 1000 });
   const uploads = new RateLimiter({ max: 60, windowMs: 60 * 60 * 1000 });
-  const sec = securityHeaders({ production: cfg.production, formEndpoint: cfg.formEndpoint });
+  const contactIp = new RateLimiter({ max: 5, windowMs: 10 * 60 * 1000 });
+  const contactGlobal = new RateLimiter({ max: 100, windowMs: 60 * 60 * 1000 });
+  const messages = createMessageService(store);
+  const sec = securityHeaders({ production: cfg.production });
 
   // ── auth helpers ──
   async function session(req) {
@@ -73,6 +79,34 @@ export function createApp(cfg, store, log = console) {
         return res.end();
       }
       return sendJson(res, 200, { data: publicView(c.data), version: c.version, updatedAt: c.updatedAt }, { ETag: etag, 'Cache-Control': 'no-cache' });
+    }
+
+    // Contact form: public, but only from this website (JSON + same Origin), rate-limited,
+    // and validated again here. Answers 201 only once the message is stored.
+    if (pathname === '/api/contact' && m === 'POST') {
+      const origin = req.headers.origin;
+      if (origin) {
+        let host = '';
+        try {
+          host = new URL(origin).host;
+        } catch {
+          /* invalid */
+        }
+        if (host !== req.headers.host && !cfg.allowedOrigins.includes(origin)) throw new HttpError(403, 'Request blocked.', { code: 'BLOCKED' });
+      }
+      const ip = clientIp(req, cfg.trustProxy);
+      const wait = contactIp.blocked(ip) || contactGlobal.blocked('all');
+      if (wait) throw new HttpError(429, 'Too many messages. Please try again later.', { code: 'RATE', retryAfter: wait });
+      const body = await readJson(req, 32 * 1024);
+      if (body.company) throw new HttpError(400, 'Your message could not be sent.', { code: 'REJECTED' }); // honeypot
+      const check = validateMessage(body);
+      if (!check.ok) throw new HttpError(422, 'Some fields need attention.', { code: 'INVALID', fields: check.fields });
+      contactIp.hit(ip);
+      contactGlobal.hit('all');
+      const c = await content.get();
+      const path = c.data.contactPaths.find((p) => p.id === check.value.category);
+      const saved = await messages.add(check.value, path ? path.title : '');
+      return sendJson(res, 201, { ok: true, id: saved.id, receivedAt: saved.createdAt });
     }
 
     if (pathname === '/api/auth/login' && m === 'POST') {
@@ -142,6 +176,18 @@ export function createApp(cfg, store, log = console) {
         return sendJson(res, 200, await content.restore(Number(body.version), Number(body.currentVersion)));
       }
 
+      // ── inbox ──
+      if (pathname === '/api/admin/messages' && m === 'GET') return sendJson(res, 200, await messages.list());
+      const mm = pathname.match(/^\/api\/admin\/messages\/([^/]+)$/);
+      if (mm && m === 'PATCH') {
+        const body = await readJson(req, 4 * 1024);
+        return sendJson(res, 200, { item: await messages.setRead(mm[1], body.read) });
+      }
+      if (mm && m === 'DELETE') {
+        await messages.remove(mm[1]);
+        return sendJson(res, 200, { ok: true });
+      }
+
       if (pathname === '/api/admin/status' && m === 'GET') {
         const c = await content.get();
         return sendJson(res, 200, {
@@ -152,7 +198,7 @@ export function createApp(cfg, store, log = console) {
           updatedAt: c.updatedAt,
           media: await content.mediaCount(),
           maxUploadMb: Math.round(cfg.maxUploadBytes / 1024 / 1024),
-          formConnected: !!cfg.formEndpoint,
+          unreadMessages: await messages.unread(),
           sessionExpiresAt: s.expiresAt,
         });
       }
@@ -173,7 +219,7 @@ export function createApp(cfg, store, log = console) {
     createReadStream(file).pipe(res);
   }
 
-  async function page(req, res, pathname) {
+  async function page(req, res, pathname, url) {
     let html;
     try {
       html = await fs.readFile(path.join(cfg.distDir, 'index.html'), 'utf8');
@@ -192,17 +238,23 @@ export function createApp(cfg, store, log = console) {
     } else {
       const c = await content.get();
       const pub = publicView(c.data);
-      let title = pub.site.seoTitle || `${pub.site.name} — ${pub.site.role}`;
-      let desc = pub.site.seoDescription || '';
+      // The visitor's language (chosen with the language switcher, remembered in a cookie)
+      // sets <html lang/dir> and the page title right away, so Arabic never flashes left-to-right.
+      const cookieLang = parseCookies(req).nt_lang;
+      const lang = isLang(url.searchParams.get('lang')) ? url.searchParams.get('lang') : isLang(cookieLang) ? cookieLang : 'en';
+      const loc = localize(pub, lang);
+      let title = loc.site.seoTitle || `${loc.site.name} — ${loc.site.role}`;
+      let desc = loc.site.seoDescription || '';
       const mm = clean.match(/^\/work\/([^/]+)$/);
       if (mm) {
-        const p = pub.projects.find((x) => x.slug === decodeURIComponent(mm[1]));
+        const p = loc.projects.find((x) => x.slug === decodeURIComponent(mm[1]));
         if (p) {
-          title = `${p.title} — Case study — ${pub.site.name}`;
+          title = `${p.title} — ${loc.site.name}`;
           desc = p.summary;
         } else status = 404;
-      } else if (clean === '/work') title = `Portfolio — ${pub.site.name}`;
+      } else if (clean === '/work') title = `Portfolio — ${loc.site.name}`;
       else if (clean !== '/') status = 404;
+      html = html.replace(/<html[^>]*>/, `<html lang="${lang}" dir="${dirOf(lang)}">`);
       const json = JSON.stringify({ data: pub, version: c.version })
         .replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
       html = html
@@ -250,7 +302,7 @@ export function createApp(cfg, store, log = console) {
       }
       if (path.extname(pathname) && !pathname.startsWith('/work/')) throw new HttpError(404, 'Not found.');
     }
-    return page(req, res, pathname);
+    return page(req, res, pathname, url);
   }
 
   // ── entry point ──

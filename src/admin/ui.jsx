@@ -1,10 +1,12 @@
 // Dialogs and small layout pieces for the dashboard.
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useAdminT } from './i18n.jsx';
 
 const ConfirmCtx = createContext(async () => false);
 
 /** const ok = await confirm({ title, body, ok: 'Delete', danger: true }) */
 export function ConfirmProvider({ children }) {
+  const t = useAdminT();
   const [req, setReq] = useState(null);
   const confirm = useCallback((opts) => new Promise((resolve) => setReq({ ...opts, resolve })), []);
   const close = (v) => {
@@ -18,9 +20,9 @@ export function ConfirmProvider({ children }) {
         <Modal title={req.title} onClose={() => close(false)}>
           {req.body && <p className="ad-modal__body">{req.body}</p>}
           <div className="ad-row ad-row--end">
-            <button type="button" className="ad-btn ad-btn--ghost" onClick={() => close(false)}>{req.cancel || 'Cancel'}</button>
+            <button type="button" className="ad-btn ad-btn--ghost" onClick={() => close(false)}>{req.cancel || t('ad.cancel')}</button>
             <button type="button" className={`ad-btn ${req.danger ? 'ad-btn--danger' : 'ad-btn--primary'}`} onClick={() => close(true)} data-autofocus>
-              {req.ok || 'OK'}
+              {req.ok || t('ad.ok')}
             </button>
           </div>
         </Modal>

@@ -14,10 +14,12 @@
 // (defaults: shared/default-content.js → `logos`, files in /public/logos).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useContent } from '../content/ContentProvider.jsx';
+import { useT } from '../i18n/index.jsx';
 
 const SPEED = 42; // pixels per second — calm and steady on every screen size
 
 function Logo({ logo, hidden }) {
+  const t = useT();
   const img = (
     <img
       className="logos__img"
@@ -29,7 +31,7 @@ function Logo({ logo, hidden }) {
   );
   if (!logo.href) return img;
   return (
-    <a className="logos__link" href={logo.href} target="_blank" rel="noopener noreferrer" tabIndex={hidden ? -1 : undefined} aria-label={hidden ? undefined : `${logo.name} (opens in a new tab)`}>
+    <a className="logos__link" href={logo.href} target="_blank" rel="noopener noreferrer" tabIndex={hidden ? -1 : undefined} aria-label={hidden ? undefined : t('logos.newTab', { name: logo.name })}>
       {img}
     </a>
   );
@@ -37,6 +39,7 @@ function Logo({ logo, hidden }) {
 
 export default function LogoMarquee() {
   const { logos } = useContent();
+  const t = useT();
   const all = useMemo(() => (Array.isArray(logos) ? logos.filter((l) => l && l.image) : []), [logos]);
   // Load state of every logo file, reported by the measuring copy below: 'ok' | 'err'.
   const [status, setStatus] = useState({});
@@ -99,7 +102,6 @@ export default function LogoMarquee() {
           return (
             <li key={`${c}-${i}`} className="logos__item" aria-hidden={hidden && g === 0 ? 'true' : undefined}>
               <Logo logo={logo} hidden={hidden} />
-              <span className="logos__sep" aria-hidden="true">✦</span>
             </li>
           );
         })
@@ -108,14 +110,13 @@ export default function LogoMarquee() {
   );
 
   return (
-    <section className="band band--logos" aria-label="Brands I’ve worked with">
+    <section className="band band--logos" aria-label={t('logos.label')}>
       <div ref={viewport} className={`logos${ready ? ' is-ready' : ''}`}>
         {/* invisible copy of one set, used only to measure its width */}
         <ul ref={firstSet} className="logos__group logos__measure" aria-hidden="true">
           {all.map((logo, i) => (
             <li key={`${i}-${logo.image}`} className="logos__item" style={status[logo.image] === 'err' ? { display: 'none' } : undefined}>
               <img className="logos__img" src={logo.image} alt="" onLoad={(e) => report(logo, e.currentTarget.naturalWidth > 0)} onError={() => report(logo, false)} />
-              <span className="logos__sep">✦</span>
             </li>
           ))}
         </ul>

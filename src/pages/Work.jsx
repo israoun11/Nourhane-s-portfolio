@@ -5,6 +5,7 @@ import { filters } from '../data/layout.js';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Button, Media, Words, countWords, orPlaceholder } from '../components/ui.jsx';
 import { isReduced, useMeta, useScrollVar } from '../hooks/motion.js';
+import { useT } from '../i18n/index.jsx';
 
 const layout = [
   { flex: '2 1 560px', ratio: '16 / 10', offset: '0px' },
@@ -15,6 +16,7 @@ const layout = [
 
 /** Drag-to-orbit project stage. Positions are written straight to the DOM for smooth 60fps motion. */
 function Orbit({ projects }) {
+  const t = useT();
   const N = Math.max(1, projects.length);
   const stage = useRef(null);
   const tiles = useRef([]);
@@ -76,7 +78,7 @@ function Orbit({ projects }) {
       ref={stage}
       className={`orbit${grabbing ? ' is-grabbing' : ''}`}
       role="group"
-      aria-label="Project orbit — drag to rotate"
+      aria-label={t('pf.orbit')}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
@@ -111,15 +113,15 @@ function Orbit({ projects }) {
         </Link>
       ))}
       <div className="orbit__pulse" aria-hidden="true" />
-      <div className="orbit__core" aria-hidden="true">DRAG<br />TO<br />ORBIT</div>
+      <div className="orbit__core" aria-hidden="true">{t('pf.drag').split('\n').map((x, k) => (k ? [<br key={k} />, x] : x))}</div>
       <div className="orbit__controls">
-        <button type="button" className="round-btn round-btn--light" onClick={() => rotate(-1)} aria-label="Rotate orbit left">←</button>
-        <button type="button" className="round-btn round-btn--light" onClick={() => rotate(1)} aria-label="Rotate orbit right">→</button>
+        <button type="button" className="round-btn round-btn--light" onClick={() => rotate(-1)} aria-label={t('pf.left')}>←</button>
+        <button type="button" className="round-btn round-btn--light" onClick={() => rotate(1)} aria-label={t('pf.right')}>→</button>
         <button type="button" className="orbit__toggle" aria-pressed={!auto} onClick={() => setAuto((a) => !a)}>
-          {auto ? 'PAUSE ❚❚' : 'PLAY ▶'}
+          {auto ? t('pf.pause') : t('pf.play')}
         </button>
       </div>
-      <p className="orbit__count">{projects.length} PROJECTS{projects.some((p) => !p.cover) ? ' · IMAGES TO ADD' : ''}</p>
+      <p className="orbit__count">{t('pf.count', { n: projects.length })}{projects.some((p) => !p.cover) ? t('pf.imagesToAdd') : ''}</p>
     </div>
   );
 }
@@ -127,8 +129,9 @@ function Orbit({ projects }) {
 export default function Work() {
   const { projects, site, text } = useContent();
   const t = text.portfolio;
+  const tr = useT();
   const N = projects.length;
-  useMeta(`Portfolio — ${site.name}`, `Selected work by ${site.name}: brands, campaigns, e-commerce and digital experiences.`);
+  useMeta(tr('pf.title', { name: site.name }), tr('pf.desc', { name: site.name }));
   const [filter, setFilter] = useState('all');
   const [hover, setHover] = useState(0);
   const heroRef = useRef(null);
@@ -155,13 +158,13 @@ export default function Work() {
         <section className="pf-section" aria-labelledby="grid-title">
           <div className="pf-wrap">
             <div className="pf-head">
-              <h2 id="grid-title" className="h2" data-reveal>Projects by <em>discipline.</em></h2>
-              <div className="filters" role="toolbar" aria-label="Filter projects">
-                {filters.map((f) => {
-                  const count = f.id === 'all' ? N : projects.filter((p) => p.cats.includes(f.id)).length;
+              <h2 id="grid-title" className="h2" data-reveal>{tr('pf.byA')} <em>{tr('pf.byB')}</em></h2>
+              <div className="filters" role="toolbar" aria-label={tr('pf.filters')}>
+                {filters.map((id) => {
+                  const count = id === 'all' ? N : projects.filter((p) => p.cats.includes(id)).length;
                   return (
-                    <button key={f.id} type="button" aria-pressed={filter === f.id} className={`filter${filter === f.id ? ' is-on' : ''}`} onClick={() => setFilter(f.id)}>
-                      {f.label} <span>{count}</span>
+                    <button key={id} type="button" aria-pressed={filter === id} className={`filter${filter === id ? ' is-on' : ''}`} onClick={() => setFilter(id)}>
+                      {tr(`pf.f.${id}`)} <span>{count}</span>
                     </button>
                   );
                 })}
@@ -171,11 +174,11 @@ export default function Work() {
               {shown.map((p, i) => {
                 const l = layout[i % layout.length];
                 return (
-                  <Link key={`${filter}-${p.slug}`} to={`/work/${p.slug}`} className="card pf-card" data-cursor="View" data-reveal style={{ flex: l.flex, marginTop: l.offset }}>
-                    <Media src={p.cover} alt={`${p.title} — cover`} bg={p.bg} art={p.art} ratio={l.ratio} label="IMAGE PLACEHOLDER" className="pf-card__media" reveal parallax />
+                  <Link key={`${filter}-${p.slug}`} to={`/work/${p.slug}`} className="card pf-card" data-cursor={tr("cursor.view")} data-reveal style={{ flex: l.flex, marginTop: l.offset }}>
+                    <Media src={p.cover} alt={tr('work.coverAlt', { title: p.title })} bg={p.bg} art={p.art} ratio={l.ratio} label={tr('work.imagePh')} className="pf-card__media" reveal parallax />
                     <div className="pf-card__meta">
                       <span>{p.n} · {p.tags.join(' · ').toUpperCase()}</span>
-                      <span>{orPlaceholder(p.year, '[Year]')}</span>
+                      <span>{orPlaceholder(p.year, tr('cs.yearPh'))}</span>
                     </div>
                     <h3>{p.title} <span className="ar" aria-hidden="true">↗</span></h3>
                     <p>{p.summary}</p>
@@ -183,13 +186,13 @@ export default function Work() {
                 );
               })}
             </div>
-            {shown.length === 0 && <p className="pf-empty">No projects in this discipline yet.</p>}
+            {shown.length === 0 && <p className="pf-empty">{tr('pf.empty')}</p>}
           </div>
         </section>
 
         <section className="pf-section pf-index" aria-labelledby="idx-title">
           <div className="pf-wrap">
-            <h2 id="idx-title" className="h2 pf-index__title" data-reveal>The <em>index.</em></h2>
+            <h2 id="idx-title" className="h2 pf-index__title" data-reveal>{tr('pf.indexA')} <em>{tr('pf.indexB')}</em></h2>
             <div className="pf-index__body">
               <ol className="pf-index__list">
                 {projects.map((p, i) => (
@@ -198,7 +201,7 @@ export default function Work() {
                       <span className="pf-row__n">{p.n}</span>
                       <span className="pf-row__t">{p.title}</span>
                       <span className="pf-row__tags">{p.tags.join(' · ')}</span>
-                      <span className="pf-row__y">{orPlaceholder(p.year, '[Year]')}</span>
+                      <span className="pf-row__y">{orPlaceholder(p.year, tr('cs.yearPh'))}</span>
                       <span className="ar" aria-hidden="true">↗</span>
                     </Link>
                   </li>
@@ -207,7 +210,7 @@ export default function Work() {
               {pv && <div className="pf-preview only-desk" aria-hidden="true">
                 <Media key={pv.slug} src={pv.cover} bg={pv.bg} art={pv.art} className="pf-preview__media" />
                 <div className="pf-preview__cap" style={{ color: pv.cover ? '#fff' : pv.fg }}>
-                  <span>PREVIEW · {pv.n}</span>
+                  <span>{tr('pf.preview', { n: pv.n })}</span>
                   <p>{pv.title}</p>
                 </div>
               </div>}
@@ -220,14 +223,14 @@ export default function Work() {
           <span className="pf-cta__ring pf-cta__ring--b" aria-hidden="true" />
           <h2 id="cta-title" data-reveal="words"><Words text={t.ctaTitle} /><br /><em><Words text={t.ctaEm} start={countWords(t.ctaTitle)} /></em></h2>
           <div className="pf-cta__btns" data-reveal>
-            <Button to="/#contact" variant="ivory" arrow magnetic>Let's Talk</Button>
-            {site.cv && <Button href={site.cv} variant="outline-light">Download CV</Button>}
+            <Button to="/#contact" variant="ivory" arrow magnetic>{tr('pf.talk')}</Button>
+            {site.cv && <Button href={site.cv} variant="outline-light">{tr('pf.cv')}</Button>}
           </div>
         </section>
       </main>
       <footer className="footer--slim on-dark">
         <span>© {new Date().getFullYear()} {site.name}</span>
-        <Link className="ulink" to="/">← Back to home</Link>
+        <Link className="ulink" to="/">{tr('pf.back')}</Link>
       </footer>
     </>
   );

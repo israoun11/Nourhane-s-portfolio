@@ -2,14 +2,15 @@
 // 1. Uses the content the server embedded in the page (no flash, no extra request).
 // 2. Otherwise (development / static hosting) shows the approved defaults and fetches /api/content.
 // 3. In preview mode, shows the dashboard's unsaved draft — only in that browser tab.
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { defaultContent } from '../../shared/default-content.js';
 import { publicView } from '../../shared/schema.js';
+import { migrateContent } from '../../shared/migrate.js';
+import { localize } from '../../shared/i18n/localize.js';
+import { useLang } from '../i18n/index.jsx';
 
 const Ctx = createContext(null);
 
-// Content saved (or previewed) before the logo carousel existed has no `logos` list.
-const withLogos = (d) => (d && !Array.isArray(d.logos) ? { ...d, logos: defaultContent.logos } : d);
 export const PREVIEW_KEY = 'nt-preview-draft';
 const PREVIEW_FLAG = 'nt-preview-on';
 
@@ -32,7 +33,7 @@ function readPreview() {
     if (!draft || Date.now() - draft.savedAt > 6 * 3600 * 1000) return null;
     // The project being edited is shown even if it is still hidden.
     const data = { ...draft.data, projects: draft.data.projects.map((p) => (draft.slug && p.slug === draft.slug ? { ...p, published: true } : p)) };
-    return publicView(withLogos(data));
+    return publicView(migrateContent(data));
   } catch {
     return null;
   }
@@ -52,8 +53,8 @@ export function ContentProvider({ children }) {
     const preview = readPreview();
     if (preview) return { data: preview, version: 0, preview: true };
     const embedded = readEmbedded();
-    if (embedded && embedded.data) return { data: withLogos(embedded.data), version: embedded.version, preview: false, live: true };
-    return { data: publicView(defaultContent), version: 0, preview: false, live: false };
+    if (embedded && embedded.data) return { data: embedded.data, version: embedded.version, preview: false, live: true };
+    return { data: publicView(migrateContent(defaultContent)), version: 0, preview: false, live: false };
   });
   const lastFetch = useRef(state.live ? Date.now() : 0);
   const etag = useRef(state.version ? `W/"v${state.version}"` : '');
@@ -69,7 +70,7 @@ export function ContentProvider({ children }) {
         const body = await res.json();
         if (cancelled || !body || !body.data) return;
         etag.current = res.headers.get('etag') || '';
-        setState((s) => (s.version === body.version ? s : { data: withLogos(body.data), version: body.version, preview: false, live: true }));
+        setState((s) => (s.version === body.version ? s : { data: body.data, version: body.version, preview: false, live: true }));
       } catch {
         /* offline or static hosting: keep what we have */
       }
@@ -85,7 +86,10 @@ export function ContentProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <Ctx.Provider value={state}>{children}</Ctx.Provider>;
+  // Texts in the visitor's language (English where a translation is missing).
+  const lang = useLang();
+  const value = useMemo(() => ({ ...state, data: localize(state.data, lang) }), [state, lang]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 /** The current website content (published projects only). */

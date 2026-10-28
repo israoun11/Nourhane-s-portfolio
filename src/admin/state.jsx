@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { api, ApiError, getIn, setIn } from './api.js';
 import { validateContent } from '../../shared/schema.js';
 import { PREVIEW_KEY } from '../content/ContentProvider.jsx';
+import { useAdminT } from './i18n.jsx';
 
 const Ctx = createContext(null);
 const ToastCtx = createContext(() => {});
@@ -33,6 +34,7 @@ export const useToast = () => useContext(ToastCtx);
 
 export function EditorProvider({ children }) {
   const toast = useToast();
+  const t = useAdminT();
   const [saved, setSaved] = useState(null); // { data, version, updatedAt }
   const [draft, setDraft] = useState(null);
   const [loadError, setLoadError] = useState('');
@@ -71,6 +73,8 @@ export function EditorProvider({ children }) {
   }, [dirty]);
 
   const update = useCallback((path, value) => setDraft((d) => setIn(d, path, value)), []);
+  /** Like update, but computes the new value from the latest draft (safe after slow uploads). */
+  const updateWith = useCallback((path, fn) => setDraft((d) => setIn(d, path, fn(getIn(d, path)))), []);
   const read = useCallback((path) => getIn(draft, path), [draft]);
   const readSaved = useCallback((path) => (saved ? getIn(saved.data, path) : undefined), [saved]);
 
@@ -79,7 +83,7 @@ export function EditorProvider({ children }) {
     const check = validateContent(structuredClone(draft));
     if (!check.ok) {
       setErrors(check.errors);
-      toast(`Not saved — ${check.errors.length} field${check.errors.length > 1 ? 's need' : ' needs'} attention (marked in red).`, 'error');
+      toast(t('ad.save.invalid', { n: check.errors.length }), 'error');
       return false;
     }
     savingRef.current = true;
@@ -94,25 +98,25 @@ export function EditorProvider({ children }) {
       } catch {
         /* ignore */
       }
-      toast('Saved — your changes are now live on the website.');
+      toast(t('ad.save.ok'));
       return true;
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) {
         setErrors(e.body.errors || []);
-        toast(`Not saved — ${e.message}`, 'error');
+        toast(t('ad.save.invalid', { n: (e.body.errors || []).length }), 'error');
       } else if (e instanceof ApiError && e.status === 409) {
         setConflict(true);
       } else if (!(e instanceof ApiError && e.status === 401)) {
-        toast(`Not saved — ${e.message} Your previous version is still online.`, 'error');
+        toast(t('ad.save.failed', { msg: e.status === 0 ? t('ad.err.network') : e.message }), 'error');
       } else {
-        toast('Not saved — please log in again, then press Save.', 'error');
+        toast(t('ad.save.relogin'), 'error');
       }
       return false;
     } finally {
       savingRef.current = false;
       setSaving(false);
     }
-  }, [draft, saved, toast]);
+  }, [draft, saved, toast, t]);
 
   const discard = useCallback(() => {
     if (saved) setDraft(saved.data);
@@ -124,12 +128,12 @@ export function EditorProvider({ children }) {
       try {
         localStorage.setItem(PREVIEW_KEY, JSON.stringify({ data: draft, savedAt: Date.now(), slug }));
       } catch {
-        toast('Preview is unavailable in this browser (storage blocked).', 'error');
+        toast(t('ad.save.previewBlocked'), 'error');
         return;
       }
       window.open(`${path}${path.includes('?') ? '&' : '?'}preview=1`, '_blank', 'noopener');
     },
-    [draft, toast]
+    [draft, toast, t]
   );
 
   const replaceSaved = useCallback((next) => {
@@ -139,7 +143,7 @@ export function EditorProvider({ children }) {
     setConflict(false);
   }, []);
 
-  const value = { saved, draft, dirty, saving, errors, conflict, loadError, load, update, read, readSaved, save, discard, preview, replaceSaved, setErrors };
+  const value = { saved, draft, dirty, saving, errors, conflict, loadError, load, update, updateWith, read, readSaved, save, discard, preview, replaceSaved, setErrors };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

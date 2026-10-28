@@ -7,7 +7,7 @@ import { startTestServer, client, PNG } from './helpers.js';
 import { createSupabaseStore } from '../lib/store-supabase.js';
 
 const KEY = 'sb_secret_test_key';
-const db = { nt_content: new Map(), nt_sessions: new Map() };
+const db = { nt_content: new Map(), nt_sessions: new Map(), nt_messages: new Map() };
 const objects = new Map();
 const seen = [];
 
@@ -24,7 +24,7 @@ function mock(req, res) {
     if (req.headers.apikey !== KEY || req.headers.authorization !== `Bearer ${KEY}`) return send(401, { message: 'bad key' });
     const raw = Buffer.concat(chunks);
     const q = Object.fromEntries([...url.searchParams].map(([k, v]) => [k, v.replace(/^(eq|lt)\./, '')]));
-    const table = url.pathname.match(/^\/rest\/v1\/(nt_content|nt_sessions)$/)?.[1];
+    const table = url.pathname.match(/^\/rest\/v1\/(nt_content|nt_sessions|nt_messages)$/)?.[1];
 
     if (table === 'nt_content') {
       if (req.method === 'GET') {
@@ -58,6 +58,31 @@ function mock(req, res) {
         if (q.id_hash) db.nt_sessions.delete(q.id_hash);
         if (q.expires_at) for (const [k, v] of db.nt_sessions) if (Date.parse(v.expires_at) < Date.parse(q.expires_at)) db.nt_sessions.delete(k);
         return send(204);
+      }
+    }
+    if (table === 'nt_messages') {
+      if (req.method === 'POST') {
+        const b = JSON.parse(raw);
+        for (const k of ['id', 'created_at', 'name', 'email', 'message', 'read']) if (b[k] === undefined) return send(400, { message: `missing ${k}` });
+        db.nt_messages.set(b.id, b);
+        return send(201);
+      }
+      let rows = [...db.nt_messages.values()];
+      if (q.read) rows = rows.filter((r) => String(r.read) === q.read);
+      if (q.id) rows = rows.filter((r) => r.id === q.id);
+      if (req.method === 'GET') {
+        rows.sort((a, b) => (q.order === 'created_at.asc' ? 1 : -1) * (a.created_at < b.created_at ? -1 : 1));
+        const off = Number(q.offset || 0);
+        return send(200, rows.slice(off, off + Number(q.limit || 1000)));
+      }
+      if (req.method === 'PATCH') {
+        const patch = JSON.parse(raw);
+        rows.forEach((r) => Object.assign(r, patch));
+        return send(200, rows);
+      }
+      if (req.method === 'DELETE') {
+        rows.forEach((r) => db.nt_messages.delete(r.id));
+        return send(200, rows);
       }
     }
     const obj = url.pathname.match(/^\/storage\/v1\/object\/portfolio\/(.+)$/);
@@ -121,4 +146,28 @@ test('Supabase outage: clear error, saved content untouched', async () => {
   const s = createSupabaseStore({ url: 'http://127.0.0.1:1', key: KEY, bucket: 'portfolio' });
   await assert.rejects(() => s.getKV('content'), /unreachable/);
   assert.equal(db.nt_content.get('content').value.text.mind.title, 'ONE CREATIVE MIND — EDITED.');
+});
+
+test('Supabase driver: contact messages are stored in nt_messages and managed from the inbox', async () => {
+  const r = await fetch(srv.base + '/api/contact', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Visitor', email: 'v@example.com', category: 'work', message: 'A message long enough to be accepted.', lang: 'ar' }),
+  });
+  assert.equal(r.status, 201);
+  const { id } = await r.json();
+  const row = db.nt_messages.get(id);
+  assert.equal(row.name, 'Visitor');
+  assert.equal(row.category_label, "Let's work together");
+  assert.equal(row.lang, 'ar');
+  const c = client(srv.base);
+  await c.login();
+  const list = await c.req('GET', '/api/admin/messages');
+  assert.equal(list.data.items[0].id, id);
+  assert.equal(list.data.items[0].categoryLabel, "Let's work together");
+  assert.equal(list.data.unread, 1);
+  assert.equal((await c.req('PATCH', `/api/admin/messages/${id}`, { json: { read: true } })).data.item.read, true);
+  assert.equal(db.nt_messages.get(id).read, true);
+  assert.equal((await c.req('DELETE', `/api/admin/messages/${id}`)).status, 200);
+  assert.equal(db.nt_messages.has(id), false);
 });

@@ -25,5 +25,5 @@ services:
         sync: false
       - key: SUPABASE_BUCKET
         value: portfolio
-      - key: VITE_FORM_ENDPOINT
+      - key: VITE_ARABIC_HEADING_FONT
         sync: false

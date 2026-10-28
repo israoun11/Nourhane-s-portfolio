@@ -1,9 +1,11 @@
 import { useContent } from '../content/ContentProvider.jsx';
 import { Button, Media, Words, countWords } from '../components/ui.jsx';
+import { useT } from '../i18n/index.jsx';
 
 export default function CodaStudio() {
   const { site, codaServices, text } = useContent();
   const t = text.coda;
+  const tr = useT();
   const [w1, w2] = site.codastudio.work;
   return (
     <section id="codastudio" className="section coda on-dark" aria-labelledby="coda-title">
@@ -28,14 +30,14 @@ export default function CodaStudio() {
           </div>
         </div>
         <div className="coda__visuals">
-          <Media className="coda__logo" src={site.codastudio.logo} alt="CodaStudio logo" bg="#1534DD" label="STUDIO IDENTITY PLACEHOLDER" reveal>
+          <Media className="coda__logo" src={site.codastudio.logo} alt={tr('coda.logoAlt')} bg="#1534DD" label={tr('coda.logoPh')} reveal>
             {!site.codastudio.logo && <span className="coda__word">Coda<em>Studio</em></span>}
           </Media>
-          <Media className="coda__tile" src={w1} alt="CodaStudio client project" bg="#2E2E46" reveal>
-            {!w1 && <span className="coda__ph">Client project — to add</span>}
+          <Media className="coda__tile" src={w1} alt={tr('coda.projectAlt')} bg="#2E2E46" reveal>
+            {!w1 && <span className="coda__ph">{tr('coda.projectPh')}</span>}
           </Media>
-          <Media className="coda__tile" src={w2} alt="CodaStudio client project" bg="#B9E8E5" reveal style={{ '--d': '.12s' }}>
-            {!w2 && <span className="coda__ph coda__ph--dark">Client project — to add</span>}
+          <Media className="coda__tile" src={w2} alt={tr('coda.projectAlt')} bg="#B9E8E5" reveal style={{ '--d': '.12s' }}>
+            {!w2 && <span className="coda__ph coda__ph--dark">{tr('coda.projectPh')}</span>}
           </Media>
         </div>
       </div>

@@ -1,12 +1,14 @@
 import { useContent } from '../content/ContentProvider.jsx';
 import { Words, countWords } from '../components/ui.jsx';
+import { useT } from '../i18n/index.jsx';
 
 function Thumb({ s }) {
+  const t = useT();
   return (
     <div className="series__frame" style={{ background: s.bg, clipPath: s.clip }}>
       <div className="series__photo" aria-hidden={!s.thumb}>
         {s.thumb ? (
-          <img src={s.thumb} alt={`${s.a} ${s.b} — video thumbnail`} loading="lazy" />
+          <img src={s.thumb} alt={t('series.thumbAlt', { title: `${s.a} ${s.b}` })} loading="lazy" />
         ) : (
           <>
             <span className="series__head" />
@@ -21,7 +23,7 @@ function Thumb({ s }) {
         <span>{s.a}</span>
         <span>{s.b}</span>
       </div>
-      {!s.thumb && <span className="ph-label series__ph">THUMBNAIL PLACEHOLDER</span>}
+      {!s.thumb && <span className="ph-label series__ph">{t('series.thumbPh')}</span>}
     </div>
   );
 }
@@ -29,6 +31,7 @@ function Thumb({ s }) {
 export default function Personality() {
   const { series, text } = useContent();
   const t = text.personality;
+  const tr = useT();
   return (
     <section id="insights" className="section pers on-dark" aria-labelledby="pers-title">
       <svg className="pers__spark" aria-hidden="true" viewBox="0 0 120 60">
@@ -47,12 +50,12 @@ export default function Personality() {
               <>
                 <Thumb s={s} />
                 <p className="series__d">{s.d}</p>
-                <span className="series__cta">{s.href ? 'WATCH THE SERIES ↗' : 'EPISODES COMING SOON'}</span>
+                <span className="series__cta">{s.href ? tr('series.watch') : tr('series.soon')}</span>
               </>
             );
             const style = { marginTop: s.offset, '--rot': s.rot, '--d': `${i * 0.12}s` };
             return s.href ? (
-              <a key={`${s.a}-${i}`} className="series__item" href={s.href} target="_blank" rel="noreferrer" style={style} data-cursor="Watch" data-reveal>
+              <a key={`${s.a}-${i}`} className="series__item" href={s.href} target="_blank" rel="noreferrer" style={style} data-cursor={tr("cursor.watch")} data-reveal>
                 {body}
               </a>
             ) : (

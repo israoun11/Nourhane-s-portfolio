@@ -2,10 +2,12 @@ import { useRef } from 'react';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Button } from '../components/ui.jsx';
 import { usePointerVars, useScrollVar } from '../hooks/motion.js';
+import { useT } from '../i18n/index.jsx';
 
 export default function Hero() {
   const { site, text } = useContent();
   const t = text.hero;
+  const tr = useT();
   const ref = useRef(null);
   usePointerVars(ref);
   useScrollVar(ref, { mode: 'exit', name: '--hp' });
@@ -55,7 +57,7 @@ export default function Hero() {
           <div className="hero__portrait-wrap">
             <figure className="hero__portrait">
               {site.portrait ? (
-                <img src={site.portrait} alt={`Portrait of ${site.name}`} fetchPriority="high" />
+                <img src={site.portrait} alt={tr('hero.portraitAlt', { name: site.name })} fetchPriority="high" />
               ) : (
                 <>
                   <div className="hero__ph" aria-hidden="true">
@@ -63,7 +65,7 @@ export default function Hero() {
                     <span className="hero__ph-body" />
                   </div>
                   <figcaption>
-                    <strong>Portrait placeholder</strong> — upload Nourhane's photograph in the dashboard (shown in black &amp; white).
+                    <strong>{tr('hero.portraitPh')}</strong> {tr('hero.portraitPhText')}
                   </figcaption>
                 </>
               )}

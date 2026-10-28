@@ -2,12 +2,14 @@ import { useContent } from '../content/ContentProvider.jsx';
 import { homeGridLayout } from '../data/layout.js';
 import { Link } from '../router.jsx';
 import { Button, Media, SplitHeading, orPlaceholder } from '../components/ui.jsx';
+import { useT } from '../i18n/index.jsx';
 
 export default function SelectedWork() {
   const { projects, text } = useContent();
   const t = text.work;
+  const tr = useT();
   const [featured, ...rest] = projects;
-  const meta = (p) => `${p.n} · ${orPlaceholder(p.industry, '[INDUSTRY]').toUpperCase()} · ${orPlaceholder(p.year, '[YEAR]')}`;
+  const meta = (p) => `${p.n} · ${orPlaceholder(p.industry, tr('work.industryPh')).toUpperCase()} · ${orPlaceholder(p.year, tr('work.yearPh'))}`;
 
   return (
     <section id="work" className="section" aria-labelledby="work-title">
@@ -18,16 +20,16 @@ export default function SelectedWork() {
         </div>
 
         {featured && (
-        <Link to={`/work/${featured.slug}`} className="card feature" data-cursor="View" data-reveal>
+        <Link to={`/work/${featured.slug}`} className="card feature" data-cursor={tr("cursor.view")} data-reveal>
           <Media
             className="feature__media"
             src={featured.cover}
-            alt={`${featured.title} — cover`}
+            alt={tr('work.coverAlt', { title: featured.title })}
             bg={featured.bg}
             art={featured.art}
             mono={featured.mono}
             monoColor="#FFF9F5"
-            label="FEATURED · IMAGE PLACEHOLDER"
+            label={tr('work.featuredPh')}
             reveal
             parallax
           />
@@ -35,13 +37,13 @@ export default function SelectedWork() {
             <span className="meta">{meta(featured)}</span>
             <h3>{featured.title}</h3>
             <ul className="chips">
-              {featured.tags.map((t) => <li key={t} className="chip chip--aqua">{t}</li>)}
+              {featured.tags.map((tag) => <li key={tag} className="chip chip--aqua">{tag}</li>)}
             </ul>
             <dl className="feature__dl">
-              <div><dt>MY ROLE</dt><dd>{orPlaceholder(featured.role, '[To verify]')}</dd></div>
-              <div><dt>CHALLENGE</dt><dd>{orPlaceholder(featured.challenge, '[One line]')}</dd></div>
+              <div><dt>{tr('work.myRole')}</dt><dd>{orPlaceholder(featured.role, tr('work.toVerify'))}</dd></div>
+              <div><dt>{tr('work.challenge')}</dt><dd>{orPlaceholder(featured.challenge, tr('work.oneLine'))}</dd></div>
             </dl>
-            <span className="feature__cta">READ THE CASE STUDY <span className="ar" aria-hidden="true">↗</span></span>
+            <span className="feature__cta">{tr('work.readCase')} <span className="ar" aria-hidden="true">↗</span></span>
           </div>
         </Link>
         )}
@@ -54,11 +56,11 @@ export default function SelectedWork() {
                 key={p.slug}
                 to={`/work/${p.slug}`}
                 className="card work-card"
-                data-cursor="View"
+                data-cursor={tr("cursor.view")}
                 data-reveal
                 style={{ flex: l.flex, marginTop: l.offset, '--d': `${(i % 2) * 0.1}s` }}
               >
-                <Media src={p.cover} alt={`${p.title} — cover`} bg={p.bg} art={p.art} ratio={l.ratio} label="IMAGE PLACEHOLDER" reveal parallax />
+                <Media src={p.cover} alt={tr('work.coverAlt', { title: p.title })} bg={p.bg} art={p.art} ratio={l.ratio} label={tr('work.imagePh')} reveal parallax />
                 <span className="meta">{meta(p)}</span>
                 <h3>
                   {p.title} <span className="ar" aria-hidden="true">↗</span>

@@ -40,7 +40,7 @@
 }
 .mmenu__nav a:hover { color: var(--pink); }
 .mmenu__nav a span { font-family: var(--f-ui); font-size: 11px; font-weight: 700; color: var(--pink); }
-.mmenu__cta { margin-top: auto; width: 100%; flex: none; }
+.mmenu__cta { width: 100%; flex: none; }
 .mmenu__nav { margin-bottom: 32px; }
 
 /* ───────────── Footer ───────────── */
@@ -58,3 +58,24 @@
 .footer__legal a { color: rgba(255, 249, 245, 0.85); }
 .footer--slim { padding: 28px var(--gutter); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 12px; color: rgba(255, 249, 245, 0.7); background: var(--ink); }
 .footer--slim a { color: var(--ivory); }
+
+/* ───────────── Language switcher ───────────── */
+.header__end { display: flex; align-items: center; gap: 14px; }
+.lang { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid rgba(32, 32, 51, 0.18); border-radius: 999px; }
+.lang__btn {
+  min-width: 34px; min-height: 30px; padding: 0 8px; border: 0; border-radius: 999px; background: transparent; color: inherit;
+  font-family: var(--f-ui); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.lang__btn[lang="ar"] { font-family: 'Tajawal', var(--f-ui); font-size: 15px; letter-spacing: 0; line-height: 1; }
+.lang__btn:hover { background: rgba(21, 52, 221, 0.08); }
+.lang__btn.is-on { background: var(--ink); color: var(--ivory); }
+.lang__btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.lang--light { border-color: rgba(255, 249, 245, 0.3); }
+.lang--light .lang__btn:hover { background: rgba(255, 249, 245, 0.12); }
+.lang--light .lang__btn.is-on { background: var(--ivory); color: var(--ink); }
+.lang--lg .lang__btn { min-width: 52px; min-height: 44px; font-size: 13px; }
+.lang--lg .lang__btn[lang="ar"] { font-size: 19px; }
+.mmenu__foot { margin-top: auto; display: flex; flex-direction: column; gap: 16px; }
+.mmenu__foot .lang { align-self: flex-start; }
+@media (max-width: 560px) { .header__end .lang { display: none; } }

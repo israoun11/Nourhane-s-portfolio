@@ -7,6 +7,7 @@ import CaseStudy from './pages/CaseStudy.jsx';
 import NotFound from './pages/NotFound.jsx';
 import RevealObserver from './components/RevealObserver.jsx';
 import ViewCursor from './components/ViewCursor.jsx';
+import { useT } from './i18n/index.jsx';
 
 // The dashboard is loaded only when someone opens /admin — visitors never download it.
 const AdminApp = lazy(() => import('./admin/AdminApp.jsx'));
@@ -25,10 +26,11 @@ function PublicPage({ path }) {
 }
 
 function PreviewBar() {
+  const t = useT();
   return (
     <div className="preview-bar" role="status">
-      <span><strong>Preview</strong> — unsaved changes from the dashboard. Visitors don't see this.</span>
-      <button type="button" onClick={exitPreview}>Close preview</button>
+      <span><strong>{t('app.preview')}</strong> — {t('app.previewText')}</span>
+      <button type="button" onClick={exitPreview}>{t('app.closePreview')}</button>
     </div>
   );
 }
@@ -36,6 +38,7 @@ function PreviewBar() {
 export default function App() {
   const { path } = useRouter();
   const preview = useIsPreview();
+  const t = useT();
   const isAdmin = path === '/admin' || path.startsWith('/admin/');
 
   // On page change: jump to the #section if there is one, otherwise to the top.
@@ -53,7 +56,7 @@ export default function App() {
 
   if (isAdmin) {
     return (
-      <Suspense fallback={<div className="admin-loading" role="status">Loading dashboard…</div>}>
+      <Suspense fallback={<div className="admin-loading" role="status">{t('app.loadingAdmin')}</div>}>
         <AdminApp />
       </Suspense>
     );
@@ -61,7 +64,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <a className="skip-link" href="#main">Skip to content</a>
+      <a className="skip-link" href="#main">{t('app.skip')}</a>
       <RevealObserver />
       <ViewCursor />
       {preview && <PreviewBar />}

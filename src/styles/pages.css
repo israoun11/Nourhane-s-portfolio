@@ -123,19 +123,29 @@
 .step:hover { translate: 0 -6px; }
 .step > span { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; }
 .step p { margin: auto 0 0; font-size: 15px; }
+/* Small image at the top of each approach card */
+.step__media { margin: -10px -10px 6px; border-radius: 12px; overflow: hidden; }
+.step__media .media__art { opacity: 0.9; }
+.step__media .ph-label { font-size: 10px; }
+.step:hover .step__media .media__img, .step:hover .step__media .media__art { scale: 1.04; }
 .step--line { border: 1px solid rgba(255, 249, 245, 0.18); }
 .step--line p { color: rgba(255, 249, 245, 0.85); }
 .step--blue { background: var(--blue); }
 .step--pink { background: var(--pink); color: var(--ink); }
 
-.cs-gal__title { margin-bottom: clamp(32px, 4vw, 56px); font-size: clamp(40px, 4.6vw, 68px); line-height: 1; }
+.cs-gal__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 32px; margin-bottom: clamp(32px, 4vw, 56px); }
+.cs-gal__title { margin: 0; font-size: clamp(40px, 4.6vw, 68px); line-height: 1; }
+.cs-gal__count { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.cs-gal__note { margin: 0; max-width: 420px; font-size: 14px; color: var(--muted); }
+.cs-fig__btn { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; text-align: inherit; }
+.cs-fig__btn:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 18px; }
 .cs-gallery { display: flex; flex-wrap: wrap; gap: 16px; }
 .cs-fig { position: relative; min-width: 0; margin: 0; }
 .cs-fig__media { border-radius: 18px; }
 .cs-fig__media .media__art { transition: scale 1.2s var(--ease); }
 .cs-fig:hover .media__art, .cs-fig:hover .media__img { scale: 1.04; }
-.cs-fig__cap { position: absolute; left: 14px; bottom: 14px; right: 14px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 249, 245, 0.94); font-size: 12px; line-height: 1.4; }
-.cs-fig__cap--real { right: auto; }
+.cs-fig__cap { position: absolute; inset-inline: 14px; bottom: 14px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 249, 245, 0.94); font-size: 12px; line-height: 1.4; }
+.cs-fig__cap--real { inset-inline-end: auto; pointer-events: none; }
 
 .cs-results { background: #EAF7F6; }
 .cs-results .h2 { font-size: clamp(40px, 4.6vw, 68px); line-height: 1; }
@@ -168,3 +178,15 @@
 .notfound { min-height: 70vh; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 24px; padding: var(--section-y) var(--gutter); max-width: 1240px; margin: 0 auto; }
 .notfound h1 { margin: 0; font-family: var(--f-cond); font-weight: 800; font-size: clamp(96px, 16vw, 220px); line-height: 0.85; color: var(--blue); }
 .notfound p { margin: 0; font-family: var(--f-display); font-size: clamp(24px, 2.6vw, 36px); }
+
+/* ───────────── Image viewer ───────────── */
+.lb { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 64px clamp(16px, 7vw, 96px); background: rgba(20, 20, 34, 0.94); color: var(--ivory); animation: fadeIn 0.25s ease both; }
+.lb__fig { margin: 0; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; animation: blurIn 0.35s var(--ease) both; }
+.lb__fig img { display: block; max-width: 100%; max-height: calc(100vh - 170px); object-fit: contain; border-radius: 8px; }
+.lb__fig figcaption { display: flex; gap: 14px; align-items: baseline; font-size: 14px; color: rgba(255, 249, 245, 0.85); text-align: center; }
+.lb__count { font-size: 12px; font-weight: 800; letter-spacing: 0.14em; color: var(--pink); }
+.lb__close { position: absolute; top: 16px; inset-inline-end: 16px; min-height: 44px; padding: 0 16px; border: 1px solid rgba(255, 249, 245, 0.4); border-radius: 999px; background: transparent; color: var(--ivory); font-size: 12px; font-weight: 800; letter-spacing: 0.12em; cursor: pointer; }
+.lb__nav { position: absolute; top: 50%; translate: 0 -50%; }
+.lb__nav--prev { inset-inline-start: 16px; }
+.lb__nav--next { inset-inline-end: 16px; }
+@media (max-width: 600px) { .lb__nav { top: auto; bottom: 16px; translate: none; } }

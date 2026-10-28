@@ -1,0 +1,11 @@
+/* 29LT Bukra — licensed Arabic heading font (29LT / 29Letters). Loaded only when
+   VITE_ARABIC_HEADING_FONT=bukra is set AND the licensed web-font files are in
+   public/fonts/bukra/ (see public/fonts/README.txt). Without them, Tajawal is used. */
+@font-face { font-family: '29LT Bukra'; font-style: normal; font-weight: 700; font-display: swap; src: local('29LT Bukra Bold'), url('/fonts/bukra/29LT-Bukra-Bold.woff2') format('woff2'); }
+@font-face { font-family: '29LT Bukra'; font-style: normal; font-weight: 500; font-display: swap; src: local('29LT Bukra Medium'), url('/fonts/bukra/29LT-Bukra-Medium.woff2') format('woff2'); }
+:root {
+  --f-ar-title: '29LT Bukra', 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+  --w-ar-title: 700;
+  --f-ar-sub: '29LT Bukra', 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+  --w-ar-sub: 500;
+}

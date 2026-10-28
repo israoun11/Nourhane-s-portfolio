@@ -2,11 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Words } from '../components/ui.jsx';
 import { useScrollVar } from '../hooks/motion.js';
+import { useT } from '../i18n/index.jsx';
+import Lightbox from '../components/Lightbox.jsx';
 
 const dots = Array.from({ length: 50 }, (_, i) => i % 7 === 0);
+const SLOTS = 4; // every year always shows at least four photo places
 
-// Illustrative visual per year — replaced by the milestone image uploaded in the dashboard.
+// Illustrative visual per year — shown in the main photo place until a real photo is uploaded.
 function YearVisual({ i }) {
+  const t = useT();
   switch (i) {
     case 0:
       return (
@@ -27,7 +31,7 @@ function YearVisual({ i }) {
         <div className="jv" style={{ background: '#FFF9F5' }}>
           <div style={{ left: 0, top: 0, width: '58%', height: '100%', background: '#1534DD' }} />
           <div style={{ left: '44%', top: '16%', width: '30%', aspectRatio: '1', borderRadius: '50%', background: '#F174AB' }} />
-          <b className="jv__big" style={{ left: '7%', bottom: '8%', color: '#FFF9F5' }}>LEAD<br />DESIGN</b>
+          <b className="jv__big" style={{ left: '7%', bottom: '8%', color: '#FFF9F5' }}>{t('journey.v.lead').split('\n').map((x, k) => (k ? [<br key={k} />, x] : x))}</b>
           <div className="jv__swatches"><i style={{ background: '#202033' }} /><i style={{ background: '#1534DD' }} /><i style={{ background: '#F174AB' }} /><i style={{ background: '#B9E8E5' }} /></div>
         </div>
       );
@@ -37,7 +41,7 @@ function YearVisual({ i }) {
           <div style={{ left: '8%', top: '14%', width: '38%', aspectRatio: '4 / 5', background: '#202033', transform: 'rotate(-6deg)' }} />
           <div style={{ left: '34%', top: '22%', width: '34%', aspectRatio: '4 / 5', background: '#B9E8E5', transform: 'rotate(3deg)', border: '6px solid #fff' }} />
           <div style={{ right: '8%', top: '10%', width: '30%', aspectRatio: '4 / 5', background: '#F174AB', transform: 'rotate(8deg)', border: '6px solid #fff' }} />
-          <span className="annot jv__note">going independent →</span>
+          <span className="annot jv__note">{t('journey.v.independent')}</span>
         </div>
       );
     case 3:
@@ -50,14 +54,14 @@ function YearVisual({ i }) {
             <i style={{ height: 30, borderRadius: 999, background: '#1534DD' }} />
           </div>
           <div className="jv__bars"><i style={{ height: '30%', background: '#E2DCE6' }} /><i style={{ height: '48%', background: '#F174AB' }} /><i style={{ height: '64%', background: '#1534DD' }} /><i style={{ height: '86%', background: '#202033' }} /></div>
-          <span className="jv__cap">STORE · CAMPAIGNS · OPS</span>
+          <span className="jv__cap">{t('journey.v.store')}</span>
         </div>
       );
     case 4:
       return (
         <div className="jv jv--edu">
           <b className="jv__fifty">50+</b>
-          <span className="jv__cap2">PEOPLE TRAINED</span>
+          <span className="jv__cap2">{t('journey.v.trained')}</span>
           <div className="jv__dots">{dots.map((pink, k) => <i key={k} style={{ background: pink ? '#F174AB' : '#FFF9F5', animationDelay: `${k * 18}ms` }} />)}</div>
         </div>
       );
@@ -71,10 +75,52 @@ function YearVisual({ i }) {
   }
 }
 
+/**
+ * Photo mosaic of one year: one large photo + three smaller ones (more photos open in the viewer).
+ * Empty places show the year's illustration (main place) or an elegant placeholder.
+ */
+function YearPhotos({ m, i, compact = false, onOpen, tabbable = true }) {
+  const t = useT();
+  const photos = m.photos || [];
+  const real = photos.filter((p) => p.src);
+  const slots = Array.from({ length: SLOTS }, (_, k) => photos[k] || { src: '', caption: '' });
+  const hidden = real.filter((p) => !slots.includes(p)); // photos beyond the first four places
+
+  return (
+    <div className={`yp${compact ? ' yp--compact' : ''}`} role="group" aria-label={t('journey.photos', { year: m.y })}>
+      {slots.map((p, k) => {
+        const realIndex = p.src ? real.indexOf(p) : -1;
+        return (
+          <div key={k} className={`yp__slot yp__slot--${k + 1}${p.src ? ' has-img' : ''}`}>
+            {p.src ? (
+              <button type="button" className="yp__btn" tabIndex={tabbable ? undefined : -1} onClick={() => onOpen(realIndex)} aria-label={t('cs.open', { label: p.caption || t('journey.photoAlt', { n: k + 1, year: m.y }) })}>
+                <img src={p.src} alt={p.caption || t('journey.photoAlt', { n: k + 1, year: m.y })} loading="lazy" decoding="async" />
+              </button>
+            ) : k === 0 && !compact ? (
+              <div className="yp__illus" aria-hidden="true"><YearVisual i={i} /></div>
+            ) : (
+              <div className="yp__ph" aria-hidden="true">
+                <span className="yp__plus">+</span>
+                <span className="yp__label">{t('journey.slot', { n: k + 1 })} · {m.y}</span>
+                <span className="yp__hint">{t('journey.slotHint')}</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {hidden.length > 0 && (
+        <button type="button" className="yp__more" tabIndex={tabbable ? undefined : -1} onClick={() => onOpen(real.indexOf(hidden[0]))}>+{hidden.length}</button>
+      )}
+    </div>
+  );
+}
+
 export default function Journey() {
   const { timeline, text } = useContent();
   const t = text.journey;
+  const tr = useT();
   const [sel, setActive] = useState(0);
+  const [viewer, setViewer] = useState(null); // { year index, photo index }
   const active = Math.min(sel, timeline.length - 1);
   const sectionRef = useRef(null);
   const itemsRef = useRef([]);
@@ -110,20 +156,20 @@ export default function Journey() {
         </p>
 
         <div className="journey__body">
-          <div className="journey__sticky only-desk" aria-hidden="true">
-            <div className="journey__rail"><span /></div>
+          <div className="journey__sticky only-desk">
+            <div className="journey__rail" aria-hidden="true"><span /></div>
             <div className="journey__stage">
-              <div className="journey__head">
+              <div className="journey__head" aria-hidden="true">
                 <span key={cur.y} className="journey__year">{cur.y}</span>
                 <span className="journey__meta">{String(active + 1).padStart(2, '0')} / {String(timeline.length).padStart(2, '0')}<br />{cur.phase}</span>
               </div>
               <div className="journey__frame">
                 {timeline.map((m, i) => (
-                  <div key={`${m.y}-${i}`} className={`journey__panel${i === active ? ' is-on' : ''}`}>
-                    {m.image ? <img src={m.image} alt="" className="media__img" loading="lazy" /> : <YearVisual i={i} />}
+                  <div key={`${m.y}-${i}`} className={`journey__panel${i === active ? ' is-on' : ''}`} aria-hidden={i !== active}>
+                    <YearPhotos m={m} i={i} tabbable={i === active} onOpen={(k) => setViewer({ y: i, k })} />
                   </div>
                 ))}
-                {!cur.image && <span className="journey__tag">ILLUSTRATIVE · ADD REAL WORK FROM {cur.y}</span>}
+                {!(cur.photos || []).some((p) => p.src) && <span className="journey__tag">{tr('journey.illustrative', { year: cur.y })}</span>}
               </div>
             </div>
           </div>
@@ -144,11 +190,25 @@ export default function Journey() {
                     <li key={c} className="chip chip--line">{c}</li>
                   ))}
                 </ul>
+                <div className="journey__photos only-mob">
+                  <YearPhotos m={m} i={i} compact onOpen={(k) => setViewer({ y: i, k })} />
+                </div>
               </li>
             ))}
           </ol>
         </div>
       </div>
+      {viewer && timeline[viewer.y] && (
+        <Lightbox
+          start={viewer.k}
+          onClose={() => setViewer(null)}
+          images={timeline[viewer.y].photos.filter((p) => p.src).map((p, k) => ({
+            src: p.src,
+            caption: [timeline[viewer.y].y, p.caption].filter(Boolean).join(' · '),
+            alt: p.caption || tr('journey.photoAlt', { n: k + 1, year: timeline[viewer.y].y }),
+          }))}
+        />
+      )}
     </section>
   );
 }

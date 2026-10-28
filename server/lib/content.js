@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { defaultContent } from '../../shared/default-content.js';
 import { collectUrls, validateContent } from '../../shared/schema.js';
+import { migrateContent } from '../../shared/migrate.js';
 import { ConflictError } from './store-file.js';
 import { HttpError } from './http.js';
 
@@ -34,7 +35,7 @@ export function createContentService(store, log = console) {
     let cur = await store.getKV('content');
     if (!cur) {
       // First start: seed with the approved website content.
-      const { value } = validateContent(structuredClone(defaultContent));
+      const { value } = validateContent(migrateContent(defaultContent));
       try {
         await store.putKV('content', value, 0);
         log.info?.('Seeded website content from shared/default-content.js');
@@ -43,9 +44,9 @@ export function createContentService(store, log = console) {
       }
       cur = await store.getKV('content');
     }
-    // Content saved before the logo carousel existed: start it with the default logos.
-    const data = Array.isArray(cur.value.logos) ? cur.value : { ...cur.value, logos: structuredClone(defaultContent.logos) };
-    return { data, version: cur.version, updatedAt: cur.updatedAt };
+    // Content saved by an earlier version is brought up to date (nothing is lost),
+    // and default French/Arabic translations are added where none exist yet.
+    return { data: migrateContent(cur.value), version: cur.version, updatedAt: cur.updatedAt };
   }
 
   async function cleanupMedia() {
@@ -71,7 +72,7 @@ export function createContentService(store, log = console) {
 
   async function save(input, expectedVersion) {
     if (!Number.isInteger(expectedVersion) || expectedVersion < 1) throw new HttpError(400, 'Missing content version.');
-    const { ok, errors, value } = validateContent(input);
+    const { ok, errors, value } = validateContent(migrateContent(input, { translations: false }));
     if (!ok) throw new HttpError(422, 'Some fields need attention.', { errors: errors.slice(0, 50) });
 
     const prev = await store.getKV('content');

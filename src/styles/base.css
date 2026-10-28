@@ -155,25 +155,25 @@ button { font: inherit; }
 /* ───────────── Scroll reveal (any browser) ───────────── */
 /* Runs once, then hands control back to each element's own hover transitions. */
 @keyframes revealUp { from { opacity: 0; translate: 0 44px; } to { opacity: 1; translate: 0 0; } }
-.reveal-on [data-reveal]:not(.is-in) { opacity: 0; }
-.reveal-on [data-reveal].is-in { animation: revealUp 0.9s var(--ease) var(--d, 0s) backwards; }
+.reveal-on [data-reveal]:not([data-in]) { opacity: 0; }
+.reveal-on [data-reveal][data-in] { animation: revealUp 0.9s var(--ease) var(--d, 0s) backwards; }
 
 /* Headings: words rise one after another */
 .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.12em; margin-bottom: -0.12em; }
 .w > span { display: inline-block; }
-.reveal-on [data-reveal="words"]:not(.is-in) { opacity: 1; }
-.reveal-on [data-reveal="words"]:not(.is-in) .w > span { transform: translateY(110%); }
-.reveal-on [data-reveal="words"].is-in { animation: none; }
-.reveal-on [data-reveal="words"].is-in .w > span { animation: wordUp 0.85s var(--ease-out) calc(var(--i, 0) * 45ms + var(--d, 0s)) backwards; }
+.reveal-on [data-reveal="words"]:not([data-in]) { opacity: 1; }
+.reveal-on [data-reveal="words"]:not([data-in]) .w > span { transform: translateY(110%); }
+.reveal-on [data-reveal="words"][data-in] { animation: none; }
+.reveal-on [data-reveal="words"][data-in] .w > span { animation: wordUp 0.85s var(--ease-out) calc(var(--i, 0) * 45ms + var(--d, 0s)) backwards; }
 @keyframes wordUp { from { transform: translateY(110%); } to { transform: none; } }
 
 /* Images: open from the bottom edge, then settle.
    The frame itself stays unclipped so the visibility observer can see it; its contents are clipped. */
-.reveal-on [data-reveal="clip"]:not(.is-in) { opacity: 1; }
-.reveal-on [data-reveal="clip"]:not(.is-in) > * { clip-path: inset(100% 0 0 0); }
-.reveal-on [data-reveal="clip"].is-in { animation: none; }
-.reveal-on [data-reveal="clip"].is-in > * { animation: clipIn 1.1s var(--ease-out) var(--d, 0s) backwards; }
-.reveal-on [data-reveal="clip"].is-in > .media__art, .reveal-on [data-reveal="clip"].is-in > .media__img { animation: clipIn 1.1s var(--ease-out) var(--d, 0s) backwards, settle 1.6s var(--ease-out) var(--d, 0s) backwards; }
+.reveal-on [data-reveal="clip"]:not([data-in]) { opacity: 1; }
+.reveal-on [data-reveal="clip"]:not([data-in]) > * { clip-path: inset(100% 0 0 0); }
+.reveal-on [data-reveal="clip"][data-in] { animation: none; }
+.reveal-on [data-reveal="clip"][data-in] > * { animation: clipIn 1.1s var(--ease-out) var(--d, 0s) backwards; }
+.reveal-on [data-reveal="clip"][data-in] > .media__art, .reveal-on [data-reveal="clip"][data-in] > .media__img { animation: clipIn 1.1s var(--ease-out) var(--d, 0s) backwards, settle 1.6s var(--ease-out) var(--d, 0s) backwards; }
 @keyframes clipIn { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes settle { from { scale: 1.18; } to { scale: 1; } }
 

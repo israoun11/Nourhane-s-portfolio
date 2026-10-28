@@ -38,6 +38,10 @@ export function createSupabaseStore({ url, key, bucket }, fetchImpl = globalThis
   }
 
   const kvKey = (k) => encodeURIComponent(k);
+  const fromRow = (r) => ({
+    id: r.id, createdAt: r.created_at, name: r.name, email: r.email, category: r.category || '',
+    categoryLabel: r.category_label || '', message: r.message, lang: r.lang || 'en', read: !!r.read,
+  });
 
   return {
     name: 'supabase',
@@ -108,6 +112,45 @@ export function createSupabaseStore({ url, key, bucket }, fetchImpl = globalThis
     },
     async deleteObject(name) {
       await call(`/storage/v1/object/${bucket}`, { method: 'DELETE', body: { prefixes: [name] } });
+    },
+
+    // ── contact messages (table nt_messages) ──
+    async addMessage(m) {
+      await call('/rest/v1/nt_messages', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: {
+          id: m.id, created_at: m.createdAt, name: m.name, email: m.email, category: m.category,
+          category_label: m.categoryLabel, message: m.message, lang: m.lang, read: m.read,
+        },
+      });
+    },
+    async listMessages() {
+      const rows = await call('/rest/v1/nt_messages?select=*&order=created_at.desc&limit=5000');
+      return (rows || []).map(fromRow);
+    },
+    async countUnreadMessages() {
+      const rows = await call('/rest/v1/nt_messages?select=id&read=eq.false&limit=5000');
+      return (rows || []).length;
+    },
+    async hasAtLeastMessages(n) {
+      const rows = await call(`/rest/v1/nt_messages?select=id&order=created_at.asc&limit=1&offset=${Math.max(0, n - 1)}`);
+      return Array.isArray(rows) && rows.length > 0;
+    },
+    async updateMessage(id, patch) {
+      const rows = await call(`/rest/v1/nt_messages?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: { read: patch.read },
+      });
+      return Array.isArray(rows) && rows.length ? fromRow(rows[0]) : null;
+    },
+    async deleteMessage(id) {
+      const rows = await call(`/rest/v1/nt_messages?id=eq.${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { Prefer: 'return=representation' },
+      });
+      return Array.isArray(rows) && rows.length > 0;
     },
   };
 }

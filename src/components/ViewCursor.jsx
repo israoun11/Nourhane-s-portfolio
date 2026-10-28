@@ -47,7 +47,7 @@ export default function ViewCursor() {
   if (!enabled) return null;
   return (
     <div ref={ref} className="view-cursor" aria-hidden="true">
-      <span>View</span>
+      <span />
     </div>
   );
 }

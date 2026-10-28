@@ -33,7 +33,6 @@ export function loadConfig(env = process.env) {
     maxUploadBytes: Math.min(20, Math.max(1, Number(env.MAX_UPLOAD_MB) || 5)) * 1024 * 1024,
     allowFileInProduction: bool(env.ALLOW_FILE_STORAGE_IN_PRODUCTION, false),
     allowedOrigins: (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
-    formEndpoint: env.VITE_FORM_ENDPOINT || '',
   };
 
   const problems = [];

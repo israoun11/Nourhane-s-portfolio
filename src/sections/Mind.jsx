@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Media, SplitHeading } from '../components/ui.jsx';
+import { useT } from '../i18n/index.jsx';
 
 export default function Mind() {
   const { mind, text } = useContent();
+  const t = useT();
   const [sel, setActive] = useState(0);
   const active = Math.min(sel, mind.length - 1);
   const cur = mind[active];
@@ -24,7 +26,7 @@ export default function Mind() {
       <div className="container">
         <SplitHeading id="mind-title" className="h2 mind__title" title={text.mind.title} em={text.mind.titleEm} />
         <div className="mind">
-          <div className="mind__words" role="tablist" aria-label="Ways of thinking" onKeyDown={onKey}>
+          <div className="mind__words" role="tablist" aria-label={t('mind.tabs')} onKeyDown={onKey}>
             {mind.map((m, i) => (
               <button
                 key={`${m.word}-${i}`}
@@ -51,10 +53,10 @@ export default function Mind() {
               key={`${cur.word}-${active}`}
               className="mind__media"
               src={cur.image}
-              alt={`${cur.word} — example work`}
+              alt={t('mind.imageAlt', { word: cur.word })}
               bg={cur.bg}
               art={cur.art}
-              label={`PROJECT IMAGE · ${cur.imgLabel}`}
+              label={t('mind.imageLabel', { label: cur.imgLabel })}
               ratio="5 / 4"
             />
             <div key={`t-${active}`} className="mind__text">
@@ -62,7 +64,7 @@ export default function Mind() {
               <p className="body-muted">{cur.text}</p>
               {cur.links.length > 0 && (
                 <p className="mind__links">
-                  <span>Informs →</span>
+                  <span>{t('mind.informs')}</span>
                   {cur.links.map((k) => (
                     <span key={k} className="chip chip--aqua">{k}</span>
                   ))}

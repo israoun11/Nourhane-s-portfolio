@@ -1,0 +1,155 @@
+/* ═════════════════════════════════════════════════════════════
+   Arabic (right to left) — typography and mirrored layout.
+   English and French are not affected by anything in this file.
+
+   Arabic type system
+   ─ Main titles ........ 29LT Bukra Bold      → var(--f-ar-title) / var(--w-ar-title)
+   ─ Subtitles .......... 29LT Bukra Medium    → var(--f-ar-sub)   / var(--w-ar-sub)
+   ─ Paragraphs ......... Tajawal Regular      → var(--f-ar-body)
+   ─ Emphasis ........... Tajawal Bold
+   29LT Bukra is a commercial font: it is used only once its licensed files are added
+   (public/fonts/README.txt, VITE_ARABIC_HEADING_FONT=bukra). Until then, titles use
+   Tajawal ExtraBold and subtitles Tajawal Bold — self-hosted, open licence (OFL).
+   ═════════════════════════════════════════════════════════════ */
+
+@font-face { font-family: 'Tajawal'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/tajawal/tajawal-regular.woff') format('woff'); }
+@font-face { font-family: 'Tajawal'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/tajawal/tajawal-medium.woff') format('woff'); }
+@font-face { font-family: 'Tajawal'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/tajawal/tajawal-bold.woff') format('woff'); }
+@font-face { font-family: 'Tajawal'; font-style: normal; font-weight: 800; font-display: swap; src: url('/fonts/tajawal/tajawal-extrabold.woff') format('woff'); }
+
+:root {
+  --f-ar-title: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+  --w-ar-title: 800;
+  --f-ar-sub: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+  --w-ar-sub: 700;
+  --f-ar-body: 'Tajawal', 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* ───────────── Typography ───────────── */
+html[lang="ar"] body,
+html[lang="ar"] button,
+html[lang="ar"] input,
+html[lang="ar"] select,
+html[lang="ar"] textarea {
+  font-family: var(--f-ar-body);
+}
+html[lang="ar"] body { line-height: 1.75; }
+/* Arabic letters join: letter spacing would break the words apart. No italics in Arabic either. */
+html[lang="ar"] body * { letter-spacing: 0 !important; }
+html[lang="ar"] em, html[lang="ar"] i, html[lang="ar"] .it, html[lang="ar"] .it-serif, html[lang="ar"] .t-serif { font-style: normal; }
+html[lang="ar"] strong, html[lang="ar"] b { font-weight: 700; }
+html[lang="ar"] p { line-height: 1.8; }
+
+/* Main titles — Bukra Bold (fallback Tajawal ExtraBold) */
+html[lang="ar"] .h2,
+html[lang="ar"] .h-cond,
+html[lang="ar"] .t-cond,
+html[lang="ar"] .hero__title,
+html[lang="ar"] .cs-title,
+html[lang="ar"] .pf-hero__title,
+html[lang="ar"] .pf-cta h2,
+html[lang="ar"] .cs-next__t,
+html[lang="ar"] .footer__motto,
+html[lang="ar"] .mmenu__nav a,
+html[lang="ar"] .path__title,
+html[lang="ar"] .mind__word,
+html[lang="ar"] .journey__y,
+html[lang="ar"] .learn__big,
+html[lang="ar"] .proof__big,
+html[lang="ar"] .series__labels,
+html[lang="ar"] .hero__labels span,
+html[lang="ar"] .jv__big {
+  font-family: var(--f-ar-title);
+  font-weight: var(--w-ar-title);
+}
+
+/* Subtitles — Bukra Medium (fallback Tajawal Bold) */
+html[lang="ar"] h3,
+html[lang="ar"] .h2 em,
+html[lang="ar"] .h-cond .it,
+html[lang="ar"] .it-serif,
+html[lang="ar"] .t-serif,
+html[lang="ar"] .cs-title em,
+html[lang="ar"] .pf-hero__title em,
+html[lang="ar"] .pf-cta h2 em,
+html[lang="ar"] .journey__grew,
+html[lang="ar"] .hero__tag,
+html[lang="ar"] .mind__q,
+html[lang="ar"] .cs-summary,
+html[lang="ar"] .cs-learning__q,
+html[lang="ar"] .proof__card blockquote,
+html[lang="ar"] .cs-quote blockquote,
+html[lang="ar"] .jv__studio,
+html[lang="ar"] .annot {
+  font-family: var(--f-ar-sub);
+  font-weight: var(--w-ar-sub);
+}
+
+/* Labels, buttons and small caps: Tajawal Bold */
+html[lang="ar"] .btn, html[lang="ar"] .eyebrow, html[lang="ar"] .pill-eyebrow, html[lang="ar"] .meta,
+html[lang="ar"] .cs-k, html[lang="ar"] .cs-crumb, html[lang="ar"] .status, html[lang="ar"] .chip,
+html[lang="ar"] .menu-btn, html[lang="ar"] .field, html[lang="ar"] .path__state {
+  font-weight: 700;
+}
+html[lang="ar"] .btn { font-size: 15px; }
+html[lang="ar"] .eyebrow, html[lang="ar"] .cs-k, html[lang="ar"] .meta, html[lang="ar"] .path__state { font-size: 14px; }
+
+/* Arabic needs more height: taller lines and room for dots and marks in the word reveal */
+html[lang="ar"] .h2, html[lang="ar"] .h-cond, html[lang="ar"] .hero__title, html[lang="ar"] .cs-title,
+html[lang="ar"] .pf-hero__title, html[lang="ar"] .contact__title, html[lang="ar"] .pf-cta h2, html[lang="ar"] .cs-next__t,
+html[lang="ar"] .journey__title, html[lang="ar"] .mmenu__nav a, html[lang="ar"] .path__title, html[lang="ar"] .footer__motto {
+  line-height: 1.3;
+}
+html[lang="ar"] .w { padding: 0.12em 0 0.22em; margin: -0.12em 0 -0.22em; }
+
+/* The display sizes were drawn for a condensed Latin face — Arabic is wider, so titles are a little smaller */
+html[lang="ar"] .t-cond { font-size: clamp(60px, 7.6vw, 124px); }
+html[lang="ar"] .t-serif { font-size: clamp(44px, 5.6vw, 92px); }
+html[lang="ar"] .h2 { font-size: clamp(34px, 4.2vw, 60px); }
+html[lang="ar"] .journey__title { font-size: clamp(42px, 5.6vw, 92px); }
+html[lang="ar"] .contact__title .h-cond { font-size: clamp(48px, 7vw, 112px); }
+html[lang="ar"] .contact__title .it-serif { font-size: clamp(36px, 5.4vw, 86px); }
+html[lang="ar"] .cs-title, html[lang="ar"] .cs-next__t { font-size: clamp(44px, 7.4vw, 124px); }
+html[lang="ar"] .pf-hero__title { font-size: clamp(52px, 8.4vw, 136px); }
+html[lang="ar"] .pf-cta h2 { font-size: clamp(40px, 5.6vw, 88px); }
+html[lang="ar"] .mmenu__nav a { font-size: 34px; }
+html[lang="ar"] .path__title { font-size: 28px; }
+html[lang="ar"] .footer__motto { font-size: clamp(26px, 2.8vw, 40px); }
+
+/* Latin brand marks (wordmark, footer mark) keep their own typeface */
+html[lang="ar"] .wordmark, html[lang="ar"] .footer__mark { font-family: var(--f-display); }
+
+/* ───────────── Mirrored layout ───────────── */
+/* "↗" style arrows point the other way */
+[dir="rtl"] .ar { display: inline-block; transform: scaleX(-1); }
+[dir="rtl"] .proof__nav .round-btn, [dir="rtl"] .lb__nav { transform: scaleX(-1); }
+[dir="rtl"] .proof__nav .round-btn:hover { transform: scaleX(-1) scale(1.08); }
+
+[dir="rtl"] .skip-link { left: auto; right: 16px; }
+[dir="rtl"] .header__progress { transform-origin: 100% 50%; }
+[dir="rtl"] .ph-label { left: auto; right: 12px; }
+[dir="rtl"] .feature__media .ph-label, [dir="rtl"] .pf-card__media .ph-label { left: auto; right: 14px; }
+[dir="rtl"] .series__ph { right: auto; left: 10px; }
+[dir="rtl"] .cs-cover__cap { left: auto; right: 20px; }
+[dir="rtl"] .mind__word { text-align: right; }
+[dir="rtl"] .journey__item { padding: 8px 24px 8px 0; border-left: 0; border-right: 3px solid rgba(32, 32, 51, 0.15); }
+[dir="rtl"] .journey__item.is-on { border-right-color: var(--blue); }
+@media (max-width: 900px) { [dir="rtl"] .journey__item { border-right-color: var(--blue); } }
+[dir="rtl"] .journey__meta { text-align: left; }
+[dir="rtl"] .journey__tag { right: auto; left: 10px; }
+[dir="rtl"] .line--last { padding-right: 0; padding-left: 0.5em; }
+[dir="rtl"] .hero__spark { right: auto; left: -0.42em; transform: scaleX(-1); }
+[dir="rtl"] .hero__labels { left: auto; right: 0; align-items: flex-end; }
+[dir="rtl"] .hero__annot { right: auto; left: 0; rotate: 6deg; }
+[dir="rtl"] .pf-row:hover, [dir="rtl"] .pf-row:focus-visible { padding-left: 0; padding-right: 16px; }
+[dir="rtl"] .orbit__count { right: auto; left: 0; }
+[dir="rtl"] .orbit__controls { left: auto; right: 0; }
+[dir="rtl"] .exp__peek { right: auto; left: 26%; }
+[dir="rtl"] .preview-bar { padding: 12px 18px 12px 14px; }
+/* Selects show their arrow on the left */
+[dir="rtl"] .field select { background-position: left 14px center; }
+/* Email addresses and numbers stay left-to-right inside Arabic text */
+[dir="rtl"] input[type="email"] { text-align: right; }
+/* The Latin wordmark reads left to right in every language (® after the name) */
+[dir="rtl"] .wordmark, [dir="rtl"] .footer__mark { direction: ltr; unicode-bidi: isolate; }
+[dir="rtl"] .wordmark sup { margin-right: 0; margin-left: 2px; }

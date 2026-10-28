@@ -1,9 +1,11 @@
 import { Link } from '../router.jsx';
 import { nav } from '../data/site.js';
 import { useContent } from '../content/ContentProvider.jsx';
+import { useT } from '../i18n/index.jsx';
 
 export default function Footer() {
   const { site, text } = useContent();
+  const t = useT();
   const f = text.footer;
   const socials = [
     ['LinkedIn', site.socials.linkedin],
@@ -18,26 +20,26 @@ export default function Footer() {
           {f.motto1} <span className="c-pink">{f.motto2}</span> <span className="c-aqua">{f.motto3}</span>
         </p>
         <div className="footer__row">
-          <nav aria-label="Footer" className="footer__links">
+          <nav aria-label={t('nav.footer')} className="footer__links">
             {nav.map((n) => (
-              <Link key={n.label} className="ulink" to={n.href}>
-                {n.label}
+              <Link key={n.key} className="ulink" to={n.href}>
+                {t(n.key)}
               </Link>
             ))}
           </nav>
           <div className="footer__links">
             {site.cv ? (
               <a className="ulink" href={site.cv} target="_blank" rel="noreferrer">
-                Download CV ↗
+                {t('footer.cv')}
               </a>
             ) : null}
             {site.codastudioUrl && (
               <a className="ulink" href={site.codastudioUrl} target="_blank" rel="noreferrer">
-                CodaStudio ↗
+                {t('footer.coda')}
               </a>
             )}
             <Link className="ulink" to="/work">
-              Full portfolio ↗
+              {t('footer.portfolio')}
             </Link>
             {socials.length ? (
               socials.map(([label, url]) => (
@@ -46,7 +48,7 @@ export default function Footer() {
                 </a>
               ))
             ) : (
-              <span className="footer__note">Social links appear once profiles are provided.</span>
+              <span className="footer__note">{t('footer.socialsNote')}</span>
             )}
           </div>
         </div>
@@ -55,10 +57,10 @@ export default function Footer() {
           <sup>®</sup>
         </p>
         <div className="footer__base">
-          <span>© {new Date().getFullYear()} {site.name}. All rights reserved.</span>
+          <span>{t('footer.rights', { year: new Date().getFullYear(), name: site.name })}</span>
           <span className="footer__legal">
-            <a className="ulink" href="#legal">Legal notice</a>
-            <a className="ulink" href="#privacy">Privacy policy</a>
+            <a className="ulink" href="#legal">{t('footer.legal')}</a>
+            <a className="ulink" href="#privacy">{t('footer.privacy')}</a>
           </span>
         </div>
       </div>

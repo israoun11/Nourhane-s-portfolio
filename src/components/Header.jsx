@@ -3,11 +3,14 @@ import { Link, useRouter } from '../router.jsx';
 import { nav } from '../data/site.js';
 import { Button } from './ui.jsx';
 import { isReduced, useScrollVar } from '../hooks/motion.js';
+import { useT } from '../i18n/index.jsx';
+import LangSwitcher from './LangSwitcher.jsx';
 
 const sectionIds = nav.map((n) => n.id).filter(Boolean);
 
 export default function Header({ variant = 'light', progress = true }) {
   const { path } = useRouter();
+  const t = useT();
   const isHome = path === '/';
   const [active, setActive] = useState('');
   const [scrolled, setScrolled] = useState(false);
@@ -50,29 +53,32 @@ export default function Header({ variant = 'light', progress = true }) {
   const links = nav.map((n) => {
     const href = n.id === 'work' && !isHome ? '/work' : n.href;
     const current = isHome ? n.id && active === n.id : n.id === 'work' && path.startsWith('/work');
-    return { ...n, href, current: current ? 'true' : undefined };
+    return { ...n, label: t(n.key), href, current: current ? 'true' : undefined };
   });
 
   return (
     <>
       <header ref={headerRef} className={`header header--${variant}${scrolled ? ' is-scrolled' : ''}`}>
         {progress && <div ref={barRef} className="header__progress" aria-hidden="true" />}
-        <nav className="header__inner" aria-label="Main">
+        <nav className="header__inner" aria-label={t('nav.main')}>
           <Link to="/" className="wordmark">
             NOURHANE THABET<sup>®</sup>
           </Link>
           <div className="header__links only-desk">
             {links.map((l) => (
-              <Link key={l.label} className="ulink" to={l.href} aria-current={l.current}>
+              <Link key={l.key} className="ulink" to={l.href} aria-current={l.current}>
                 {l.label}
               </Link>
             ))}
           </div>
-          <Button to="/#contact" size="sm" variant={variant === 'dark' ? 'pink' : 'blue'} arrow magnetic className="only-desk">
-            LET'S CONNECT
-          </Button>
+          <div className="header__end">
+            <LangSwitcher className={variant === 'dark' ? 'lang--light' : ''} />
+            <Button to="/#contact" size="sm" variant={variant === 'dark' ? 'pink' : 'blue'} arrow magnetic className="only-desk">
+              {t('header.connect')}
+            </Button>
+          </div>
           <button type="button" className="menu-btn only-mob" aria-expanded={menu === 'open'} aria-controls="mobile-menu" onClick={openMenu}>
-            MENU
+            {t('header.menu')}
             <svg width="16" height="11" viewBox="0 0 18 12" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
               <path d="M0 1h18M6 6h12M0 11h18" />
             </svg>
@@ -85,6 +91,7 @@ export default function Header({ variant = 'light', progress = true }) {
 }
 
 function MobileMenu({ links, onClose, closing }) {
+  const t = useT();
   const closeRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -102,26 +109,29 @@ function MobileMenu({ links, onClose, closing }) {
   }, []);
 
   return (
-    <div id="mobile-menu" className={`mmenu on-dark${closing ? ' is-closing' : ''}`} role="dialog" aria-modal="true" aria-label="Menu">
+    <div id="mobile-menu" className={`mmenu on-dark${closing ? ' is-closing' : ''}`} role="dialog" aria-modal="true" aria-label={t('header.menuDialog')}>
       <div className="mmenu__top">
         <span className="wordmark">
           NOURHANE THABET<sup>®</sup>
         </span>
         <button ref={closeRef} type="button" className="menu-btn menu-btn--light" onClick={onClose}>
-          CLOSE ✕
+          {t('header.close')}
         </button>
       </div>
-      <nav className="mmenu__nav" aria-label="Mobile">
+      <nav className="mmenu__nav" aria-label={t('nav.mobile')}>
         {links.map((l, i) => (
-          <Link key={l.label} to={l.href} onClick={onClose} style={{ '--i': i }}>
+          <Link key={l.key} to={l.href} onClick={onClose} style={{ '--i': i }}>
             <span>{l.n}</span>
             {l.label}
           </Link>
         ))}
       </nav>
-      <Button to="/#contact" onClick={onClose} className="mmenu__cta" arrow>
-        LET'S CONNECT
-      </Button>
+      <div className="mmenu__foot">
+        <LangSwitcher className="lang--light lang--lg" />
+        <Button to="/#contact" onClick={onClose} className="mmenu__cta" arrow>
+          {t('header.connect')}
+        </Button>
+      </div>
     </div>
   );
 }

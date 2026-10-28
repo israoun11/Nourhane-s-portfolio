@@ -2,13 +2,18 @@
 //  DEFAULT CONTENT — the approved website content.
 //  Used once to seed the database on first start, and as the
 //  offline fallback. After that, edit everything in /admin.
+//  French and Arabic translations of these texts: shared/i18n/content-fr.js
+//  and content-ar.js (filled in automatically when the site starts).
 // ─────────────────────────────────────────────────────────────
 
 const B = '#1534DD', P = '#F174AB', I = '#FFF9F5', K = '#202033', A = '#B9E8E5', K2 = '#2E2E46', S = '#EFE6DC';
 
+// Four empty photo slots per year of "My story" — filled in the dashboard.
+const photoSlots = () => [0, 1, 2, 3].map(() => ({ src: '', caption: '' }));
+
 const emptyCase = {
   industry: '', year: '', role: '', deliverables: '', context: '', problem: '', challenge: '', solution: '',
-  approach: ['', '', '', ''], results: [], feedback: { quote: '', name: '', role: '' }, learning: '', cover: '', gallery: [],
+  approach: [0, 1, 2, 3].map(() => ({ text: '', image: '' })), results: [], feedback: { quote: '', name: '', role: '' }, learning: '', cover: '', gallery: [],
 };
 
 export const defaultContent = {
@@ -143,12 +148,12 @@ export const defaultContent = {
   ],
 
   timeline: [
-    { y: '2021', t: 'The Beginning', phase: 'EXECUTION', image: '', d: 'Graduated in Graphic Advertising / Graphic Design, with a final-year project focused on UX/UI Design. Worked as a graphic designer in a printing company and gained UX/UI and social media design experience through a marketing agency internship.', chips: ['Graphic design', 'Print', 'First UX/UI'] },
-    { y: '2022', t: 'Growing Responsibility', phase: 'CRAFT + LEADERSHIP', image: '', d: 'Lead Graphic Designer at a large printing company, supervising a junior designer. Pursued master’s-level studies in Theories of Creativity, and gained experience through an internship with a marketing company in Saudi Arabia.', chips: ['Lead designer', 'Branding', 'Creativity studies'] },
-    { y: '2023', t: 'Independent Practice', phase: 'INDEPENDENCE', image: '', d: 'Developed freelance experience across creative and marketing-related projects.', chips: ['Freelance', 'Creative', 'Marketing'] },
-    { y: '2024', t: 'Understanding Business', phase: 'COMMERCE', image: '', d: 'A year on an e-commerce project, combining marketing, design, project management, and commercial operations.', chips: ['E-commerce', 'Project management', 'Operations'] },
-    { y: '2025', t: 'From Practice to Education', phase: 'EDUCATION', image: '', d: 'Continued freelance work and trained more than 50 people in digital marketing.', chips: ['Training', '50+ people trained', 'Freelance'] },
-    { y: '2026', t: 'Building Something of My Own', phase: 'STRATEGY + STUDIO', image: '', d: 'Established CodaStudio and expanded into independent creative and strategic client projects.', chips: ['CodaStudio', 'Strategy', 'Client projects'] },
+    { y: '2021', t: 'The Beginning', phase: 'EXECUTION', photos: photoSlots(), d: 'Graduated in Graphic Advertising / Graphic Design, with a final-year project focused on UX/UI Design. Worked as a graphic designer in a printing company and gained UX/UI and social media design experience through a marketing agency internship.', chips: ['Graphic design', 'Print', 'First UX/UI'] },
+    { y: '2022', t: 'Growing Responsibility', phase: 'CRAFT + LEADERSHIP', photos: photoSlots(), d: 'Lead Graphic Designer at a large printing company, supervising a junior designer. Pursued master’s-level studies in Theories of Creativity, and gained experience through an internship with a marketing company in Saudi Arabia.', chips: ['Lead designer', 'Branding', 'Creativity studies'] },
+    { y: '2023', t: 'Independent Practice', phase: 'INDEPENDENCE', photos: photoSlots(), d: 'Developed freelance experience across creative and marketing-related projects.', chips: ['Freelance', 'Creative', 'Marketing'] },
+    { y: '2024', t: 'Understanding Business', phase: 'COMMERCE', photos: photoSlots(), d: 'A year on an e-commerce project, combining marketing, design, project management, and commercial operations.', chips: ['E-commerce', 'Project management', 'Operations'] },
+    { y: '2025', t: 'From Practice to Education', phase: 'EDUCATION', photos: photoSlots(), d: 'Continued freelance work and trained more than 50 people in digital marketing.', chips: ['Training', '50+ people trained', 'Freelance'] },
+    { y: '2026', t: 'Building Something of My Own', phase: 'STRATEGY + STUDIO', photos: photoSlots(), d: 'Established CodaStudio and expanded into independent creative and strategic client projects.', chips: ['CodaStudio', 'Strategy', 'Client projects'] },
   ],
 
   method: [

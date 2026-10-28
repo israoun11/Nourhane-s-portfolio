@@ -91,13 +91,7 @@ export function clientIp(req, trustProxy) {
   return req.socket.remoteAddress || 'unknown';
 }
 
-export function securityHeaders({ production, formEndpoint, extraImg = [] }) {
-  let formOrigin = '';
-  try {
-    if (formEndpoint) formOrigin = new URL(formEndpoint).origin;
-  } catch {
-    /* ignore invalid endpoint */
-  }
+export function securityHeaders({ production, extraImg = [] }) {
   const csp = [
     "default-src 'self'",
     "script-src 'self'",
@@ -105,7 +99,7 @@ export function securityHeaders({ production, formEndpoint, extraImg = [] }) {
     "font-src 'self' https://fonts.gstatic.com",
     ["img-src 'self' data: blob: https:", ...extraImg].join(' '),
     "media-src 'self' https:",
-    ['connect-src', "'self'", formOrigin].filter(Boolean).join(' '),
+    "connect-src 'self'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

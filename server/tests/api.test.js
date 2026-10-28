@@ -128,7 +128,15 @@ test('pages: content injected safely, SEO titles, 404 status for hidden/unknown 
 
   const cs = await fetch(srv.base + '/work/vxn-moto-procap');
   assert.equal(cs.status, 200);
-  assert.match(await cs.text(), /<title>VXN Moto \/ PROCAP — Case study/);
+  assert.match(await cs.text(), /<title>VXN Moto \/ PROCAP — Nourhane Thabet<\/title>/);
+  // language chosen by the visitor (cookie) → <html lang/dir> and translated title
+  const ar = await (await fetch(srv.base + '/', { headers: { Cookie: 'nt_lang=ar' } })).text();
+  assert.match(ar, /<html lang="ar" dir="rtl">/);
+  assert.match(ar, /<title>نورهان ثابت/);
+  const fr = await (await fetch(srv.base + '/?lang=fr')).text();
+  assert.match(fr, /<html lang="fr" dir="ltr">/);
+  const bad = await (await fetch(srv.base + '/', { headers: { Cookie: 'nt_lang="><script>' } })).text();
+  assert.match(bad, /<html lang="en" dir="ltr">/, 'unknown language falls back to English');
   assert.equal((await fetch(srv.base + '/work/dar-el-keswa')).status, 404, 'hidden project page');
   assert.equal((await fetch(srv.base + '/no-such-page')).status, 404);
   const admin = await fetch(srv.base + '/admin');

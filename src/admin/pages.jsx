@@ -4,52 +4,66 @@ import { newProject, schema, slugify } from '../../shared/schema.js';
 import { api } from './api.js';
 import { Field, ImageField, ListField, ObjectFields } from './fields.jsx';
 import { useEditor, useToast } from './state.jsx';
-import { Card, PageHead, fmtDate, useConfirm } from './ui.jsx';
+import { Card, PageHead, useConfirm } from './ui.jsx';
+import { useAdminT, useFmtDate, useL } from './i18n.jsx';
 
 const F = schema.fields;
 
 // ═════════════ Overview ═════════════
-export function Overview({ status, email }) {
+export function Overview({ status, email, unread }) {
   const { saved, draft, dirty } = useEditor();
+  const t = useAdminT();
+  const fmt = useFmtDate();
   const pub = draft.projects.filter((p) => p.published).length;
+  const emptyStory = draft.timeline.reduce((n, y) => n + Math.max(0, 4 - (y.photos || []).filter((p) => p.src).length), 0);
+  const noGallery = draft.projects.filter((p) => !(p.gallery || []).some((g) => g.src)).length;
   const missing = [
-    !draft.site.portrait && { t: 'Add your portrait photo', to: '/admin/site' },
-    !draft.site.email && { t: 'Add your contact email', to: '/admin/site' },
-    draft.projects.some((p) => !p.cover) && { t: `Add cover images to ${draft.projects.filter((p) => !p.cover).length} project(s)`, to: '/admin/projects' },
-    !Object.values(draft.site.socials).some(Boolean) && { t: 'Add your social profile links', to: '/admin/site' },
+    !draft.site.portrait && { t: t('ad.ov.todo.portrait'), to: '/admin/site' },
+    !draft.site.email && { t: t('ad.ov.todo.email'), to: '/admin/site' },
+    draft.projects.some((p) => !p.cover) && { t: t('ad.ov.todo.covers', { n: draft.projects.filter((p) => !p.cover).length }), to: '/admin/projects' },
+    emptyStory > 0 && { t: t('ad.ov.todo.story', { n: emptyStory }), to: '/admin/sections/timeline' },
+    noGallery > 0 && { t: t('ad.ov.todo.galleries', { n: noGallery }), to: '/admin/projects' },
+    !Object.values(draft.site.socials).some(Boolean) && { t: t('ad.ov.todo.socials'), to: '/admin/site' },
   ].filter(Boolean);
+  const quick = [
+    ['/admin/inbox', 'inbox'],
+    ['/admin/projects', 'projects'],
+    ['/admin/texts', 'texts'],
+    ['/admin/sections/timeline', 'story'],
+    ['/admin/site', 'site'],
+    ['/admin/history', 'history'],
+  ];
   return (
     <>
-      <PageHead title="Welcome back" intro={`Signed in as ${email}. Everything you change here appears on your website once you press “Save changes”.`}>
-        <a className="ad-btn ad-btn--ghost" href="/" target="_blank" rel="noreferrer">View website ↗</a>
+      <PageHead title={t('ad.ov.title')} intro={t('ad.ov.intro', { email })}>
+        <a className="ad-btn ad-btn--ghost" href="/" target="_blank" rel="noreferrer">{t('ad.nav.view')}</a>
       </PageHead>
       {status && !status.persistent && (
         <div className="ad-alert ad-alert--warn" role="alert">
-          <strong>Development storage.</strong> Content and images are saved on this computer only. Before going live, connect Supabase (see README → Production setup) so your changes survive redeploys.
+          <strong>{t('ad.ov.devStorage')}</strong> {t('ad.ov.devStorageText')}
         </div>
       )}
       <div className="ad-stats">
-        <div className="ad-stat"><span>Last saved</span><b>{fmtDate(saved.updatedAt)}</b><small>Version {saved.version}{dirty ? ' · unsaved changes' : ''}</small></div>
-        <div className="ad-stat"><span>Projects</span><b>{pub} visible</b><small>{draft.projects.length - pub} hidden</small></div>
-        <div className="ad-stat"><span>Images</span><b>{status ? status.media : '—'}</b><small>uploaded</small></div>
-        <div className="ad-stat"><span>Contact form</span><b>{status ? (status.formConnected ? 'Connected' : 'Not connected') : '—'}</b><small>{status && !status.formConnected ? 'see README' : 'messages delivered'}</small></div>
+        <div className="ad-stat"><span>{t('ad.ov.lastSaved')}</span><b>{fmt(saved.updatedAt)}</b><small>{t('ad.ov.version', { v: saved.version })}{dirty ? t('ad.ov.unsaved') : ''}</small></div>
+        <div className="ad-stat"><span>{t('ad.ov.projects')}</span><b>{t('ad.ov.visible', { n: pub })}</b><small>{t('ad.ov.hidden', { n: draft.projects.length - pub })}</small></div>
+        <div className="ad-stat"><span>{t('ad.ov.images')}</span><b>{status ? status.media : '—'}</b><small>{t('ad.ov.uploaded')}</small></div>
+        <Link className="ad-stat ad-stat--link" to="/admin/inbox"><span>{t('ad.ov.messages')}</span><b>{unread === null ? '—' : t('ad.ov.unread', { n: unread })}</b><small>{t('ad.ov.openInbox')}</small></Link>
       </div>
       <div className="ad-cols">
-        <Card title="Quick actions">
+        <Card title={t('ad.ov.quick')}>
           <div className="ad-quick">
-            <Link className="ad-quick__item" to="/admin/projects">Manage projects<small>add, edit, hide or reorder</small></Link>
-            <Link className="ad-quick__item" to="/admin/texts">Edit page texts<small>headlines and introductions</small></Link>
-            <Link className="ad-quick__item" to="/admin/site">Website info &amp; photos<small>portrait, email, links</small></Link>
-            <Link className="ad-quick__item" to="/admin/history">Restore an older version<small>last 10 saves are kept</small></Link>
+            {quick.map(([to, k]) => (
+              <Link key={k} className="ad-quick__item" to={to}>{t(`ad.ov.q.${k}`)}<small>{t(`ad.ov.q.${k}Sub`)}</small></Link>
+            ))}
           </div>
         </Card>
-        <Card title="Still to complete">
+        <Card title={t('ad.ov.todo')}>
           {missing.length ? (
             <ul className="ad-todo">
               {missing.map((m) => <li key={m.t}><Link to={m.to}>{m.t} →</Link></li>)}
             </ul>
           ) : (
-            <p className="ad-empty">Everything essential is filled in.</p>
+            <p className="ad-empty">{t('ad.ov.done')}</p>
           )}
         </Card>
       </div>
@@ -59,19 +73,20 @@ export function Overview({ status, email }) {
 
 // ═════════════ Website info ═════════════
 export function SiteInfo() {
+  const t = useAdminT();
   return (
     <>
-      <PageHead title="Website information" intro="Your name, photos, contact details and links." />
-      <Card title="Identity">
+      <PageHead title={t('ad.site.title')} intro={t('ad.site.intro')} />
+      <Card title={t('ad.site.identity')}>
         <ObjectFields def={F.site} path={['site']} only={['name', 'role', 'portrait']} />
       </Card>
-      <Card title="Contact & links">
+      <Card title={t('ad.site.contact')}>
         <ObjectFields def={F.site} path={['site']} only={['email', 'cv', 'codastudioUrl', 'socials']} />
       </Card>
-      <Card title="CodaStudio & training photos">
+      <Card title={t('ad.site.photos')}>
         <ObjectFields def={F.site} path={['site']} only={['codastudio', 'training']} />
       </Card>
-      <Card title="Search engines" intro="How the website appears in Google and when shared.">
+      <Card title={t('ad.site.seo')} intro={t('ad.site.seoIntro')}>
         <ObjectFields def={F.site} path={['site']} only={['seoTitle', 'seoDescription']} />
       </Card>
     </>
@@ -80,13 +95,15 @@ export function SiteInfo() {
 
 // ═════════════ Page texts ═════════════
 export function Texts() {
+  const t = useAdminT();
+  const L = useL();
   const groups = Object.entries(F.text.fields);
   const [open, setOpen] = useState('hero');
   return (
     <>
-      <PageHead title="Page texts" intro="Headlines, introductions and button labels, section by section — in the order they appear on the page." />
+      <PageHead title={t('ad.texts.title')} intro={t('ad.texts.intro')} />
       {groups.map(([k, def]) => (
-        <Card key={k} title={def.label} collapsible open={open === k} onToggle={() => setOpen(open === k ? '' : k)}>
+        <Card key={k} title={L(def.label)} collapsible open={open === k} onToggle={() => setOpen(open === k ? '' : k)}>
           {def.type === 'object' ? <ObjectFields def={def} path={['text', k]} /> : <Field def={def} path={['text', k]} />}
         </Card>
       ))}
@@ -95,27 +112,15 @@ export function Texts() {
 }
 
 // ═════════════ Section lists ═════════════
-export const SECTION_PAGES = [
-  { key: 'logos', label: 'Logo carousel', intro: 'Brand logos scrolling under the hero, in this order. Use ↑ ↓ to reorder, ✕ to remove, “Add logo” for a new one.' },
-  { key: 'mind', label: 'Ways of thinking', intro: 'The four big words in “One creative mind”. Hover text and image for each.' },
-  { key: 'timeline', label: 'Journey', intro: 'Milestones of “My story”, in order. Add an image to replace the illustration of a year.' },
-  { key: 'method', label: 'Method', intro: 'The four steps of “Behind the strategy”.' },
-  { key: 'expertise', label: 'Expertise', intro: 'Numbered rows with links to the projects that prove them.' },
-  { key: 'codaServices', label: 'CodaStudio', intro: 'Capabilities shown as chips in the CodaStudio section.' },
-  { key: 'learning', label: 'Training', intro: 'Training offers with their status.' },
-  { key: 'series', label: 'Content series', intro: 'Video series in the personality section. Add a link when episodes are online.' },
-  { key: 'products', label: 'Digital products', intro: 'Upcoming products — always shown as “Coming soon”.' },
-  { key: 'testimonials', label: 'Testimonials', intro: 'Only authentic, approved feedback. Empty quotes show a clear placeholder.' },
-  { key: 'contactPaths', label: 'Contact paths', intro: 'The three ways to get in touch.' },
-];
+export const SECTION_PAGES = ['logos', 'mind', 'timeline', 'method', 'expertise', 'codaServices', 'learning', 'series', 'products', 'testimonials', 'contactPaths'];
 
 export function SectionPage({ k }) {
-  const meta = SECTION_PAGES.find((s) => s.key === k);
+  const t = useAdminT();
   const def = F[k];
-  if (!meta || !def) return <p className="ad-empty">Unknown section.</p>;
+  if (!SECTION_PAGES.includes(k) || !def) return <p className="ad-empty">{t('ad.sec.unknown')}</p>;
   return (
     <>
-      <PageHead title={meta.label} intro={meta.intro} />
+      <PageHead title={t(`ad.sec.${k}`)} intro={t(`ad.sec.${k}Intro`)} />
       <Card>{def.type === 'list' ? <ListField def={def} path={[k]} flat /> : <Field def={def} path={[k]} />}</Card>
     </>
   );
@@ -126,6 +131,7 @@ export function Projects() {
   const { draft, update } = useEditor();
   const { navigate } = useRouter();
   const confirm = useConfirm();
+  const t = useAdminT();
   const list = draft.projects;
   const move = (i, d) => {
     const j = i + d;
@@ -141,16 +147,16 @@ export function Projects() {
   };
   const remove = async (i) => {
     const p = list[i];
-    if (await confirm({ title: `Delete “${p.title}”?`, body: 'The project and its page will be removed from the website when you save. Its images stay restorable through History for a while.', ok: 'Delete project', danger: true })) {
+    if (await confirm({ title: t('ad.pr.deleteTitle', { title: p.title }), body: t('ad.pr.deleteBody'), ok: t('ad.pr.deleteOk'), danger: true })) {
       update(['projects'], list.filter((_, k) => k !== i));
     }
   };
   return (
     <>
-      <PageHead title="Projects" intro="The order here is the order on the website. The first project is featured on the home page.">
-        <button type="button" className="ad-btn ad-btn--primary" onClick={add}>+ Add project</button>
+      <PageHead title={t('ad.pr.title')} intro={t('ad.pr.intro')}>
+        <button type="button" className="ad-btn ad-btn--primary" onClick={add}>{t('ad.pr.add')}</button>
       </PageHead>
-      {list.length === 0 && <p className="ad-empty">No projects yet. Use “Add project” to create the first one.</p>}
+      {list.length === 0 && <p className="ad-empty">{t('ad.pr.empty')}</p>}
       <ol className="ad-projects">
         {list.map((p, i) => (
           <li key={`${p.slug}-${i}`} className={`ad-proj${p.published ? '' : ' is-hidden'}`}>
@@ -158,18 +164,18 @@ export function Projects() {
               {p.cover ? <img src={p.cover} alt="" /> : <span style={{ color: p.fg }}>{p.mono || p.title.slice(0, 2)}</span>}
             </div>
             <div className="ad-proj__main">
-              <span className="ad-proj__n">{String(i + 1).padStart(2, '0')}{i === 0 ? ' · Featured' : ''}</span>
-              <Link to={`/admin/projects/${i}`} className="ad-proj__t">{p.title || 'Untitled project'}</Link>
-              <span className="ad-proj__meta">/work/{p.slug}</span>
+              <span className="ad-proj__n">{String(i + 1).padStart(2, '0')}{i === 0 ? t('ad.pr.featured') : ''} · {t('ad.pr.images', { n: (p.gallery || []).filter((g) => g.src).length })}</span>
+              <Link to={`/admin/projects/${i}`} className="ad-proj__t">{p.title || t('ad.pr.untitled')}</Link>
+              <span className="ad-proj__meta" dir="ltr">/work/{p.slug}</span>
             </div>
             <div className="ad-proj__tools">
-              <button type="button" className={`ad-badge ${p.published ? 'ad-badge--ok' : 'ad-badge--muted'} ad-badge--btn`} onClick={() => update(['projects', i, 'published'], !p.published)} aria-label={`${p.published ? 'Hide' : 'Show'} ${p.title}`}>
-                {p.published ? 'Visible' : 'Hidden'}
+              <button type="button" className={`ad-badge ${p.published ? 'ad-badge--ok' : 'ad-badge--muted'} ad-badge--btn`} onClick={() => update(['projects', i, 'published'], !p.published)} aria-label={p.published ? t('ad.pr.hide', { title: p.title }) : t('ad.pr.show', { title: p.title })}>
+                {p.published ? t('ad.pr.visible') : t('ad.pr.hidden')}
               </button>
-              <button type="button" className="ad-icon" onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${p.title} up`}>↑</button>
-              <button type="button" className="ad-icon" onClick={() => move(i, 1)} disabled={i === list.length - 1} aria-label={`Move ${p.title} down`}>↓</button>
-              <Link className="ad-btn ad-btn--ghost" to={`/admin/projects/${i}`}>Edit</Link>
-              <button type="button" className="ad-icon ad-icon--danger" onClick={() => remove(i)} aria-label={`Delete ${p.title}`}>✕</button>
+              <button type="button" className="ad-icon" onClick={() => move(i, -1)} disabled={i === 0} aria-label={t('ad.pr.up', { title: p.title })}>↑</button>
+              <button type="button" className="ad-icon" onClick={() => move(i, 1)} disabled={i === list.length - 1} aria-label={t('ad.pr.down', { title: p.title })}>↓</button>
+              <Link className="ad-btn ad-btn--ghost" to={`/admin/projects/${i}`}>{t('ad.pr.edit')}</Link>
+              <button type="button" className="ad-icon ad-icon--danger" onClick={() => remove(i)} aria-label={t('ad.pr.delete', { title: p.title })}>✕</button>
             </div>
           </li>
         ))}
@@ -180,13 +186,14 @@ export function Projects() {
 
 export function ProjectEdit({ index }) {
   const { draft, readSaved, update, preview } = useEditor();
+  const t = useAdminT();
   const p = draft.projects[index];
   const pf = F.projects.of.fields;
   if (!p) {
     return (
       <>
-        <PageHead title="Project not found" />
-        <p className="ad-empty">This project does not exist (it may have been deleted). <Link to="/admin/projects">Back to projects</Link></p>
+        <PageHead title={t('ad.pe.notFound')} />
+        <p className="ad-empty">{t('ad.pe.notFoundBody')} <Link to="/admin/projects">{t('ad.pe.back')}</Link></p>
       </>
     );
   }
@@ -194,31 +201,41 @@ export function ProjectEdit({ index }) {
   const only = (keys) => <ObjectFields def={F.projects.of} path={['projects', index]} only={keys} />;
   return (
     <>
-      <PageHead title={p.title || 'Untitled project'} intro={<>Page address: <code>/work/{p.slug}</code></>}>
-        <Link className="ad-btn ad-btn--ghost" to="/admin/projects">← All projects</Link>
-        <button type="button" className="ad-btn ad-btn--ghost" onClick={() => preview(`/work/${p.slug}`, p.slug)}>Preview page ↗</button>
+      <PageHead title={p.title || t('ad.pr.untitled')} intro={<>{t('ad.pe.address')} <code dir="ltr">/work/{p.slug}</code></>}>
+        <Link className="ad-btn ad-btn--ghost" to="/admin/projects">{t('ad.pe.all')}</Link>
+        <button type="button" className="ad-btn ad-btn--ghost" onClick={() => preview(`/work/${p.slug}`, p.slug)}>{t('ad.pe.preview')}</button>
       </PageHead>
-      <Card title="Basics">
+      <Card title={t('ad.pe.basics')}>
         <Field def={pf.published} path={['projects', index, 'published']} />
         {only(['title'])}
         <div className="ad-field">
           {only(['slug'])}
-          <button type="button" className="ad-link" onClick={() => update(['projects', index, 'slug'], slugify(p.title))}>Use the title as address</button>
-          {savedSlug && savedSlug !== p.slug && <p className="ad-help">Changing the address breaks links you may already have shared to /work/{savedSlug}.</p>}
+          <button type="button" className="ad-link" onClick={() => update(['projects', index, 'slug'], slugify(p.title))}>{t('ad.pe.useTitle')}</button>
+          {savedSlug && savedSlug !== p.slug && <p className="ad-help">{t('ad.pe.slugWarn', { slug: savedSlug })}</p>}
         </div>
         {only(['short', 'summary', 'tags', 'cats'])}
       </Card>
-      <Card title="Images">
+      <Card title={t('ad.pe.images')} intro={t('ad.pe.imagesIntro')}>
         <ImageField def={pf.cover} path={['projects', index, 'cover']} />
-        <ListField def={pf.gallery} path={['projects', index, 'gallery']} />
+        <Field def={pf.gallery} path={['projects', index, 'gallery']} />
       </Card>
-      <Card title="Case study details" intro="Empty fields show a clear placeholder on the website.">
-        {only(['industry', 'year', 'role', 'deliverables', 'challenge', 'context', 'problem', 'solution', 'approach', 'learning'])}
+      <Card title={t('ad.pe.details')} intro={t('ad.pe.detailsIntro')}>
+        {only(['industry', 'year', 'role', 'deliverables', 'challenge', 'context', 'problem', 'solution', 'learning'])}
       </Card>
-      <Card title="Results & feedback" intro="Only verified figures and approved feedback.">
+      <Card title={t('ad.pe.approach')} intro={t('ad.pe.approachIntro')}>
+        <div className="ad-approach">
+          {(p.approach || []).map((_, i) => (
+            <fieldset key={i} className="ad-group ad-approach__card">
+              <legend>{t(`ad.pe.step${i + 1}`)}</legend>
+              <ObjectFields def={pf.approach.of} path={['projects', index, 'approach', i]} />
+            </fieldset>
+          ))}
+        </div>
+      </Card>
+      <Card title={t('ad.pe.results')} intro={t('ad.pe.resultsIntro')}>
         {only(['results', 'feedback'])}
       </Card>
-      <Card title="Card design (when no cover image)">
+      <Card title={t('ad.pe.design')}>
         {only(['mono', 'bg', 'fg'])}
       </Card>
     </>
@@ -230,6 +247,8 @@ export function History() {
   const { saved, dirty, replaceSaved } = useEditor();
   const confirm = useConfirm();
   const toast = useToast();
+  const t = useAdminT();
+  const fmt = useFmtDate();
   const [items, setItems] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(0);
@@ -241,18 +260,18 @@ export function History() {
 
   const restore = async (it) => {
     const ok = await confirm({
-      title: `Restore the version from ${fmtDate(it.updatedAt)}?`,
-      body: `${dirty ? 'Your unsaved changes will be lost. ' : ''}The current version stays in this list, so you can switch back.`,
-      ok: 'Restore',
+      title: t('ad.hi.confirmTitle', { date: fmt(it.updatedAt) }),
+      body: `${dirty ? t('ad.hi.confirmUnsaved') : ''}${t('ad.hi.confirmBody')}`,
+      ok: t('ad.hi.restore'),
     });
     if (!ok) return;
     setBusy(it.version);
     try {
       const next = await api('/api/admin/restore', { method: 'POST', json: { version: it.version, currentVersion: saved.version } });
       replaceSaved(next);
-      toast('Restored — this version is now live.');
+      toast(t('ad.hi.done'));
     } catch (e) {
-      toast(`Could not restore — ${e.message}`, 'error');
+      toast(t('ad.hi.failed', { msg: e.message }), 'error');
     } finally {
       setBusy(0);
     }
@@ -260,22 +279,22 @@ export function History() {
 
   return (
     <>
-      <PageHead title="History" intro="The last 10 saved versions. Restoring makes an older version live again." />
+      <PageHead title={t('ad.hi.title')} intro={t('ad.hi.intro')} />
       <Card>
-        <div className="ad-hist ad-hist--current"><b>Current version {saved.version}</b><span>saved {fmtDate(saved.updatedAt)}</span></div>
+        <div className="ad-hist ad-hist--current"><b>{t('ad.hi.current', { v: saved.version })}</b><span>{t('ad.hi.saved', { date: fmt(saved.updatedAt) })}</span></div>
         {error && <p className="ad-error" role="alert">{error}</p>}
-        {!items && !error && <p className="ad-empty" role="status">Loading…</p>}
-        {items && items.length === 0 && <p className="ad-empty">No earlier versions yet — they appear here after your next save.</p>}
+        {!items && !error && <p className="ad-empty" role="status">{t('ad.hi.loading')}</p>}
+        {items && items.length === 0 && <p className="ad-empty">{t('ad.hi.empty')}</p>}
         {items && items.length > 0 && (
           <ul className="ad-histlist">
             {items.map((it) => (
               <li key={it.version} className="ad-hist">
                 <div>
-                  <b>Version {it.version}</b>
-                  <span>{fmtDate(it.updatedAt)} · {it.projects} projects · “{it.heroLine}”</span>
+                  <b>{t('ad.hi.version', { v: it.version })}</b>
+                  <span>{t('ad.hi.meta', { date: fmt(it.updatedAt), n: it.projects, line: it.heroLine })}</span>
                 </div>
                 <button type="button" className="ad-btn ad-btn--ghost" onClick={() => restore(it)} disabled={!!busy}>
-                  {busy === it.version ? 'Restoring…' : 'Restore'}
+                  {busy === it.version ? t('ad.hi.restoring') : t('ad.hi.restore')}
                 </button>
               </li>
             ))}

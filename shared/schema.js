@@ -3,7 +3,13 @@
 //   • server-side validation of everything the dashboard saves
 //   • the admin forms (labels, help texts, field types)
 //  Plain JavaScript, used by both the browser and Node.
+//
+//  Translations: every text field (text, textarea, tags) is written in English
+//  and can be translated. Translations live next to the English text, in the
+//  same object:  { title: 'Hello', i18n: { fr: { title: 'Bonjour' }, ar: { … } } }
+//  so they move along when items are reordered. Empty = the English text is shown.
 // ─────────────────────────────────────────────────────────────
+import { TRANSLATED } from './i18n/langs.js';
 
 export const PALETTE = [
   { value: '#1534DD', label: 'Royal Blue' },
@@ -42,6 +48,9 @@ const art = () => ({ type: 'art', hidden: true });
 const obj = (label, fields, o = {}) => ({ type: 'object', label, fields, ...o });
 const list = (label, of, o = {}) => ({ type: 'list', label, of, max: 40, ...o });
 const tags = (label, o = {}) => ({ type: 'tags', label, max: 12, itemMax: 60, ...o });
+/** Texts that can be translated (English is stored in the field, translations in `i18n`). */
+export const isTranslatable = (f) => ['text', 'textarea', 'tags'].includes(f.type) && !f.hidden && !f.noTranslate;
+
 const heading = (help) => ({
   title: text('Heading — first part', { required: true, max: 120 }),
   titleEm: text('Heading — highlighted part', { help: help || 'Shown in blue italic after the first part.', max: 120 }),
@@ -154,18 +163,22 @@ export const schema = obj('Website', {
   }), { min: 1, max: 6, itemTitle: 'word' }),
 
   timeline: list('Journey milestones', obj('Milestone', {
-    y: text('Year', { required: true, max: 12 }),
+    y: text('Year', { required: true, max: 12, noTranslate: true }),
     t: text('Title', { required: true, max: 80 }),
     phase: text('Phase label', { max: 40 }),
     d: area('Description', { required: true, max: 800 }),
     chips: tags('Keywords', { max: 6, itemMax: 40 }),
-    image: image('Image', { help: 'Optional. Replaces the illustration (about 5:4).' }),
+    photos: list('Photos of this year', obj('Photo', {
+      src: image('Photo'),
+      caption: text('Caption', { max: 100, help: 'Optional. Describes the photo (also read by screen readers).' }),
+    }), { min: 0, max: 12, gallery: true, slots: 4, itemTitle: 'caption', help: 'At least four photos per year look best. Empty slots show an elegant placeholder on the website.' }),
   }), { min: 1, max: 12, itemTitle: 'y' }),
 
   method: list('Method steps', obj('Step', {
     n: text('Number', { hidden: true, max: 4 }),
     t: text('Step name', { required: true, max: 30 }),
     d: area('Description', { max: 300 }),
+    image: image('Step image', { help: 'Optional small image under the step (about 16:10). An elegant placeholder is shown until you add one.' }),
     bg: color('Circle colour'),
     fg: color('Number colour'),
     pad: raw(),
@@ -176,6 +189,7 @@ export const schema = obj('Website', {
     title: text('Title', { required: true, max: 80 }),
     text: area('Description', { max: 400 }),
     proof: { type: 'multiselect', label: 'Evidence projects', source: 'projects', max: 4 },
+    image: image('Area image', { help: 'Shown in the card that appears on hover (about 4:5), and as a small picture on phones.' }),
     bg: color('Hover card colour'),
     c: color('Hover shape colour'),
     r: raw(),
@@ -201,6 +215,7 @@ export const schema = obj('Website', {
   products: list('Digital products', obj('Product', {
     t: text('Name', { required: true, max: 60 }),
     d: area('Description', { max: 200 }),
+    image: image('Product image', { help: 'Cover of the product card (about 2:1). The colour design is shown until you add one.' }),
     bg: color('Background colour'),
     c: color('Accent colour'),
   }), { min: 0, max: 10, itemTitle: 't' }),
@@ -233,14 +248,21 @@ export const schema = obj('Website', {
     tags: tags('Disciplines', { max: 6, itemMax: 40 }),
     cats: { type: 'multiselect', label: 'Portfolio filters', options: CATEGORIES },
     industry: text('Industry', { max: 60 }),
-    year: text('Year', { max: 12 }),
+    year: text('Year', { max: 12, noTranslate: true }),
     role: text('My role', { max: 200 }),
     deliverables: text('Deliverables', { max: 200 }),
     challenge: text('Challenge (one line, landing page)', { max: 200 }),
     context: area('Context', { max: 1200 }),
     problem: area('The problem', { max: 1200 }),
     solution: area('What I did', { max: 1200 }),
-    approach: list('Approach (4 steps)', area('Step', { max: 500 }), { fixed: true, min: 4, max: 4 }),
+    approach: list('Approach — “How it came together” (4 cards)', obj('Card', {
+      text: area('Text', { max: 500 }),
+      image: image('Card image', { help: 'Small image at the top of the card (about 16:10).' }),
+    }), {
+      fixed: true, min: 4, max: 4, itemTitle: 'text',
+      // older content stored each step as plain text
+      coerce: (v) => (typeof v === 'string' ? { text: v, image: '' } : v),
+    }),
     results: list('Results (verified figures only)', obj('Result', {
       value: text('Figure', { required: true, max: 20 }),
       label: text('What it measures', { required: true, max: 120 }),
@@ -252,12 +274,12 @@ export const schema = obj('Website', {
     }),
     learning: area('What I took away', { max: 600 }),
     cover: image('Cover image', { help: 'Landscape, about 2400 × 1500.' }),
-    gallery: list('Gallery', obj('Image', {
+    gallery: list('Project gallery', obj('Image', {
       src: image('Image'),
       label: text('Caption', { max: 80 }),
       hint: text('Placeholder hint', { max: 120, help: 'Shown only while no image is uploaded.' }),
-    }), { min: 0, max: 12, itemTitle: 'label' }),
-    mono: text('Placeholder initials', { max: 20, help: 'Big letters shown on the card while no cover image is uploaded.' }),
+    }), { min: 0, max: 24, gallery: true, itemTitle: 'label', help: 'Shown in “The work” on the project page, in this order.' }),
+    mono: text('Placeholder initials', { max: 20, noTranslate: true, help: 'Big letters shown on the card while no cover image is uploaded.' }),
     bg: color('Card colour (without image)'),
     fg: color('Card text colour'),
     art: art(),
@@ -296,49 +318,71 @@ export function slugify(s) {
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'project';
 }
 
+// Validation messages: a code (translated in the dashboard) + an English fallback.
+export const MESSAGES = {
+  text: 'must be text',
+  tooLong: 'is too long (maximum {max} characters)',
+  required: 'is required',
+  slug: 'may only contain lowercase letters, numbers and dashes',
+  number: 'must be a number',
+  range: 'must be between {min} and {max}',
+  email: 'is not a valid email address',
+  url: 'must be a full https:// link or a site path starting with /',
+  color: 'must be a colour like #1534DD',
+  choice: 'has an invalid choice',
+  maxItems: 'can have at most {max} items',
+  itemTooLong: 'items can be at most {max} characters',
+  minItems: 'needs at least {min} items',
+  slugTaken: 'Page address “{slug}” is used by two projects',
+};
+export const formatMessage = (tpl, params = {}) => String(tpl).replace(/\{(\w+)\}/g, (_, k) => (params[k] ?? ''));
+
+const joinPath = (path, k) => (path ? `${path}.${k}` : k);
+
 function vField(f, v, path, errs) {
-  const err = (msg) => errs.push({ path, message: `${f.label || path}: ${msg}` });
+  const err = (code, params = {}) =>
+    errs.push({ path, code, params, label: f.label || path, message: `${f.label || path}: ${formatMessage(MESSAGES[code], params)}` });
   switch (f.type) {
     case 'text':
     case 'textarea':
     case 'slug': {
       if (v === undefined || v === null) v = '';
-      if (typeof v !== 'string' && typeof v !== 'number') return err('must be text'), '';
+      if (typeof v !== 'string' && typeof v !== 'number') return err('text'), '';
       let s = clean(v);
       if (f.type === 'text') s = s.replace(/[\r\n]+/g, ' ');
       s = s.trim();
       const max = f.max || 200;
-      if (s.length > max) err(`is too long (maximum ${max} characters)`);
-      if (f.required && !s) err('is required');
-      if (f.type === 'slug' && !SLUG.test(s)) err('may only contain lowercase letters, numbers and dashes');
+      if (s.length > max) err('tooLong', { max });
+      if (f.required && !s) err('required');
+      if (f.type === 'slug' && !SLUG.test(s)) err('slug');
       return s.slice(0, max);
     }
     case 'number': {
       const n = Number(v);
-      if (!Number.isFinite(n)) return err('must be a number'), f.min || 0;
-      if (n < (f.min ?? -Infinity) || n > (f.max ?? Infinity)) err(`must be between ${f.min} and ${f.max}`);
+      if (!Number.isFinite(n)) return err('number'), f.min || 0;
+      if (n < (f.min ?? -Infinity) || n > (f.max ?? Infinity)) err('range', { min: f.min, max: f.max });
       return Math.round(n);
     }
     case 'boolean':
       return v === true;
     case 'email': {
       const s = clean(v || '').trim();
-      if (s && (!EMAIL.test(s) || s.length > 200)) err('is not a valid email address');
+      if (s && (!EMAIL.test(s) || s.length > 200)) err('email');
       return s;
     }
     case 'url':
     case 'image': {
       const s = clean(v || '').trim();
-      if (!isSafeUrl(s, f.kind)) err('must be a full https:// link or a site path starting with /');
+      if (!isSafeUrl(s, f.kind)) err('url');
       return s;
     }
     case 'color': {
       const s = String(v || '');
-      if (!HEX.test(s)) return err('must be a colour like #1534DD'), '#202033';
+      if (!HEX.test(s)) return err('color'), '#202033';
       return s.toUpperCase();
     }
     case 'select': {
-      if (!f.options.some((o) => o.value === v)) return err('has an invalid choice'), f.options[0].value;
+      if (!f.options.some((o) => o.value === v)) return err('choice'), f.options[0].value;
       return v;
     }
     case 'multiselect': {
@@ -350,8 +394,8 @@ function vField(f, v, path, errs) {
     case 'tags': {
       if (!Array.isArray(v)) return [];
       const out = v.map((x) => clean(x).replace(/[\r\n]+/g, ' ').trim()).filter(Boolean);
-      if (out.length > f.max) err(`can have at most ${f.max} items`);
-      if (out.some((x) => x.length > f.itemMax)) err(`items can be at most ${f.itemMax} characters`);
+      if (out.length > f.max) err('maxItems', { max: f.max });
+      if (out.some((x) => x.length > f.itemMax)) err('itemTooLong', { max: f.itemMax });
       return out.slice(0, f.max).map((x) => x.slice(0, f.itemMax));
     }
     case 'css': {
@@ -375,13 +419,32 @@ function vField(f, v, path, errs) {
     case 'object': {
       const src = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
       const out = {};
-      for (const [k, sub] of Object.entries(f.fields)) out[k] = vField(sub, src[k], path ? `${path}.${k}` : k, errs);
+      for (const [k, sub] of Object.entries(f.fields)) out[k] = vField(sub, src[k], joinPath(path, k), errs);
+      // Translations of this object's texts. Empty translations are dropped (English is shown).
+      const tkeys = Object.keys(f.fields).filter((k) => isTranslatable(f.fields[k]));
+      if (tkeys.length && src.i18n && typeof src.i18n === 'object') {
+        const i18n = {};
+        for (const lang of TRANSLATED) {
+          const li = src.i18n[lang];
+          if (!li || typeof li !== 'object') continue;
+          const o = {};
+          for (const k of tkeys) {
+            if (li[k] === undefined || li[k] === null) continue;
+            const t = vField({ ...f.fields[k], required: false }, li[k], joinPath(path, `i18n.${lang}.${k}`), errs);
+            if (Array.isArray(t) ? t.length : t !== '') o[k] = t;
+          }
+          if (Object.keys(o).length) i18n[lang] = o;
+        }
+        if (Object.keys(i18n).length) out.i18n = i18n;
+      }
       return out;
     }
     case 'list': {
-      const arr = Array.isArray(v) ? v : [];
-      if (arr.length > f.max) err(`can have at most ${f.max} items`);
-      if (arr.length < (f.min || 0)) err(`needs at least ${f.min} items`);
+      let arr = Array.isArray(v) ? v : [];
+      if (f.coerce) arr = arr.map(f.coerce);
+      if (arr.length > f.max) err('maxItems', { max: f.max });
+      if (arr.length < (f.min || 0)) err('minItems', { min: f.min });
+      if (f.fixed && arr.length < f.min) arr = [...arr, ...Array.from({ length: f.min - arr.length }, () => undefined)];
       return arr.slice(0, f.max).map((item, i) => vField(f.of, item, `${path}[${i}]`, errs));
     }
     default:
@@ -402,7 +465,7 @@ export function validateContent(input) {
   // Projects: unique addresses, numbering follows the order.
   const seen = new Set();
   value.projects.forEach((p, i) => {
-    if (seen.has(p.slug)) errors.push({ path: `projects[${i}].slug`, message: `Page address “${p.slug}” is used by two projects` });
+    if (seen.has(p.slug)) errors.push({ path: `projects[${i}].slug`, code: 'slugTaken', params: { slug: p.slug }, label: '', message: formatMessage(MESSAGES.slugTaken, { slug: p.slug }) });
     seen.add(p.slug);
     p.n = pad2(i);
   });
@@ -449,7 +512,7 @@ export function newProject(existing = []) {
   return {
     published: false, title: 'New project', slug, n: '', short: '', summary: '', tags: [], cats: [],
     industry: '', year: '', role: '', deliverables: '', challenge: '', context: '', problem: '', solution: '',
-    approach: ['', '', '', ''], results: [], feedback: { quote: '', name: '', role: '' }, learning: '',
+    approach: [0, 1, 2, 3].map(() => ({ text: '', image: '' })), results: [], feedback: { quote: '', name: '', role: '' }, learning: '',
     cover: '', gallery: [], mono: 'New', bg: '#2E2E46', fg: '#FFF9F5',
     art: [
       { width: '40%', left: '50%', top: '-10%', borderRadius: '50%', background: '#1534DD' },
