@@ -96,6 +96,7 @@ export function Texts() {
 
 // ═════════════ Section lists ═════════════
 export const SECTION_PAGES = [
+  { key: 'logos', label: 'Logo carousel', intro: 'Brand logos scrolling under the hero, in this order. Use ↑ ↓ to reorder, ✕ to remove, “Add logo” for a new one.' },
   { key: 'mind', label: 'Ways of thinking', intro: 'The four big words in “One creative mind”. Hover text and image for each.' },
   { key: 'timeline', label: 'Journey', intro: 'Milestones of “My story”, in order. Add an image to replace the illustration of a year.' },
   { key: 'method', label: 'Method', intro: 'The four steps of “Behind the strategy”.' },

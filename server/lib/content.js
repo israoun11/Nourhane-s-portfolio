@@ -43,7 +43,9 @@ export function createContentService(store, log = console) {
       }
       cur = await store.getKV('content');
     }
-    return { data: cur.value, version: cur.version, updatedAt: cur.updatedAt };
+    // Content saved before the logo carousel existed: start it with the default logos.
+    const data = Array.isArray(cur.value.logos) ? cur.value : { ...cur.value, logos: structuredClone(defaultContent.logos) };
+    return { data, version: cur.version, updatedAt: cur.updatedAt };
   }
 
   async function cleanupMedia() {

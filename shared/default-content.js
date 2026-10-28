@@ -42,7 +42,6 @@ export const defaultContent = {
       label2: 'Marketing strategist',
       annotation: 'More than just pretty visuals. ↓',
     },
-    band: ['Design', 'strategy', 'People', 'business'],
     mind: { title: 'ONE CREATIVE MIND.', titleEm: 'Multiple ways to think.' },
     journey: {
       eyebrow: 'MY STORY · 2021 — 2026',
@@ -90,6 +89,19 @@ export const defaultContent = {
       ctaEm: 'in mind?',
     },
   },
+
+  // Logo carousel under the hero — files live in /public/logos. Edit in the dashboard: Sections → Logo carousel.
+  logos: [
+    { name: 'Client logo (fox mark)', image: '/logos/fox-mark.png', href: '' },
+    { name: 'La Tienda', image: '/logos/la-tienda.png', href: '' },
+    { name: 'Client logo (chevron mark)', image: '/logos/chevron-mark.png', href: '' },
+    { name: 'NovaSeeds Innovation Hub', image: '/logos/novaseeds.png', href: '' },
+    { name: 'Nouvelle Vision Rénovation', image: '/logos/nvr.png', href: '' },
+    { name: 'The Elo', image: '/logos/the-elo.png', href: '' },
+    { name: 'Tunisie Compétences', image: '/logos/tunisie-competences.png', href: '' },
+    { name: 'Days Up', image: '/logos/days-up.png', href: '' },
+    { name: 'ProHealthCare+', image: '/logos/prohealthcare.png', href: '' },
+  ],
 
   mind: [
     {

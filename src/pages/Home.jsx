@@ -1,5 +1,5 @@
 import Hero from '../sections/Hero.jsx';
-import Band from '../sections/Band.jsx';
+import LogoMarquee from '../sections/LogoMarquee.jsx';
 import Mind from '../sections/Mind.jsx';
 import Journey from '../sections/Journey.jsx';
 import SelectedWork from '../sections/SelectedWork.jsx';
@@ -24,7 +24,7 @@ export default function Home() {
       <Header />
       <main id="main">
         <Hero />
-        <Band />
+        <LogoMarquee />
         <Mind />
         <Journey />
         <SelectedWork />

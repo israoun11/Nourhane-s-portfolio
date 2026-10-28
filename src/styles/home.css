@@ -41,11 +41,39 @@
 .hero__cursor path { fill: var(--ivory); stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; }
 .hero__annot { position: absolute; right: 0; top: -2%; margin: 0; font-size: 26px; line-height: 1; color: var(--blue); rotate: -6deg; animation: pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 2s both; }
 
-/* ═════════════ Band ═════════════ */
-.band { overflow: hidden; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 14px 0; --p: 0.5; }
-.band__track { display: flex; gap: 40px; width: max-content; white-space: nowrap; font-family: var(--f-cond); font-weight: 800; font-size: clamp(44px, 6vw, 96px); line-height: 1; text-transform: uppercase; transform: translateX(calc(var(--p) * -28%)); will-change: transform; }
-.band__item { display: inline-flex; gap: 40px; }
-.band__serif { font-family: var(--f-display); font-style: italic; font-weight: 400; text-transform: none; color: var(--blue); }
+/* ═════════════ Band: logo carousel (same frame as before: ink rules, same height) ═════════════ */
+.band { overflow: hidden; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 14px 0; }
+.band--logos { --logo-gap: clamp(28px, 4.6vw, 68px); --row-h: clamp(44px, 6vw, 96px); --logo-h: clamp(34px, 4.2vw, 62px); }
+.logos { position: relative; overflow: hidden; min-height: var(--row-h); }
+/* soft fade at both edges so logos glide in and out (overlays, not a CSS mask: masks can blank animated content in Safari) */
+.logos::before, .logos::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 1; width: 6%; pointer-events: none; }
+.logos::before { left: 0; background: linear-gradient(90deg, var(--ivory), rgba(255, 249, 245, 0)); }
+.logos::after { right: 0; background: linear-gradient(270deg, var(--ivory), rgba(255, 249, 245, 0)); }
+.logos__track { display: flex; width: max-content; animation: marquee var(--marquee-duration, 40s) linear infinite; animation-play-state: paused; }
+.logos.is-ready .logos__track { animation-play-state: running; } /* starts once every logo has loaded */
+@keyframes marquee { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+.logos__group { display: flex; flex: none; align-items: center; margin: 0; padding: 0; list-style: none; }
+.logos__item { display: flex; flex: none; align-items: center; gap: var(--logo-gap); padding-right: var(--logo-gap); height: var(--row-h); }
+.logos__img {
+  display: block; flex: none; height: var(--logo-h); width: auto; max-width: clamp(96px, 13vw, 190px);
+  object-fit: contain; user-select: none; -webkit-user-drag: none;
+  transition: transform 0.4s var(--ease);
+}
+.logos__link { display: block; border-radius: 4px; }
+.logos__sep { font-family: var(--f-cond); font-weight: 800; font-size: clamp(18px, 2.2vw, 32px); line-height: 1; color: var(--pink); }
+.logos__measure { position: absolute; left: 0; top: 0; width: max-content; visibility: hidden; pointer-events: none; }
+/* Desktop: pause while the pointer (or keyboard focus) is on the carousel */
+@media (hover: hover) and (pointer: fine) {
+  .logos.is-ready:hover .logos__track { animation-play-state: paused; }
+  .logos__item:hover .logos__img { transform: scale(1.06); }
+}
+.logos.is-ready:focus-within .logos__track { animation-play-state: paused; }
+/* Reduced motion: no movement — the row can be scrolled sideways instead */
+@media (prefers-reduced-motion: reduce) {
+  .logos { overflow-x: auto; scrollbar-width: thin; }
+  .logos::before, .logos::after { display: none; }
+  .logos__group[aria-hidden="true"]:not(.logos__measure) { display: none; }
+}
 
 /* ═════════════ 03 MIND ═════════════ */
 .mind__title { margin-bottom: clamp(40px, 5vw, 72px); }

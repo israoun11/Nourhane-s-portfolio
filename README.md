@@ -42,7 +42,7 @@ In development, content and images are saved in `server/data/` on your computer 
    - **Projects** — add, edit, hide/show, reorder (↑ ↓) or delete projects. The first project is featured on the home page. Each project has its own page; "Preview page" shows it before saving.
    - **Page texts** — every headline, introduction and button label, section by section.
    - **Website info & photos** — portrait, contact email, CV link, CodaStudio link and images, social profiles, training photos, Google title/description.
-   - **Sections** — ways of thinking, journey milestones, method, expertise, CodaStudio capabilities, training offers, content series, digital products, testimonials, contact paths.
+   - **Sections** — logo carousel (brand logos scrolling under the hero), ways of thinking, journey milestones, method, expertise, CodaStudio capabilities, training offers, content series, digital products, testimonials, contact paths.
    - **History** — the last 10 saved versions; one click restores an older one.
 3. When you change something, a dark bar appears at the bottom:
    - **Preview ↗** opens the website in a new tab with your unsaved changes (only you see it).
@@ -118,6 +118,7 @@ See [`.env.example`](.env.example) — placeholders only. Only variables startin
 - **Saving:** optimistic version check (409 instead of overwriting newer content) · previous 10 versions kept · uploads no longer used anywhere (including history) are deleted after 24 h.
 - **Security:** scrypt-hashed password from env · random session tokens, only their SHA-256 stored · `HttpOnly; SameSite=Strict; Secure` cookie · CSRF: custom header + Origin check on every state change · login rate limit (5 failures / 15 min per IP, 30 overall) · server-side validation of every field (URLs limited to `https://` or site paths — no `javascript:`) · uploads checked by file content (JPEG/PNG/WebP magic bytes, not the name), size-limited, stored under their SHA-256 name (duplicates reused) · CSP, `nosniff`, `frame-ancestors 'none'`, HSTS in production · no stack traces or secrets in responses · React escapes all text (no raw HTML rendering).
 - **Motion:** words of headings rise in sequence, images open with a clip reveal and drift gently inside their frame (parallax), page transitions, header entrance, mobile menu closing animation, scroll progress line, plus the existing hero sequence, orbit, journey and hover effects. Everything is CSS transforms/opacity driven by one shared `requestAnimationFrame` loop and IntersectionObserver; all of it is disabled with *reduce motion*.
+- **Logo carousel:** `src/sections/LogoMarquee.jsx` + `.logos*` rules in `src/styles/home.css`. Pure CSS animation: two identical groups slide by exactly one group width, so the loop has no seam; each group repeats the logos until it is wider than the screen. Speed is `SPEED` (px/s) at the top of the component. Pauses on hover (mouse only) and keyboard focus; with *reduce motion* it becomes a static, swipeable row. Default logo files live in `public/logos/`, listed in `shared/default-content.js` → `logos`.
 - **Dashboard bundle** is lazy-loaded: visitors never download it.
 
 ### Scripts

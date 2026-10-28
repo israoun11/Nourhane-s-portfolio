@@ -85,7 +85,6 @@ export const schema = obj('Website', {
       label2: text('Label on the photo — line 2 (pink)', { max: 40 }),
       annotation: text('Handwritten note', { max: 60 }),
     }),
-    band: tags('Moving word band', { max: 8, itemMax: 24, help: 'Words that slide across the page under the hero.' }),
     mind: obj('“One creative mind” section', heading()),
     journey: obj('Journey section', {
       eyebrow: text('Small label', { max: 60 }),
@@ -136,6 +135,12 @@ export const schema = obj('Website', {
       ctaEm: text('Closing heading — highlighted part', { max: 60 }),
     }),
   }),
+
+  logos: list('Logo carousel', obj('Logo', {
+    name: text('Brand name', { required: true, max: 80, help: 'Describes the logo for screen readers and search engines.' }),
+    image: image('Logo image', { help: 'PNG with a transparent background works best. Keep little empty space around the logo.' }),
+    href: link('Link (optional)', { help: 'Opens the brand’s website when the logo is clicked. Leave empty for no link.' }),
+  }), { min: 0, max: 30, itemTitle: 'name' }),
 
   mind: list('Ways of thinking', obj('Item', {
     word: text('Big word', { required: true, max: 20 }),

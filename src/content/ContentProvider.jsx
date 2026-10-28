@@ -7,6 +7,9 @@ import { defaultContent } from '../../shared/default-content.js';
 import { publicView } from '../../shared/schema.js';
 
 const Ctx = createContext(null);
+
+// Content saved (or previewed) before the logo carousel existed has no `logos` list.
+const withLogos = (d) => (d && !Array.isArray(d.logos) ? { ...d, logos: defaultContent.logos } : d);
 export const PREVIEW_KEY = 'nt-preview-draft';
 const PREVIEW_FLAG = 'nt-preview-on';
 
@@ -29,7 +32,7 @@ function readPreview() {
     if (!draft || Date.now() - draft.savedAt > 6 * 3600 * 1000) return null;
     // The project being edited is shown even if it is still hidden.
     const data = { ...draft.data, projects: draft.data.projects.map((p) => (draft.slug && p.slug === draft.slug ? { ...p, published: true } : p)) };
-    return publicView(data);
+    return publicView(withLogos(data));
   } catch {
     return null;
   }
@@ -49,7 +52,7 @@ export function ContentProvider({ children }) {
     const preview = readPreview();
     if (preview) return { data: preview, version: 0, preview: true };
     const embedded = readEmbedded();
-    if (embedded && embedded.data) return { data: embedded.data, version: embedded.version, preview: false, live: true };
+    if (embedded && embedded.data) return { data: withLogos(embedded.data), version: embedded.version, preview: false, live: true };
     return { data: publicView(defaultContent), version: 0, preview: false, live: false };
   });
   const lastFetch = useRef(state.live ? Date.now() : 0);
@@ -66,7 +69,7 @@ export function ContentProvider({ children }) {
         const body = await res.json();
         if (cancelled || !body || !body.data) return;
         etag.current = res.headers.get('etag') || '';
-        setState((s) => (s.version === body.version ? s : { data: body.data, version: body.version, preview: false, live: true }));
+        setState((s) => (s.version === body.version ? s : { data: withLogos(body.data), version: body.version, preview: false, live: true }));
       } catch {
         /* offline or static hosting: keep what we have */
       }
