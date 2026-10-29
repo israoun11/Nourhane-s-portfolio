@@ -9,6 +9,7 @@ import { createMessageService, validateMessage } from './lib/messages.js';
 import { createLeadService, toCsv, validateLead } from './lib/leads.js';
 import { createBookingService } from './lib/booking.js';
 import { createScheduler, validateBooking } from './lib/scheduler.js';
+import { createInsights } from './lib/insights.js';
 import { baseUrl, checkLinks, collectLinks, findRedirect, headTags, robots, sitemap } from './lib/seo.js';
 import { localize } from '../shared/i18n/localize.js';
 import { dirOf, isLang } from '../shared/i18n/langs.js';
@@ -36,6 +37,8 @@ export function createApp(cfg, store, log = console, deps = {}) {
   const leads = createLeadService(store, cfg, log);
   const booking = createBookingService(cfg, deps.fetch || globalThis.fetch);
   const scheduler = createScheduler(store, log);
+  const insights = createInsights(cfg, deps.fetch || globalThis.fetch);
+  const aiLimit = new RateLimiter({ max: 30, windowMs: 60 * 60 * 1000 });
   const bookIp = new RateLimiter({ max: 5, windowMs: 10 * 60 * 1000 });
   const bookGlobal = new RateLimiter({ max: 100, windowMs: 60 * 60 * 1000 });
   const leadIp = new RateLimiter({ max: 10, windowMs: 10 * 60 * 1000 });
@@ -317,6 +320,21 @@ export function createApp(cfg, store, log = console, deps = {}) {
         return sendJson(res, 200, { ok: true });
       }
 
+      // ── read-only reports: GA4, Search Console, Google Ads, Meta Ads ──
+      const im = pathname.match(/^\/api\/admin\/insights\/(analytics|search|google-ads|meta-ads)$/);
+      if (im && m === 'GET') {
+        const days = url.searchParams.get('days');
+        const fn = { analytics: insights.analytics, search: insights.search, 'google-ads': insights.googleAds, 'meta-ads': insights.metaAds }[im[1]];
+        return sendJson(res, 200, await fn(days), { 'Cache-Control': 'no-store' });
+      }
+      // ── AI assistant: drafts only (the owner copies what she approves) ──
+      if (pathname === '/api/admin/ai' && m === 'POST') {
+        if (aiLimit.blocked(s.idHash)) throw new HttpError(429, 'The AI assistant can be used 30 times per hour.');
+        const body = await readJson(req, 64 * 1024);
+        aiLimit.hit(s.idHash);
+        return sendJson(res, 200, await insights.ai(String(body.task || ''), body.input));
+      }
+
       // ── SEO: link checker ──
       if (pathname === '/api/admin/seo/check-links' && m === 'POST') {
         if (linkCheck.blocked(s.idHash)) throw new HttpError(429, 'The link check can run 6 times per hour.');
@@ -366,12 +384,8 @@ export function createApp(cfg, store, log = console, deps = {}) {
           maxPdfMb: Math.round(cfg.maxPdfBytes / 1024 / 1024),
           integrations: {
             booking: c.data.booking.provider === 'builtin' ? { provider: 'builtin', connected: true, open: c.data.booking.open } : booking.status(c.data.booking.provider),
-            searchConsole: { connected: false, envVar: 'GOOGLE_SEARCH_CONSOLE (phase 2)' },
-            analytics: { connected: false, envVar: 'GA4 (phase 2)' },
-            googleAds: { connected: false, envVar: 'GOOGLE_ADS (phase 2)' },
-            metaAds: { connected: false, envVar: 'META_ADS (phase 2)' },
-            ai: { connected: false, envVar: 'AI provider key (phase 2)' },
-            payments: { connected: false, envVar: 'payment gateway (phase 2)' },
+            ...insights.status(),
+            payments: { connected: false, needs: ['payment provider (not chosen yet)'] },
           },
           sessionExpiresAt: s.expiresAt,
         });

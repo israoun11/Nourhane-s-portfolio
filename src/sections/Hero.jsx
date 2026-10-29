@@ -5,7 +5,7 @@ import { usePointerVars, useScrollVar } from '../hooks/motion.js';
 import { useT } from '../i18n/index.jsx';
 
 export default function Hero() {
-  const { site, text } = useContent();
+  const { site, text, stats = [] } = useContent();
   const t = text.hero;
   const tr = useT();
   const ref = useRef(null);
@@ -47,6 +47,19 @@ export default function Hero() {
             <Button to="/#work" arrow magnetic>{t.cta1}</Button>
             <Button to="/#story" variant="outline">{t.cta2}</Button>
           </div>
+          {stats.length > 0 && (
+            <ul className="hero__stats in-3" aria-label={tr('stats.label')}>
+              {stats.map((x, i) => {
+                const inner = (
+                  <>
+                    <b>{x.value}</b>
+                    <span>{x.label}</span>
+                  </>
+                );
+                return <li key={`${x.label}-${i}`}>{x.href ? <a href={x.href}>{inner}</a> : inner}</li>;
+              })}
+            </ul>
+          )}
         </div>
 
         <div className="hero__visual">
@@ -57,7 +70,7 @@ export default function Hero() {
           <div className="hero__portrait-wrap">
             <figure className="hero__portrait">
               {site.portrait ? (
-                <img src={site.portrait} alt={tr('hero.portraitAlt', { name: site.name })} fetchPriority="high" />
+                <img src={site.portrait} alt={site.portraitAlt || tr('hero.portraitAlt', { name: site.name })} fetchPriority="high" style={site.portraitPos && site.portraitPos !== 'center' ? { objectPosition: site.portraitPos } : undefined} />
               ) : (
                 <>
                   <div className="hero__ph" aria-hidden="true">

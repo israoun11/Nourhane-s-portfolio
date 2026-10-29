@@ -222,3 +222,14 @@
 .bk-link { word-break: break-all; }
 
 .exp__art { position: absolute; inset: 14%; width: 72%; height: 72%; }
+
+/* case study: objective / strategy / execution, tools & links, related */
+.cs-plan__grid { display: flex; flex-wrap: wrap; gap: clamp(24px, 4vw, 56px); }
+.cs-plan__item { flex: 1 1 260px; min-width: 0; }
+.cs-plan__item p { margin: 0; white-space: pre-line; }
+.cs-tools__grid { display: flex; flex-wrap: wrap; gap: 32px 72px; }
+.cs-tools__grid > div { flex: 1 1 280px; }
+.cs-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-weight: 700; }
+.cs-related__grid { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 32px; }
+.cs-related__grid > .work-card { flex: 1 1 260px; max-width: 420px; }
+

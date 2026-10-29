@@ -29,7 +29,7 @@ export default function CaseStudy({ project }) {
   const { projects, site } = useContent();
   const t = useT();
   const p = project;
-  useMeta(t('cs.title', { title: p.title, name: site.name }), p.summary);
+  useMeta(p.seoTitle || t('cs.title', { title: p.title, name: site.name }), p.seoDescription || p.summary);
   const coverRef = useRef(null);
   useScrollVar(coverRef, { mode: 'cover', from: 0.05, to: 0.45, name: '--u' });
   const [viewer, setViewer] = useState(-1);
@@ -42,6 +42,19 @@ export default function CaseStudy({ project }) {
   const real = gallery.filter((g) => g.src);
   const [t1, ...t2] = p.title.split(' / ');
   const hasFeedback = !!(p.feedback && p.feedback.quote);
+  // Extra case-study parts: shown only once they are filled in (nothing is invented).
+  const plan = [
+    ['cs.objective', p.objective],
+    ['cs.strategy', p.strategy],
+    ['cs.execution', p.execution],
+  ].filter(([, v]) => v && v.trim());
+  const extLinks = [
+    p.url && { label: t('cs.visit'), url: p.url },
+    p.sourceUrl && { label: t('cs.source'), url: p.sourceUrl },
+    ...(p.links || []).filter((l) => l.url),
+  ].filter(Boolean);
+  const tools = p.toolsUsed || [];
+  const related = (p.related || []).map((s) => projects.find((x) => x.slug === s)).filter(Boolean);
 
   return (
     <>
@@ -58,7 +71,7 @@ export default function CaseStudy({ project }) {
             <div className="cs-intro in-2">
               <p className="cs-summary">{p.summary}</p>
               <dl className="cs-facts">
-                <div><dt>{t('cs.client')}</dt><dd>{p.title}</dd></div>
+                <div><dt>{t('cs.client')}</dt><dd>{p.client || p.title}</dd></div>
                 <div><dt>{t('cs.year')}</dt><dd>{orPlaceholder(p.year, t('cs.yearPh'))}</dd></div>
                 <div><dt>{t('cs.role')}</dt><dd>{orPlaceholder(p.role, t('cs.rolePh'))}</dd></div>
                 <div><dt>{t('cs.deliverables')}</dt><dd>{orPlaceholder(p.deliverables, t('cs.deliverablesPh'))}</dd></div>
@@ -73,7 +86,7 @@ export default function CaseStudy({ project }) {
 
         <section className="cs-cover-wrap" aria-label={t('cs.cover')}>
           <div ref={coverRef} className="cs-cover">
-            <Media src={p.cover} alt={t('cs.coverAlt', { title: p.title })} bg={p.bg} art={p.art} mono={p.mono} monoColor="#F174AB" className="cs-cover__media" />
+            <Media src={p.cover} alt={p.coverAlt || t('cs.coverAlt', { title: p.title })} bg={p.bg} art={p.art} mono={p.mono} monoColor="#F174AB" className="cs-cover__media" />
             {!p.cover && <span className="cs-cover__cap">{t('cs.coverPh')}</span>}
           </div>
         </section>
@@ -97,6 +110,19 @@ export default function CaseStudy({ project }) {
             </div>
           </div>
         </section>
+
+        {plan.length > 0 && (
+          <section className="cs-section cs-plan" aria-label={t('cs.planLabel')}>
+            <div className="cs-wrap cs-plan__grid">
+              {plan.map(([k, v], i) => (
+                <div key={k} className="cs-plan__item" data-reveal style={{ '--d': `${i * 0.08}s` }}>
+                  <h3 className="cs-k">{t(k)}</h3>
+                  <p>{v}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="cs-section cs-approach on-dark" aria-labelledby="pr-title">
           <div className="cs-wrap">
@@ -181,6 +207,48 @@ export default function CaseStudy({ project }) {
           <p className="eyebrow">{t('cs.takeaway')}</p>
           <p className="cs-learning__q" data-reveal>“{orPlaceholder(p.learning, t('cs.learningPh'))}”</p>
         </section>
+
+        {(tools.length > 0 || extLinks.length > 0) && (
+          <section className="cs-section cs-tools" aria-labelledby="tl-title">
+            <div className="cs-wrap cs-tools__grid">
+              {tools.length > 0 && (
+                <div>
+                  <h2 id="tl-title" className="cs-k">{t('cs.tools')}</h2>
+                  <ul className="chips">{tools.map((x) => <li key={x} className="chip chip--line">{x}</li>)}</ul>
+                </div>
+              )}
+              {extLinks.length > 0 && (
+                <div>
+                  <h2 className="cs-k" id={tools.length ? undefined : 'tl-title'}>{t('cs.links')}</h2>
+                  <ul className="cs-links">
+                    {extLinks.map((l) => (
+                      <li key={l.url}>
+                        <a className="ulink" href={l.url} target={/^https?:/.test(l.url) ? '_blank' : undefined} rel="noreferrer">{l.label} <span aria-hidden="true">↗</span></a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {related.length > 0 && (
+          <section className="cs-section cs-related" aria-labelledby="rel-title">
+            <div className="cs-wrap">
+              <h2 id="rel-title" className="h2" data-reveal>{t('cs.relatedA')} <em>{t('cs.relatedB')}</em></h2>
+              <div className="cs-related__grid">
+                {related.map((r) => (
+                  <Link key={r.slug} to={`/work/${r.slug}`} className="card work-card" data-cursor={t('cursor.view')}>
+                    <Media src={r.cover} alt={r.coverAlt || t('work.coverAlt', { title: r.title })} bg={r.bg} art={r.art} ratio="4 / 3" label={t('work.imagePh')} framed />
+                    <span className="meta">{t('cs.case', { n: r.n })}</span>
+                    <h3>{r.title} <span className="ar" aria-hidden="true">↗</span></h3>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         <Link to={`/work/${next.slug}`} className="cs-next" data-cursor={t('cs.nextCursor')}>
           <div className="cs-wrap cs-next__inner">

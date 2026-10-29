@@ -24,7 +24,8 @@ export default function SelectedWork() {
           <Media
             className="feature__media"
             src={featured.cover}
-            alt={tr('work.coverAlt', { title: featured.title })}
+            alt={featured.coverAlt || tr('work.coverAlt', { title: featured.title })}
+            framed
             bg={featured.bg}
             art={featured.art}
             mono={featured.mono}
@@ -60,7 +61,7 @@ export default function SelectedWork() {
                 data-reveal
                 style={{ flex: l.flex, marginTop: l.offset, '--d': `${(i % 2) * 0.1}s` }}
               >
-                <Media src={p.cover} alt={tr('work.coverAlt', { title: p.title })} bg={p.bg} art={p.art} ratio={l.ratio} label={tr('work.imagePh')} reveal parallax />
+                <Media src={p.cover} alt={p.coverAlt || tr('work.coverAlt', { title: p.title })} bg={p.bg} art={p.art} framed ratio={l.ratio} label={tr('work.imagePh')} reveal parallax />
                 <span className="meta">{meta(p)}</span>
                 <h3>
                   {p.title} <span className="ar" aria-hidden="true">↗</span>

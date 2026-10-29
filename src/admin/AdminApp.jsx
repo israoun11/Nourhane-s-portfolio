@@ -6,7 +6,7 @@ import { ConfirmProvider, Modal, useConfirm } from './ui.jsx';
 import { History, Overview, ProjectEdit, Projects, SECTION_PAGES, SectionPage, SiteInfo, Texts } from './pages.jsx';
 import { Inbox } from './Inbox.jsx';
 import { Translations, useMissingCounts } from './Translations.jsx';
-import { BookingPage, ContactPage, FilesPage, IntegrationsPage, LeadsPage, ProductsPage, SeoPage, StatsPage, StoryPage, ToolsPage, UiTextsPage } from './modules.jsx';
+import { AdsPage, AiPage, AnalyticsPage, BookingPage, ContactPage, FilesPage, IntegrationsPage, LeadsPage, ProductsPage, SeoPage, StatsPage, StoryPage, ToolsPage, UiTextsPage } from './modules.jsx';
 import { AdminI18n, EditLangProvider, LANGS, inputLangProps, useAdminT, useEditLang, useErrorText } from './i18n.jsx';
 import LangSwitcher from '../components/LangSwitcher.jsx';
 import './admin.css';
@@ -95,6 +95,9 @@ function useNav() {
     { to: '/admin/files', label: t('ad.mod.files') },
     { group: t('ad.nav.g.growth') },
     { to: '/admin/seo', label: t('ad.mod.seo') },
+    { to: '/admin/analytics', label: t('ad.mod.analytics') },
+    { to: '/admin/ads', label: t('ad.mod.ads') },
+    { to: '/admin/ai', label: t('ad.mod.ai') },
     { to: '/admin/integrations', label: t('ad.mod.integrations') },
     { group: t('ad.nav.g.languages') },
     { to: '/admin/translations', label: t('ad.nav.translations'), missing: true },
@@ -150,7 +153,7 @@ function SaveBar() {
   );
 }
 
-const EDITING = /^\/admin\/(projects\/\d+|texts|site|sections\/|products|story|tools|stats|contact|booking|files|seo|leads|interface)/;
+const EDITING = /^\/admin\/(projects\/\d+|texts|site|sections\/|products|story|tools|stats|contact|booking|files|seo|leads|interface|ads)/;
 
 function Route({ path, status, email, unread, setUnread }) {
   const t = useAdminT();
@@ -168,6 +171,7 @@ function Route({ path, status, email, unread, setUnread }) {
     '/admin/story': StoryPage, '/admin/stats': StatsPage, '/admin/tools': ToolsPage, '/admin/products': ProductsPage,
     '/admin/leads': LeadsPage, '/admin/contact': ContactPage, '/admin/booking': BookingPage, '/admin/files': FilesPage,
     '/admin/seo': SeoPage, '/admin/interface': UiTextsPage, '/admin/integrations': IntegrationsPage,
+    '/admin/analytics': AnalyticsPage, '/admin/ads': AdsPage, '/admin/ai': AiPage,
   };
   const Mod = MODULES[clean];
   if (Mod) return <Mod status={status} />;

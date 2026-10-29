@@ -53,7 +53,9 @@ export default function Mind() {
               key={`${cur.word}-${active}`}
               className="mind__media"
               src={cur.image}
-              alt={t('mind.imageAlt', { word: cur.word })}
+              alt={cur.imageAlt || t('mind.imageAlt', { word: cur.word })}
+              pos={cur.imagePos}
+              framed
               bg={cur.bg}
               art={cur.art}
               label={t('mind.imageLabel', { label: cur.imgLabel })}

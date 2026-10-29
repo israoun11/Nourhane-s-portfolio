@@ -219,7 +219,7 @@ export const schema = obj('Website', {
       src: image('Photo'),
       caption: text('Caption', { max: 100, help: 'Optional. Shown under the photo.' }),
       alt: text('Description for screen readers', { max: 160, help: 'Optional. Leave empty to use the caption.' }),
-    }), { min: 0, max: 20, gallery: true, itemTitle: 'caption', help: 'Shown in this year’s photo mosaic, in this order: the first photo is the large one. Use ← → to change the order. More than four photos open in the photo viewer.' }),
+    }), { min: 0, max: 20, gallery: true, itemTitle: 'caption', help: 'Shown in this year’s slider, after the designed visual of the year, in this order. Use ← → to change the order.' }),
   }), { min: 1, max: 12, itemTitle: 'y' }),
 
   method: list('Method steps', obj('Step', {
@@ -306,10 +306,12 @@ export const schema = obj('Website', {
 
   tools: list('Tools, platforms & technologies', obj('Category', {
     title: text('Category name', { required: true, max: 60 }),
+    description: text('Category description', { max: 160 }),
     visible: bool('Visible on the website', { default: true }),
     tools: list('Tools', obj('Tool', {
       name: text('Name', { required: true, max: 60, keepName: true }),
-      description: text('Short description', { max: 120 }),
+      symbol: text('Card letters', { max: 3, noTranslate: true, help: 'The two letters shown on the tool card, e.g. Cc for CapCut. Leave empty to use the first letters of the name.' }),
+      description: text('Short description', { max: 140, help: 'Shown in the detail panel when the tool is selected.' }),
       url: link('Official website (optional)'),
       icon: image('Logo or icon (optional)', { help: 'Only official logos you are allowed to use. Without one, the name is shown as a clean label.' }),
       visible: bool('Visible on the website', { default: true }),
@@ -373,6 +375,12 @@ export const schema = obj('Website', {
     }), { min: 0, max: 100, itemTitle: 'from' }),
   }),
 
+  ads: obj('Paid ads — budget alerts', {
+    currency: text('Currency of your ad accounts', { max: 4, noTranslate: true, default: 'TND' }),
+    googleMonthly: num('Google Ads — monthly budget alert', { max: 10000000, help: 'A warning appears in the dashboard when spend over the last 28 days passes this amount. 0 = no alert. Budgets are never changed from here.' }),
+    metaMonthly: num('Meta Ads — monthly budget alert', { max: 10000000, help: 'Same for Meta Ads. 0 = no alert.' }),
+  }),
+
   storySettings: obj('My story slider', {
     dots: bool('Show the dots under the slider', { default: true }),
     counter: bool('Show the photo counter (e.g. 2 / 5)', { default: true }),
@@ -380,6 +388,7 @@ export const schema = obj('Website', {
 
   ui: { type: 'uitexts', label: 'Interface texts', hidden: true },
   toolsSeed: { type: 'number', label: 'Tools list version', hidden: true, min: 0, max: 1000, default: 0 },
+  socialsSeed: { type: 'number', label: 'Social links version', hidden: true, min: 0, max: 1000, default: 0 },
 
   projects: list('Projects', obj('Project', {
     published: { type: 'boolean', label: 'Visible on the website' },
@@ -731,8 +740,9 @@ export function collectUrls(content) {
 export function publicView(content) {
   const projects = content.projects.filter((p) => p.published && !p.archived);
   const live = new Set(projects.map((p) => p.slug));
+  const { ads, ...rest } = content; // ad budget alerts stay in the dashboard
   return {
-    ...content,
+    ...rest,
     projects: projects.map((p) => ({ ...p, related: (p.related || []).filter((s) => live.has(s)) })),
     expertise: content.expertise.map((e) => ({ ...e, proof: e.proof.filter((s) => live.has(s)) })),
     products: (content.products || []).filter((p) => p.published).map(({ file, ...p }) => ({ ...p, hasFile: !!file })),

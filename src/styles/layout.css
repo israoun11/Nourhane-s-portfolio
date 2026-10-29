@@ -82,3 +82,30 @@
 
 /* footer: CV button */
 .footer__cv { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; margin-top: 36px; }
+
+/* Header: Instagram + LinkedIn buttons */
+.hsoc { display: flex; align-items: center; gap: 8px; }
+.hsoc__btn { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; border: 1px solid rgba(32, 32, 51, 0.18); color: var(--ink); transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, translate 0.25s var(--ease); }
+.hsoc__btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.hsoc__btn:hover { background: var(--blue); border-color: var(--blue); color: #fff; translate: 0 -1px; }
+.hsoc__btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.hsoc--light .hsoc__btn { border-color: rgba(255, 249, 245, 0.3); color: var(--ivory); }
+.hsoc--light .hsoc__btn:hover { background: var(--pink); border-color: var(--pink); color: var(--ink); }
+.hsoc--lg .hsoc__btn { width: 48px; height: 48px; }
+.mmenu__foot .hsoc { align-self: flex-start; }
+.header__links a { white-space: nowrap; }
+@media (max-width: 1240px) and (min-width: 901px) { .header__inner { gap: 16px; } .header__links { gap: 18px; } .header__end { gap: 10px; } .hsoc__btn { width: 36px; height: 36px; } }
+@media (max-width: 1100px) and (min-width: 901px) { .header__end .btn { display: none !important; } .header__links { gap: 14px; font-size: 13px; } }
+@media (max-width: 900px) { .header__end { gap: 8px; } .hsoc { gap: 6px; } .hsoc__btn { width: 36px; height: 36px; } }
+@media (max-width: 400px) { .hsoc__btn { width: 32px; height: 32px; } .hsoc__btn svg { width: 16px; height: 16px; } .header__inner { gap: 10px; } }
+/* Phones: wordmark, Instagram/LinkedIn and the menu button share one line */
+@media (max-width: 560px) {
+  .header__inner { gap: 8px; padding-left: 16px; padding-right: 16px; }
+  .header .wordmark { font-size: 15px; letter-spacing: 0.03em; }
+  .header__end { margin-inline-start: auto; }
+  .header .menu-btn { padding-left: 12px; padding-right: 12px; gap: 6px; font-size: 11px; }
+}
+@media (max-width: 380px) {
+  .header .wordmark { font-size: 13px; letter-spacing: 0.02em; }
+  .header .menu-btn svg { display: none; }
+}

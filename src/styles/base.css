@@ -214,3 +214,14 @@ button { font: inherit; }
   .reveal-on [data-reveal] .w > span { transform: none; }
   .reveal-on [data-reveal="clip"] > * { clip-path: none; }
 }
+
+/* framed photo (only once a photo is uploaded): the coloured shapes stay visible behind and around it */
+.media__frame { position: absolute; inset: 11% 13%; z-index: 1; overflow: hidden; background: #fff; box-shadow: 0 18px 40px -22px rgba(32, 32, 51, 0.45); outline: 6px solid #fff; transition: scale 0.9s var(--ease); }
+.media__frame > .media__img { position: absolute; inset: 0; }
+.media--framed .media__art { z-index: 0; }
+.media--parallax.media--framed .media__frame > .media__img { inset: 0; translate: none; }
+.reveal-on [data-reveal="clip"][data-in] > .media__frame { animation: clipIn 1.1s var(--ease-out) var(--d, 0s) backwards; }
+.card:hover .media--framed .media__img { scale: 1.04; }
+.media__frame--logo { display: grid; place-items: center; background: #fff; }
+.media__logo { width: 78%; height: 78%; object-fit: contain; }
+@media (max-width: 640px) { .media__frame { inset: 9% 10%; outline-width: 4px; } }

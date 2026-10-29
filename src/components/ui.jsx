@@ -84,18 +84,43 @@ export function SplitHeading({ as: Tag = 'h2', id, className = 'h2', title, em, 
  * reveal: opens with a clip animation when scrolled into view.
  * parallax: the image drifts gently inside its frame while scrolling.
  */
-export function Media({ src, alt = '', bg, art = [], label, mono, monoColor, ratio, className = '', grayscale = false, style, reveal = false, parallax = false, children }) {
+export function Media({ src, alt = '', bg, art = [], label, mono, monoColor, ratio, className = '', grayscale = false, style, reveal = false, parallax = false, framed = false, pos, logo, children }) {
   const ref = useRef(null);
   useScrollVar(ref, { mode: 'cover', name: '--py', enabled: parallax });
+  const imgStyle = pos && pos !== 'center' ? { objectPosition: pos } : undefined;
   return (
     <div
       ref={ref}
-      className={`media${parallax ? ' media--parallax' : ''} ${className}`}
+      className={`media${parallax ? ' media--parallax' : ''}${framed && (src || logo) ? ' media--framed' : ''} ${className}`}
       style={{ background: bg, aspectRatio: ratio, ...style }}
       data-reveal={reveal ? 'clip' : undefined}
     >
-      {src ? (
-        <img className={`media__img${grayscale ? ' is-gray' : ''}`} src={src} alt={alt} loading="lazy" decoding="async" />
+      {!src && logo ? (
+        // No photo yet but the client's logo exists: the logo sits in the frame, shapes around it.
+        <>
+          <div className="media__art" aria-hidden="true">
+            {(art.length ? art : FRAME_SHAPES).map((s, i) => (
+              <span key={i} style={s} />
+            ))}
+          </div>
+          <div className="media__frame media__frame--logo">
+            <img className="media__logo" src={logo} alt={alt} loading="lazy" decoding="async" />
+          </div>
+        </>
+      ) : src && framed ? (
+        // The decorative shapes stay as their own layer; the photo sits in a frame above them.
+        <>
+          <div className="media__art" aria-hidden="true">
+            {(art.length ? art : FRAME_SHAPES).map((s, i) => (
+              <span key={i} style={s} />
+            ))}
+          </div>
+          <div className="media__frame">
+            <img className={`media__img${grayscale ? ' is-gray' : ''}`} src={src} alt={alt} loading="lazy" decoding="async" style={imgStyle} />
+          </div>
+        </>
+      ) : src ? (
+        <img className={`media__img${grayscale ? ' is-gray' : ''}`} src={src} alt={alt} loading="lazy" decoding="async" style={imgStyle} />
       ) : (
         <div className="media__art" aria-hidden="true">
           {art.map((s, i) => (
@@ -108,11 +133,17 @@ export function Media({ src, alt = '', bg, art = [], label, mono, monoColor, rat
           )}
         </div>
       )}
-      {!src && label && <span className="ph-label">{label}</span>}
+      {!src && !logo && label && <span className="ph-label">{label}</span>}
       {children}
     </div>
   );
 }
+
+// Restrained shapes used behind a framed photo when the item has no shapes of its own.
+const FRAME_SHAPES = [
+  { width: '42%', left: '-10%', bottom: '-18%', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.22)' },
+  { width: '24%', right: '4%', top: '3%', borderRadius: '50%', border: '1.5px solid rgba(255, 255, 255, 0.5)' },
+];
 
 /** Animated number (counts up once when visible). */
 export function CountUp({ to, suffix = '', className, duration = 1400 }) {

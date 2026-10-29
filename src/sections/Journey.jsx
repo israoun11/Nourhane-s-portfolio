@@ -6,7 +6,6 @@ import { useT } from '../i18n/index.jsx';
 import Lightbox from '../components/Lightbox.jsx';
 
 const dots = Array.from({ length: 50 }, (_, i) => i % 7 === 0);
-const SLOTS = 4; // every year always shows at least four photo places
 
 // Illustrative visual per year — shown in the main photo place until a real photo is uploaded.
 function YearVisual({ i }) {
@@ -75,48 +74,111 @@ function YearVisual({ i }) {
   }
 }
 
-/**
- * Photo mosaic of one year: one large photo + three smaller ones (more photos open in the viewer).
- * Empty places show the year's illustration (main place) or an elegant placeholder.
- */
-function YearPhotos({ m, i, compact = false, onOpen, tabbable = true }) {
-  const t = useT();
-  const photos = m.photos || [];
-  const real = photos.filter((p) => p.src);
-  const slots = Array.from({ length: SLOTS }, (_, k) => photos[k] || { src: '', caption: '' });
-  const hidden = real.filter((p) => !slots.includes(p)); // photos beyond the first four places
+/** The slides of one year: the featured cover (designed illustration until a cover is uploaded), then the photos. */
+export function yearSlides(m) {
+  const photos = (m.photos || []).filter((p) => p.src).map((p) => ({ src: p.src, caption: p.caption, alt: p.alt || p.caption }));
+  const cover = { cover: true, src: m.cover || '', alt: m.coverAlt || '' };
+  return m.coverPosition === 'last' ? [...photos, cover] : [cover, ...photos];
+}
 
+/**
+ * One year's slider: one image at a time, arrows, dots, counter, swipe and arrow keys.
+ * Each year keeps its own position.
+ */
+function YearSlider({ m, i, settings, onOpen, tabbable = true }) {
+  const t = useT();
+  const slides = yearSlides(m);
+  const [cur, setCur] = useState(0);
+  const at = Math.min(cur, slides.length - 1);
+  const drag = useRef(null);
+  const n = slides.length;
+  const go = (k) => setCur(((k % n) + n) % n);
+  const photos = slides.filter((x) => !x.cover || x.src);
+
+  const onKey = (e) => {
+    if (n < 2) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const fwd = (e.key === 'ArrowRight') !== (document.documentElement.dir === 'rtl');
+      go(at + (fwd ? 1 : -1));
+    }
+  };
+  const onDown = (e) => {
+    if (n < 2) return;
+    drag.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  };
+  const onUp = (e) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d || d.id !== e.pointerId) return;
+    const dx = e.clientX - d.x;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(e.clientY - d.y)) return;
+    const rtl = document.documentElement.dir === 'rtl';
+    go(at + ((dx < 0) !== rtl ? 1 : -1));
+    e.preventDefault();
+  };
+
+  const label = (x, k) => x.alt || x.caption || (x.cover ? t('journey.coverAlt', { year: m.y }) : t('journey.photoAlt', { n: k + 1, year: m.y }));
+  const s = settings || {};
   return (
-    <div className={`yp${compact ? ' yp--compact' : ''}`} role="group" aria-label={t('journey.photos', { year: m.y })}>
-      {slots.map((p, k) => {
-        const realIndex = p.src ? real.indexOf(p) : -1;
-        return (
-          <div key={k} className={`yp__slot yp__slot--${k + 1}${p.src ? ' has-img' : ''}`}>
-            {p.src ? (
-              <button type="button" className="yp__btn" tabIndex={tabbable ? undefined : -1} onClick={() => onOpen(realIndex)} aria-label={t('cs.open', { label: p.caption || t('journey.photoAlt', { n: k + 1, year: m.y }) })}>
-                <img src={p.src} alt={p.caption || t('journey.photoAlt', { n: k + 1, year: m.y })} loading="lazy" decoding="async" />
+    <div
+      className="ys"
+      role="region"
+      aria-roledescription={t('journey.carousel')}
+      aria-label={t('journey.photos', { year: m.y })}
+      tabIndex={tabbable ? 0 : -1}
+      onKeyDown={onKey}
+      onPointerDown={onDown}
+      onPointerUp={onUp}
+      onPointerCancel={() => (drag.current = null)}
+    >
+      <div className="ys__track" style={{ '--at': at }}>
+        {slides.map((x, k) => (
+          <div
+            key={k}
+            className={`ys__slide${k === at ? ' is-on' : ''}`}
+            role="group"
+            aria-roledescription={t('journey.slide')}
+            aria-label={t('journey.slideOf', { n: k + 1, total: n })}
+            aria-hidden={k !== at}
+          >
+            {x.src ? (
+              <button type="button" className="ys__img" tabIndex={tabbable && k === at ? undefined : -1} onClick={() => onOpen(photos.indexOf(x))} aria-label={t('cs.open', { label: label(x, k) })} draggable={false}>
+                <img src={x.src} alt={label(x, k)} loading={k === 0 ? undefined : 'lazy'} decoding="async" draggable={false} />
               </button>
-            ) : k === 0 && !compact ? (
-              <div className="yp__illus" aria-hidden="true"><YearVisual i={i} /></div>
             ) : (
-              <div className="yp__ph" aria-hidden="true">
-                <span className="yp__plus">+</span>
-                <span className="yp__label">{t('journey.slot', { n: k + 1 })} · {m.y}</span>
-                <span className="yp__hint">{t('journey.slotHint')}</span>
+              <div className="ys__illus" aria-hidden="true"><YearVisual i={i} /></div>
+            )}
+            {x.caption && <p className="ys__cap">{x.caption}</p>}
+          </div>
+        ))}
+      </div>
+      {n > 1 && (
+        <>
+          <button type="button" className="ys__arrow ys__arrow--prev" onClick={() => go(at - 1)} tabIndex={tabbable ? undefined : -1} aria-label={t('journey.prev')}>
+            <span aria-hidden="true">←</span>
+          </button>
+          <button type="button" className="ys__arrow ys__arrow--next" onClick={() => go(at + 1)} tabIndex={tabbable ? undefined : -1} aria-label={t('journey.next')}>
+            <span aria-hidden="true">→</span>
+          </button>
+          <div className="ys__foot">
+            {s.dots !== false && (
+              <div className="ys__dots">
+                {slides.map((_, k) => (
+                  <button key={k} type="button" className={k === at ? 'is-on' : ''} aria-current={k === at ? 'true' : undefined} tabIndex={tabbable ? undefined : -1} onClick={() => go(k)} aria-label={t('journey.goto', { n: k + 1 })} />
+                ))}
               </div>
             )}
+            {s.counter !== false && <span className="ys__count" aria-live="polite">{at + 1} / {n}</span>}
           </div>
-        );
-      })}
-      {hidden.length > 0 && (
-        <button type="button" className="yp__more" tabIndex={tabbable ? undefined : -1} onClick={() => onOpen(real.indexOf(hidden[0]))}>+{hidden.length}</button>
+        </>
       )}
     </div>
   );
 }
 
 export default function Journey() {
-  const { timeline, text } = useContent();
+  const { timeline, text, storySettings } = useContent();
   const t = text.journey;
   const tr = useT();
   const [sel, setActive] = useState(0);
@@ -166,10 +228,10 @@ export default function Journey() {
               <div className="journey__frame">
                 {timeline.map((m, i) => (
                   <div key={`${m.y}-${i}`} className={`journey__panel${i === active ? ' is-on' : ''}`} aria-hidden={i !== active}>
-                    <YearPhotos m={m} i={i} tabbable={i === active} onOpen={(k) => setViewer({ y: i, k })} />
+                    <YearSlider m={m} i={i} settings={storySettings} tabbable={i === active} onOpen={(k) => setViewer({ y: i, k })} />
                   </div>
                 ))}
-                {!(cur.photos || []).some((p) => p.src) && <span className="journey__tag">{tr('journey.illustrative', { year: cur.y })}</span>}
+                {!cur.cover && !(cur.photos || []).some((p) => p.src) && <span className="journey__tag">{tr('journey.illustrative', { year: cur.y })}</span>}
               </div>
             </div>
           </div>
@@ -191,7 +253,7 @@ export default function Journey() {
                   ))}
                 </ul>
                 <div className="journey__photos only-mob">
-                  <YearPhotos m={m} i={i} compact onOpen={(k) => setViewer({ y: i, k })} />
+                  <YearSlider m={m} i={i} settings={storySettings} onOpen={(k) => setViewer({ y: i, k })} />
                 </div>
               </li>
             ))}
@@ -202,10 +264,10 @@ export default function Journey() {
         <Lightbox
           start={viewer.k}
           onClose={() => setViewer(null)}
-          images={timeline[viewer.y].photos.filter((p) => p.src).map((p, k) => ({
-            src: p.src,
-            caption: [timeline[viewer.y].y, p.caption].filter(Boolean).join(' · '),
-            alt: p.caption || tr('journey.photoAlt', { n: k + 1, year: timeline[viewer.y].y }),
+          images={yearSlides(timeline[viewer.y]).filter((x) => x.src).map((x, k) => ({
+            src: x.src,
+            caption: [timeline[viewer.y].y, x.caption].filter(Boolean).join(' · '),
+            alt: x.alt || x.caption || tr('journey.photoAlt', { n: k + 1, year: timeline[viewer.y].y }),
           }))}
         />
       )}

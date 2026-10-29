@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { migrateContent } from '../../shared/migrate.js';
+import { defaultContent } from '../../shared/default-content.js';
 import { validateContent, publicView } from '../../shared/schema.js';
 
 const old = JSON.parse(fs.readFileSync(new URL('./fixtures/v4-content.json', import.meta.url), 'utf8'));
@@ -11,8 +12,9 @@ test('v4 content: valid after migration (dashboard can save), new sections fille
   const v = validateContent(migrateContent(old));
   assert.deepEqual(v.errors, []);
   const pub = publicView(v.value);
-  assert.equal(pub.tools.length, 16);
-  assert.ok(pub.tools.reduce((n, c) => n + c.tools.length, 0) === 55, "all 55 tools of the list");
+  assert.equal(pub.tools.length, 9, 'the 9 categories of the owner’s table');
+  assert.equal(pub.tools.reduce((n, c) => n + c.tools.length, 0), 24, 'the 24 tools to display');
+  assert.ok(!pub.tools.flatMap((c) => c.tools).some((t) => t.name === 'YouTube Studio'), 'YouTube Studio was crossed out');
   assert.deepEqual(pub.contactPaths.map((c) => c.id), ['work', 'collab', 'share', 'booking']);
   assert.equal(pub.booking.provider, 'builtin');
   assert.equal(pub.booking.open, false, 'bookings stay closed until the owner opens them');
@@ -20,15 +22,18 @@ test('v4 content: valid after migration (dashboard can save), new sections fille
   assert.equal(pub.stats.length, 2);
 });
 
-test('tools list: missing reference tools are merged once; deleted ones are not brought back', () => {
+test('tools list v2: the owner’s list replaces the earlier one once, keeping logos/links already set', () => {
   const doc = structuredClone(old);
-  doc.tools = [{ title: 'Digital Advertising', visible: true, tools: [{ name: 'Meta Ads Manager', description: '', url: '', icon: '', visible: true }] }];
+  doc.tools = [{ title: 'Digital Advertising', visible: true, tools: [{ name: 'Meta Ads Manager', description: '', url: 'https://example.com/ads', icon: '/uploads/meta.png', visible: true }] }];
+  doc.toolsSeed = 1;
   const m = migrateContent(doc);
-  assert.equal(m.tools.length, 16);
-  assert.equal(m.tools[0].tools.length, 2, 'TikTok Ads Manager added to the existing category');
-  m.tools[0].tools = m.tools[0].tools.filter((t) => t.name !== 'TikTok Ads Manager');
-  const again = migrateContent(m);
-  assert.equal(again.tools[0].tools.length, 1, 'stays deleted');
+  assert.equal(m.tools.filter((c) => c.visible).length, 9);
+  const meta = m.tools[0].tools.find((t) => t.name === 'Meta Ads Manager');
+  assert.equal(meta.icon, '/uploads/meta.png');
+  assert.equal(meta.url, 'https://example.com/ads');
+  assert.ok(m.tools.some((c) => !c.visible && c.title === 'E-commerce & CMS'), 'the rest of the earlier list is kept, hidden');
+  m.tools[0].tools = m.tools[0].tools.filter((t) => t.name !== 'Google Ads');
+  assert.equal(migrateContent(m).tools[0].tools.length, 2, 'a later deletion stays deleted');
 });
 
 test('tool names are never auto-translated (an earlier "Later" → "سنوات" is corrected)', () => {
@@ -39,4 +44,15 @@ test('tool names are never auto-translated (an earlier "Later" → "سنوات" 
   const fixed = migrateContent(doc).tools[1].tools.find((t) => t.name === 'Later');
   assert.equal(fixed.i18n.ar.name, 'Later');
   assert.equal(fixed.i18n.fr.name, 'Plus tard', 'a name changed on purpose is kept');
+});
+
+test('social links: filled once where empty, owner changes kept', () => {
+  const doc = structuredClone(defaultContent);
+  delete doc.socialsSeed;
+  doc.site.socials = { instagram: '', linkedin: 'https://linkedin.com/in/kept', youtube: '' };
+  const out = migrateContent(doc);
+  assert.equal(out.site.socials.instagram, 'https://www.instagram.com/nourhane_thabet');
+  assert.equal(out.site.socials.linkedin, 'https://linkedin.com/in/kept');
+  out.site.socials.instagram = '';
+  assert.equal(migrateContent(out).site.socials.instagram, '', 'a link removed later is not brought back');
 });

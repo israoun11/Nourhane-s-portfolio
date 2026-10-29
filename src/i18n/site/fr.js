@@ -339,4 +339,9 @@ export default {
   'cs.ctaA': "Un projet similaire ?",
   'cs.ctaB': "Parlons-en.",
   'cs.ctaBtn': "TRAVAILLONS ENSEMBLE",
+  'tools.filter': "Filtrer par catégorie",
+  'tools.all': "Tous",
+  'tools.list': "Outils",
+  'tools.mine': "Ma boîte à outils",
+  'tools.visit': "Site officiel",
 };

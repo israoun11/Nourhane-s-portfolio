@@ -362,4 +362,9 @@ export default {
   'cs.ctaA': "Have a similar project?",
   'cs.ctaB': "Let's talk.",
   'cs.ctaBtn': "LET'S WORK TOGETHER",
+  'tools.filter': "Filter by category",
+  'tools.all': "All",
+  'tools.list': "Tools",
+  'tools.mine': "My toolkit",
+  'tools.visit': "Official website",
 };

@@ -175,7 +175,7 @@ export default function Work() {
                 const l = layout[i % layout.length];
                 return (
                   <Link key={`${filter}-${p.slug}`} to={`/work/${p.slug}`} className="card pf-card" data-cursor={tr("cursor.view")} data-reveal style={{ flex: l.flex, marginTop: l.offset }}>
-                    <Media src={p.cover} alt={tr('work.coverAlt', { title: p.title })} bg={p.bg} art={p.art} ratio={l.ratio} label={tr('work.imagePh')} className="pf-card__media" reveal parallax />
+                    <Media src={p.cover} alt={p.coverAlt || tr('work.coverAlt', { title: p.title })} bg={p.bg} art={p.art} framed ratio={l.ratio} label={tr('work.imagePh')} className="pf-card__media" reveal parallax />
                     <div className="pf-card__meta">
                       <span>{p.n} · {p.tags.join(' · ').toUpperCase()}</span>
                       <span>{orPlaceholder(p.year, tr('cs.yearPh'))}</span>

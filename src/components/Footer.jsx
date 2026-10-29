@@ -9,7 +9,10 @@ export default function Footer() {
   const f = text.footer;
   // the uploaded CV PDF first, otherwise the CV link
   const cvUrl = site.cvFile || site.cv || '';
+  const wa = String(site.whatsapp || '').replace(/\D/g, '');
   const socials = [
+    [t('contact.m.email'), site.email ? `mailto:${site.email}` : ''],
+    ['WhatsApp', wa ? `https://wa.me/${wa}${site.whatsappMessage ? `?text=${encodeURIComponent(site.whatsappMessage)}` : ''}` : ''],
     ['LinkedIn', site.socials.linkedin],
     ['Instagram', site.socials.instagram],
     ['YouTube', site.socials.youtube],
@@ -40,7 +43,7 @@ export default function Footer() {
             </Link>
             {socials.length ? (
               socials.map(([label, url]) => (
-                <a key={label} className="ulink" href={url} target="_blank" rel="noreferrer">
+                <a key={label} className="ulink" href={url} {...(url.startsWith('mailto:') ? {} : { target: '_blank', rel: 'noreferrer' })}>
                   {label} ↗
                 </a>
               ))

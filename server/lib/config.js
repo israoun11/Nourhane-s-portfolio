@@ -36,6 +36,21 @@ export function loadConfig(env = process.env) {
     downloadSecret: env.DOWNLOAD_SECRET || '',
     calendlyToken: env.CALENDLY_TOKEN || '',
     calcomApiKey: env.CALCOM_API_KEY || '',
+    // read-only reporting (dashboard → Analytics & Paid Ads); all optional
+    googleServiceAccount: env.GOOGLE_SERVICE_ACCOUNT_JSON || '',
+    ga4PropertyId: env.GA4_PROPERTY_ID || '',
+    gscSiteUrl: env.GSC_SITE_URL || '',
+    googleAds: {
+      developerToken: env.GOOGLE_ADS_DEVELOPER_TOKEN || '',
+      clientId: env.GOOGLE_ADS_CLIENT_ID || '',
+      clientSecret: env.GOOGLE_ADS_CLIENT_SECRET || '',
+      refreshToken: env.GOOGLE_ADS_REFRESH_TOKEN || '',
+      customerId: env.GOOGLE_ADS_CUSTOMER_ID || '',
+      loginCustomerId: env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || '',
+      apiVersion: env.GOOGLE_ADS_API_VERSION || 'v21',
+    },
+    meta: { accessToken: env.META_ACCESS_TOKEN || '', adAccountId: env.META_AD_ACCOUNT_ID || '', apiVersion: env.META_API_VERSION || 'v21.0' },
+    ai: { provider: (env.AI_PROVIDER || '').toLowerCase(), apiKey: env.AI_API_KEY || '', model: env.AI_MODEL || '' },
     allowFileInProduction: bool(env.ALLOW_FILE_STORAGE_IN_PRODUCTION, false),
     allowedOrigins: (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
   };

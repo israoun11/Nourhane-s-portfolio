@@ -340,4 +340,9 @@ export default {
   'cs.ctaA': "لديك مشروع مشابه؟",
   'cs.ctaB': "لنتحدث.",
   'cs.ctaBtn': "لنعمل معًا",
+  'tools.filter': "تصفية حسب الفئة",
+  'tools.all': "الكل",
+  'tools.list': "الأدوات",
+  'tools.mine': "أدواتي",
+  'tools.visit': "الموقع الرسمي",
 };

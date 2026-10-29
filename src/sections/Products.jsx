@@ -18,12 +18,18 @@ export default function Products() {
           {products.map((p, i) => (
             <article key={`${p.t}-${i}`} className="prod__card" data-reveal style={{ '--d': `${i * 0.07}s` }}>
               <div className="prod__art" aria-hidden={!p.image} style={{ background: p.bg }}>
-                {p.image ? <img src={p.image} alt={p.t} loading="lazy" /> : <span style={{ boxShadow: `10px 10px 0 ${p.c}` }} />}
+                {p.image ? <img src={p.image} alt={p.imageAlt || p.t} loading="lazy" /> : <span style={{ boxShadow: `10px 10px 0 ${p.c}` }} />}
               </div>
-              <span className="status status--soon">{t('status.soon')}</span>
+              <span className={`status ${p.kind === 'soon' ? 'status--soon' : 'status--available'}`}>
+                {p.kind === 'free' ? t('product.free') : p.kind === 'paid' ? (p.price ? `${p.price} ${p.currency || ''}`.trim() : t('product.paid')) : t('status.soon')}
+              </span>
               <h3>{p.t}</h3>
               <p>{p.d}</p>
-              <Link to="/#contact" className="ulink prod__link">{t('products.notify')}</Link>
+              {p.kind === 'soon' ? (
+                <Link to="/#contact" className="ulink prod__link">{t('products.notify')}</Link>
+              ) : (
+                <Link to={`/resources/${p.slug}`} className="ulink prod__link stretched">{p.kind === 'free' ? t('products.getFree') : t('products.details')}</Link>
+              )}
             </article>
           ))}
         </div>

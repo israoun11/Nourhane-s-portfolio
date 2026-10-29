@@ -25,19 +25,44 @@ const ListCard = ({ k }) => (
 );
 
 // ═════════════ My story ═════════════
+function slidesOf(m) {
+  const photos = (m.photos || []).filter((p) => p.src);
+  const cover = { cover: true, src: m.cover };
+  return m.coverPosition === 'last' ? [...photos, cover] : [cover, ...photos];
+}
+
 export function StoryPage() {
   const t = useAdminT();
+  const { draft } = useEditor();
+  const [y, setY] = useState(0);
+  const year = draft.timeline[Math.min(y, draft.timeline.length - 1)];
   return (
     <>
-      <PageHead title={t('ad.mod.story')} intro={t('ad.story.mosaicIntro')}>
-        <a className="ad-btn ad-btn--ghost" href="/#story" target="_blank" rel="noreferrer">{t('ad.nav.view')}</a>
-      </PageHead>
+      <PageHead title={t('ad.mod.story')} intro={t('ad.mod.storyIntro')} />
+      {year && (
+        <Card title={t('ad.story.order')} intro={t('ad.story.orderIntro')}>
+          <div className="ad-chips" role="group" aria-label={t('ad.story.year')}>
+            {draft.timeline.map((m, i) => (
+              <button key={i} type="button" className={`ad-chip${i === y ? ' is-on' : ''}`} aria-pressed={i === y} onClick={() => setY(i)}>{m.y}</button>
+            ))}
+          </div>
+          <ol className="ad-slides">
+            {slidesOf(year).map((s, i) => (
+              <li key={i} className={`ad-slide${s.cover ? ' is-cover' : ''}`}>
+                {s.src ? <img src={s.src} alt="" /> : <span>{t('ad.story.illustration')}</span>}
+                <b>{i + 1}{s.cover ? ` · ${t('ad.story.cover')}` : ''}</b>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      )}
+      <Card title={t('ad.story.settings')}>
+        <ObjectFields def={F.storySettings} path={['storySettings']} />
+      </Card>
       <Card title={t('ad.story.texts')}>
         <ObjectFields def={F.text.fields.journey} path={['text', 'journey']} />
       </Card>
-      <Card title={t('ad.story.years')}>
-        <ListField def={F.timeline} path={['timeline']} flat />
-      </Card>
+      <ListCard k="timeline" />
     </>
   );
 }
@@ -615,11 +640,276 @@ export function IntegrationsPage({ status }) {
                 <p className="ad-help">{t(`ad.int.${k}Text`)}</p>
               </div>
               <span className={`ad-badge ${s && s.connected ? 'ad-badge--ok' : 'ad-badge--muted'}`}>{s && s.connected ? t('ad.int.connected') : t('ad.int.notConnected')}</span>
-              {k !== 'booking' && <span className="ad-badge ad-badge--xs ad-badge--muted">{t('ad.int.phase2')}</span>}
+              {s && !s.connected && s.needs && <code className="ad-help" dir="ltr">{s.needs.join(', ')}</code>}
             </li>
           ))}
         </ul>
         <p className="ad-help">{t('ad.int.secrets')}</p>
+      </Card>
+    </>
+  );
+}
+
+// ═════════════ Reports: Analytics & Search, Paid ads, AI assistant ═════════════
+const nf = (v, d = 0) => (v === null || v === undefined || Number.isNaN(v) ? '—' : Number(v).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }));
+const pct = (v) => (v === null || v === undefined ? '—' : `${(v * 100).toFixed(1)} %`);
+
+function useReport(kind, days) {
+  const [data, setData] = useState(null);
+  const load = useCallback(async () => {
+    setData(null);
+    try {
+      setData(await api(`/api/admin/insights/${kind}?days=${days}`));
+    } catch (e) {
+      setData({ connected: true, error: e.message });
+    }
+  }, [kind, days]);
+  useEffect(() => {
+    load();
+  }, [load]);
+  return [data, load];
+}
+
+/** Honest state of a report: loading, not connected (with what is missing), error. */
+function ReportState({ data, children }) {
+  const t = useAdminT();
+  if (!data) return <p className="ad-empty" role="status">{t('ad.in.loading')}</p>;
+  if (!data.connected) {
+    return (
+      <div className="ad-alert ad-alert--warn" role="status">
+        <b>{t('ad.int.notConnected')}.</b> {t('ad.rep.needs')} <code dir="ltr">{(data.needs || []).join(', ')}</code>
+      </div>
+    );
+  }
+  if (data.error) return <p className="ad-error" role="alert">{t('ad.rep.error', { msg: data.error })}</p>;
+  return children;
+}
+
+function Days({ days, setDays }) {
+  const t = useAdminT();
+  return (
+    <div className="ad-chips" role="group" aria-label={t('ad.rep.period')}>
+      {[7, 28, 90].map((d) => (
+        <button key={d} type="button" className={`ad-chip${days === d ? ' is-on' : ''}`} aria-pressed={days === d} onClick={() => setDays(d)}>{t('ad.rep.days', { n: d })}</button>
+      ))}
+    </div>
+  );
+}
+
+function Bars({ rows, k }) {
+  const max = Math.max(1, ...rows.map((r) => r[k] || 0));
+  return (
+    <div className="ad-bars" aria-hidden="true">
+      {rows.map((r, i) => <span key={i} title={`${r.date}: ${r[k]}`} style={{ height: `${Math.max(2, ((r[k] || 0) / max) * 100)}%` }} />)}
+    </div>
+  );
+}
+
+function Stat({ label, value, sub }) {
+  return <div className="ad-stat"><span>{label}</span><b>{value}</b>{sub && <small>{sub}</small>}</div>;
+}
+
+export function AnalyticsPage() {
+  const t = useAdminT();
+  const [days, setDays] = useState(28);
+  const [ga, reloadGa] = useReport('analytics', days);
+  const [sc, reloadSc] = useReport('search', days);
+  return (
+    <>
+      <PageHead title={t('ad.mod.analytics')} intro={t('ad.rep.analyticsIntro')}>
+        <button type="button" className="ad-btn ad-btn--ghost" onClick={() => { reloadGa(); reloadSc(); }}>{t('ad.in.refresh')}</button>
+      </PageHead>
+      <Days days={days} setDays={setDays} />
+      <Card title="Google Analytics 4">
+        <ReportState data={ga}>
+          {ga && ga.totals && (
+            <>
+              <div className="ad-stats ad-stats--inline">
+                <Stat label={t('ad.rep.sessions')} value={nf(ga.totals.sessions)} />
+                <Stat label={t('ad.rep.users')} value={nf(ga.totals.users)} />
+                <Stat label={t('ad.rep.conversions')} value={nf(ga.totals.conversions)} />
+                <Stat label={t('ad.rep.organicPaid')} value={`${nf(ga.organicVsPaid.organic)} / ${nf(ga.organicVsPaid.paid)}`} sub={t('ad.rep.organicPaidSub')} />
+              </div>
+              <Bars rows={ga.daily} k="sessions" />
+              <div className="ad-table-wrap">
+                <table className="ad-table">
+                  <thead><tr><th>{t('ad.rep.channel')}</th><th>{t('ad.rep.sessions')}</th><th>{t('ad.rep.users')}</th><th>{t('ad.rep.conversions')}</th></tr></thead>
+                  <tbody>{ga.channels.map((c) => <tr key={c.channel}><td>{c.channel}</td><td>{nf(c.sessions)}</td><td>{nf(c.users)}</td><td>{nf(c.conversions)}</td></tr>)}</tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </ReportState>
+      </Card>
+      <Card title="Google Search Console">
+        <ReportState data={sc}>
+          {sc && sc.totals && (
+            <>
+              <div className="ad-stats ad-stats--inline">
+                <Stat label={t('ad.rep.clicks')} value={nf(sc.totals.clicks)} />
+                <Stat label={t('ad.rep.impressions')} value={nf(sc.totals.impressions)} />
+                <Stat label="CTR" value={pct(sc.totals.ctr)} />
+                <Stat label={t('ad.rep.position')} value={nf(sc.totals.position, 1)} />
+              </div>
+              <Bars rows={sc.daily} k="clicks" />
+              <div className="ad-cols">
+                {[['queries', 'query'], ['pages', 'page']].map(([list, key]) => (
+                  <div key={list} className="ad-table-wrap">
+                    <table className="ad-table">
+                      <thead><tr><th>{t(`ad.rep.${key}`)}</th><th>{t('ad.rep.clicks')}</th><th>{t('ad.rep.impressions')}</th><th>{t('ad.rep.position')}</th></tr></thead>
+                      <tbody>{sc[list].map((r) => <tr key={r[key]}><td dir="auto">{r[key]}</td><td>{nf(r.clicks)}</td><td>{nf(r.impressions)}</td><td>{nf(r.position, 1)}</td></tr>)}</tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </ReportState>
+      </Card>
+      <Card title={t('ad.rep.cwv')}>
+        <p className="ad-help">{t('ad.rep.cwvText')}</p>
+        <a className="ad-btn ad-btn--ghost" href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(window.location.origin)}`} target="_blank" rel="noreferrer">PageSpeed Insights ↗</a>
+      </Card>
+    </>
+  );
+}
+
+function CampaignTable({ data, currency, meta = false }) {
+  const t = useAdminT();
+  return (
+    <>
+      <div className="ad-stats ad-stats--inline">
+        <Stat label={t('ad.rep.spend')} value={`${nf(data.totals.spend, 2)} ${currency}`} />
+        <Stat label={t('ad.rep.impressions')} value={nf(data.totals.impressions)} />
+        <Stat label={t('ad.rep.clicks')} value={nf(data.totals.clicks)} sub={`CTR ${pct(data.totals.ctr)} · CPC ${nf(data.totals.cpc, 2)}`} />
+        <Stat label={t('ad.rep.conversions')} value={nf(data.totals.conversions, 1)} sub={`CPA ${nf(data.totals.cpa, 2)} · ROAS ${nf(data.totals.roas, 2)}`} />
+        {meta && <Stat label={t('ad.rep.leads')} value={nf(data.totals.leads)} />}
+      </div>
+      {data.campaigns.length === 0 ? (
+        <p className="ad-empty">{t('ad.rep.noCampaigns')}</p>
+      ) : (
+        <div className="ad-table-wrap">
+          <table className="ad-table">
+            <thead>
+              <tr>
+                <th>{t('ad.rep.campaign')}</th>{!meta && <th>{t('ad.rep.status')}</th>}<th>{t('ad.rep.spend')}</th><th>{t('ad.rep.impressions')}</th>{meta && <th>{t('ad.rep.reach')}</th>}
+                <th>{t('ad.rep.clicks')}</th><th>CTR</th><th>CPC</th>{meta && <th>CPM</th>}<th>{t('ad.rep.conversions')}</th>{meta && <th>{t('ad.rep.leads')}</th>}<th>CPA</th><th>ROAS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.campaigns.map((c) => (
+                <tr key={c.id}>
+                  <td dir="auto">{c.name}</td>{!meta && <td>{c.status}</td>}<td>{nf(c.spend, 2)}</td><td>{nf(c.impressions)}</td>{meta && <td>{nf(c.reach)}</td>}
+                  <td>{nf(c.clicks)}</td><td>{pct(c.ctr)}</td><td>{nf(c.cpc, 2)}</td>{meta && <td>{nf(c.cpm, 2)}</td>}<td>{nf(c.conversions, 1)}</td>{meta && <td>{nf(c.leads)}</td>}<td>{nf(c.cpa, 2)}</td><td>{nf(c.roas, 2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}
+
+export function AdsPage() {
+  const t = useAdminT();
+  const { draft } = useEditor();
+  const [days, setDays] = useState(28);
+  const [g, reloadG] = useReport('google-ads', days);
+  const [m, reloadM] = useReport('meta-ads', days);
+  const ads = draft.ads || {};
+  const cur = ads.currency || '';
+  const alert = (rep, limit) => rep && rep.totals && limit > 0 && days === 28 && rep.totals.spend > limit;
+  const both = g && m && g.totals && m.totals;
+  return (
+    <>
+      <PageHead title={t('ad.mod.ads')} intro={t('ad.rep.adsIntro')}>
+        <button type="button" className="ad-btn ad-btn--ghost" onClick={() => { reloadG(); reloadM(); }}>{t('ad.in.refresh')}</button>
+      </PageHead>
+      <Days days={days} setDays={setDays} />
+      {alert(g, ads.googleMonthly) && <div className="ad-alert ad-alert--warn" role="alert">{t('ad.rep.over', { name: 'Google Ads', spend: nf(g.totals.spend, 2), limit: nf(ads.googleMonthly, 2), cur })}</div>}
+      {alert(m, ads.metaMonthly) && <div className="ad-alert ad-alert--warn" role="alert">{t('ad.rep.over', { name: 'Meta Ads', spend: nf(m.totals.spend, 2), limit: nf(ads.metaMonthly, 2), cur })}</div>}
+      {both && (
+        <Card title={t('ad.rep.compare')}>
+          <div className="ad-table-wrap">
+            <table className="ad-table">
+              <thead><tr><th /><th>{t('ad.rep.spend')}</th><th>{t('ad.rep.clicks')}</th><th>CTR</th><th>CPC</th><th>{t('ad.rep.conversions')}</th><th>CPA</th><th>ROAS</th></tr></thead>
+              <tbody>
+                {[['Google Ads', g.totals], ['Meta Ads', m.totals]].map(([n, x]) => (
+                  <tr key={n}><td>{n}</td><td>{nf(x.spend, 2)} {cur}</td><td>{nf(x.clicks)}</td><td>{pct(x.ctr)}</td><td>{nf(x.cpc, 2)}</td><td>{nf(x.conversions, 1)}</td><td>{nf(x.cpa, 2)}</td><td>{nf(x.roas, 2)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+      <Card title="Google Ads"><ReportState data={g}>{g && g.totals && <CampaignTable data={g} currency={cur} />}</ReportState></Card>
+      <Card title="Meta Ads (Facebook & Instagram)"><ReportState data={m}>{m && m.totals && <CampaignTable data={m} currency={cur} meta />}</ReportState></Card>
+      <Card title={t('ad.rep.budget')} intro={t('ad.rep.budgetIntro')}>
+        <ObjectFields def={F.ads} path={['ads']} />
+      </Card>
+      <p className="ad-help">{t('ad.rep.readOnly')}</p>
+    </>
+  );
+}
+
+export function AiPage() {
+  const t = useAdminT();
+  const toast = useToast();
+  const [task, setTask] = useState('meta');
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState(null);
+  const [status, setStatus] = useState(null);
+  useEffect(() => {
+    api('/api/admin/status').then((s) => setStatus(s.integrations && s.integrations.ai), () => {});
+  }, []);
+  const run = async () => {
+    setBusy(true);
+    setRes(null);
+    try {
+      setRes(await api('/api/admin/ai', { method: 'POST', json: { task, input } }));
+    } catch (e) {
+      setRes({ error: e.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const useReportData = async () => {
+    try {
+      const [g, m, a] = await Promise.all(['google-ads', 'meta-ads', 'analytics'].map((k) => api(`/api/admin/insights/${k}?days=28`)));
+      setInput(JSON.stringify({ googleAds: g.totals ? g : 'not connected', metaAds: m.totals ? m : 'not connected', analytics: a.totals ? a.totals : 'not connected' }, null, 1));
+      setTask('report');
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+  return (
+    <>
+      <PageHead title={t('ad.mod.ai')} intro={t('ad.ai.intro')} />
+      {status && !status.connected && (
+        <div className="ad-alert ad-alert--warn" role="status"><b>{t('ad.int.notConnected')}.</b> {t('ad.rep.needs')} <code dir="ltr">{status.needs.join(', ')}</code></div>
+      )}
+      <Card>
+        <label className="ad-label" htmlFor="ai-task">{t('ad.ai.task')}</label>
+        <select id="ai-task" className="ad-input" value={task} onChange={(e) => setTask(e.target.value)}>
+          {['meta', 'keywords', 'ideas', 'conversion', 'report'].map((k) => <option key={k} value={k}>{t(`ad.ai.t.${k}`)}</option>)}
+        </select>
+        <label className="ad-label" htmlFor="ai-input">{t('ad.ai.input')}</label>
+        <textarea id="ai-input" className="ad-input" rows={8} value={input} onChange={(e) => setInput(e.target.value)} placeholder={t('ad.ai.placeholder')} />
+        <div className="ad-row">
+          <button type="button" className="ad-btn ad-btn--primary" onClick={run} disabled={busy || !input.trim()}>{busy ? t('ad.ai.working') : t('ad.ai.run')}</button>
+          <button type="button" className="ad-btn ad-btn--ghost" onClick={useReportData}>{t('ad.ai.useData')}</button>
+        </div>
+        {res && res.error && <p className="ad-error" role="alert">{res.error}</p>}
+        {res && res.connected === false && <p className="ad-help">{t('ad.rep.needs')} <code dir="ltr">{(res.needs || []).join(', ')}</code></p>}
+        {res && res.draft && (
+          <div className="ad-draft">
+            <p className="ad-help">{t('ad.ai.review')}</p>
+            <pre dir="auto">{res.draft}</pre>
+            <button type="button" className="ad-btn ad-btn--ghost" onClick={() => navigator.clipboard && navigator.clipboard.writeText(res.draft).then(() => toast(t('ad.ai.copied')))}>{t('ad.ai.copy')}</button>
+          </div>
+        )}
       </Card>
     </>
   );

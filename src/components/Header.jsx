@@ -5,6 +5,34 @@ import { Button } from './ui.jsx';
 import { isReduced, useScrollVar } from '../hooks/motion.js';
 import { useT } from '../i18n/index.jsx';
 import LangSwitcher from './LangSwitcher.jsx';
+import { useContent } from '../content/ContentProvider.jsx';
+
+const SOCIAL_ICONS = {
+  instagram: <><rect x="4" y="4" width="16" height="16" rx="4.5" /><circle cx="12" cy="12" r="3.6" /><circle cx="16.9" cy="7.1" r="0.6" /></>,
+  linkedin: <><rect x="4" y="4" width="16" height="16" rx="2.5" /><path d="M8 10.5V16 M8 8v.01 M11.5 16v-5.5 M11.5 13a2.5 2.5 0 0 1 5 0V16" /></>,
+};
+
+// Nourhane's profiles: used whenever the dashboard field is empty, so the buttons are always there.
+const PROFILE_LINKS = {
+  instagram: 'https://www.instagram.com/nourhane_thabet',
+  linkedin: 'https://www.linkedin.com/in/nourhane-thabet-a656b729b',
+};
+
+/** Instagram + LinkedIn buttons in the menu bar (links editable in the dashboard). */
+function Socials({ className = '' }) {
+  const content = useContent() || {};
+  const so = (content.site && content.site.socials) || {};
+  const items = [['instagram', 'Instagram'], ['linkedin', 'LinkedIn']].map(([k, label]) => [k, label, so[k] || PROFILE_LINKS[k]]);
+  return (
+    <div className={`hsoc ${className}`}>
+      {items.map(([k, label, href]) => (
+        <a key={k} className="hsoc__btn" href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">{SOCIAL_ICONS[k]}</svg>
+        </a>
+      ))}
+    </div>
+  );
+}
 
 const sectionIds = nav.map((n) => n.id).filter(Boolean);
 
@@ -72,6 +100,7 @@ export default function Header({ variant = 'light', progress = true }) {
             ))}
           </div>
           <div className="header__end">
+            <Socials className={variant === 'dark' ? 'hsoc--light' : ''} />
             <LangSwitcher className={variant === 'dark' ? 'lang--light' : ''} />
             <Button to="/#contact" size="sm" variant={variant === 'dark' ? 'pink' : 'blue'} arrow magnetic className="only-desk">
               {t('header.connect')}
@@ -128,6 +157,7 @@ function MobileMenu({ links, onClose, closing }) {
       </nav>
       <div className="mmenu__foot">
         <LangSwitcher className="lang--light lang--lg" />
+        <Socials className="hsoc--light hsoc--lg" />
         <Button to="/#contact" onClick={onClose} className="mmenu__cta" arrow>
           {t('header.connect')}
         </Button>

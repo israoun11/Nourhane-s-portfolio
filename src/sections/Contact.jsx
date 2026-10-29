@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Button, Words, countWords } from '../components/ui.jsx';
 import { useI18n } from '../i18n/index.jsx';
+import { getSource } from '../lib/source.js';
+import { BuiltinBooking } from './Booking.jsx';
 
 const EMAIL_RE = /^[^\s@<>"']+@[^\s@<>"'.]+(\.[^\s@<>"'.]+)+$/;
 const LIMITS = { name: 100, messageMin: 20, messageMax: 5000 }; // same rules as the server (server/lib/messages.js)
@@ -23,12 +25,104 @@ function check(data) {
   return e;
 }
 
+const ICONS = {
+  email: <path d="M3 6h18v12H3z M3 7l9 6 9-6" />,
+  whatsapp: <path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z M9 9.5c0 3 2.5 5.5 5.5 5.5l1.3-1.3-2-1-1 .8a4 4 0 0 1-2.3-2.3l.8-1-1-2z" />,
+  instagram: <><rect x="4" y="4" width="16" height="16" rx="4.5" /><circle cx="12" cy="12" r="3.6" /><circle cx="16.9" cy="7.1" r="0.6" /></>,
+  linkedin: <><rect x="4" y="4" width="16" height="16" rx="2.5" /><path d="M8 10.5V16 M8 8v.01 M11.5 16v-5.5 M11.5 13a2.5 2.5 0 0 1 5 0V16" /></>,
+};
+const Icon = ({ k }) => <svg className="cm__icon" viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg>;
+
+/** Email, WhatsApp, Instagram, LinkedIn — each shown only once it is set in the dashboard. */
+export function ContactMethods({ site }) {
+  const { t } = useI18n();
+  const digits = String(site.whatsapp || '').replace(/\D/g, '');
+  const items = [
+    site.email && { k: 'email', href: `mailto:${site.email}`, label: t('contact.m.email'), value: site.email },
+    digits && { k: 'whatsapp', href: `https://wa.me/${digits}${site.whatsappMessage ? `?text=${encodeURIComponent(site.whatsappMessage)}` : ''}`, label: t('contact.m.whatsapp'), value: `+${digits}` },
+    site.socials && site.socials.instagram && { k: 'instagram', href: site.socials.instagram, label: t('contact.m.instagram') },
+    site.socials && site.socials.linkedin && { k: 'linkedin', href: site.socials.linkedin, label: t('contact.m.linkedin') },
+  ].filter(Boolean);
+  if (!items.length) return null;
+  return (
+    <ul className="cm" aria-label={t('contact.m.label')}>
+      {items.map((x) => (
+        <li key={x.k}>
+          <a className={`cm__a cm__a--${x.k}`} href={x.href} {...(x.k === 'email' ? {} : { target: '_blank', rel: 'noreferrer' })} aria-label={x.value ? `${x.label}: ${x.value}` : x.label}>
+            <Icon k={x.k} />
+            <span className="cm__label">{x.label}</span>
+            {x.value && <span className="cm__value" dir="ltr">{x.value}</span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The booking calendar of Calendly / Cal.com, shown inside the page. Bookings are confirmed by that service. */
+function BookingPanel({ onMessage }) {
+  const { booking = {} } = useContent();
+  if (booking.provider === 'builtin' || !booking.provider) return <BuiltinBooking onMessage={onMessage} />;
+  return <ExternalBooking booking={booking} onMessage={onMessage} />;
+}
+
+/** Calendly / Cal.com calendar shown inside the page. */
+function ExternalBooking({ booking, onMessage }) {
+  const { t } = useI18n();
+  const types = (booking.types || []).filter((x) => x.url);
+  const [sel, setSel] = useState(0);
+  const base = (types[sel] && types[sel].url) || booking.url;
+  if (!base) {
+    return (
+      <div className="booking booking--empty" role="status">
+        <p>{t('booking.notSet')}</p>
+        <Button type="button" variant="outline" onClick={onMessage}>{t('booking.sendMessage')}</Button>
+      </div>
+    );
+  }
+  let src = base;
+  try {
+    const u = new URL(base);
+    if (booking.provider === 'cal') u.searchParams.set('embed', 'true');
+    else {
+      u.searchParams.set('embed_domain', window.location.hostname);
+      u.searchParams.set('embed_type', 'Inline');
+      u.searchParams.set('hide_gdpr_banner', '1');
+    }
+    src = u.toString();
+  } catch {
+    /* validated by the server already */
+  }
+  return (
+    <div className="booking">
+      {booking.note && <p className="booking__note">{booking.note}</p>}
+      {types.length > 1 && (
+        <div className="booking__types" role="radiogroup" aria-label={t('booking.types')}>
+          {types.map((x, i) => (
+            <button key={x.url} type="button" role="radio" aria-checked={i === sel} className={`chip${i === sel ? ' chip--blue' : ' chip--line'}`} onClick={() => setSel(i)}>
+              {x.name}{x.duration ? ` · ${t('booking.minutes', { n: x.duration })}` : ''}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="booking__frame">
+        <iframe key={src} src={src} title={t('booking.frameTitle')} loading="lazy" />
+      </div>
+      <p className="booking__foot">
+        {t('booking.tz')}{' '}
+        <a className="ulink" href={base} target="_blank" rel="noreferrer">{t('booking.open')} ↗</a>
+      </p>
+    </div>
+  );
+}
+
 export default function Contact() {
-  const { site, contactPaths: allPaths, text } = useContent();
-  // the original three cards (the booking card is managed in the dashboard but not shown here)
-  const contactPaths = allPaths.filter((p) => p.kind !== 'booking');
+  const { site, contactPaths, text } = useContent();
   const { t, lang } = useI18n();
-  const [inquiry, setInquiry] = useState('work');
+  const formPaths = contactPaths.filter((p) => p.kind !== 'booking');
+  const [inquiry, setInquiry] = useState(() => (formPaths[0] ? formPaths[0].id : ''));
+  const current = contactPaths.find((p) => p.id === inquiry);
+  const isBooking = !!current && current.kind === 'booking';
   const [err, setErr] = useState({});
   // idle | sending | sent | error | offline | rate
   const [status, setStatus] = useState('idle');
@@ -45,6 +139,7 @@ export default function Contact() {
       message: f.message.value.trim(),
       lang,
       company: f.company.value, // left empty by people; bots fill it in
+      source: getSource(),
     };
     const next = check(data);
     setErr(next);
@@ -89,6 +184,13 @@ export default function Contact() {
   const bad = (k) => (err[k] ? ' is-invalid' : '');
   const choose = (id) => {
     setInquiry(id);
+    // the booking calendar opens under the cards: bring it into view
+    if ((contactPaths.find((p) => p.id === id) || {}).kind === 'booking') {
+      requestAnimationFrame(() => {
+        const el = document.getElementById('contact-panel');
+        if (el && el.getBoundingClientRect().top > window.innerHeight * 0.7) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
     if (status === 'sent') setStatus('idle');
   };
 
@@ -109,20 +211,29 @@ export default function Contact() {
                 key={p.id}
                 type="button"
                 aria-pressed={on}
-                className={`path${on ? ' is-on' : ''}`}
+                className={`path${on ? ' is-on' : ''}${p.kind === 'booking' ? ' path--booking' : ''}`}
                 onClick={() => choose(p.id)}
                 data-reveal
                 style={{ '--d': `${i * 0.08}s` }}
               >
                 <span className="path__check" aria-hidden="true" />
+                {p.icon && <img className="path__icon" src={p.icon} alt="" />}
                 <span className="path__title">{p.title}</span>
                 <span className="path__text">{p.text}</span>
-                <span className="path__state">{on ? t('contact.selected') : t('contact.choose')}</span>
+                {p.kind === 'booking' ? (
+                  <span className={`path__cta${on ? ' is-on' : ''}`}>{on ? t('contact.selected') : t('contact.bookBtn')}</span>
+                ) : (
+                  <span className="path__state">{on ? t('contact.selected') : t('contact.choose')}</span>
+                )}
               </button>
             );
           })}
         </fieldset>
 
+        <div id="contact-panel" className="contact__panel" />
+        {isBooking ? (
+          <BookingPanel onMessage={() => formPaths[0] && choose(formPaths[0].id)} />
+        ) : (
         <form className="form" noValidate onSubmit={onSubmit} aria-label={t('contact.form')} data-reveal>
           <div className="form__row">
             <label className="field">
@@ -138,7 +249,7 @@ export default function Contact() {
             <label className="field">
               {t('contact.inquiry')}
               <select name="inquiry" value={inquiry} onChange={(e) => choose(e.target.value)}>
-                {contactPaths.map((p) => (
+                {formPaths.map((p) => (
                   <option key={p.id} value={p.id}>{p.title}</option>
                 ))}
               </select>
@@ -173,6 +284,8 @@ export default function Contact() {
             {status === 'rate' && <p role="alert" className="form__msg form__msg--err">{t('contact.rate')}</p>}
           </div>
         </form>
+        )}
+        <ContactMethods site={site} />
       </div>
     </section>
   );

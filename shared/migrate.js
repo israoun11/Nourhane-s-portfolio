@@ -81,7 +81,7 @@ function fillTranslations(def, value) {
 }
 
 /** Version of the reference tools list (raise it when tools are added to DEFAULT_TOOLS). */
-export const TOOLS_SEED = 1;
+export const TOOLS_SEED = 2;
 
 export function migrateContent(input, { translations = true } = {}) {
   if (!isObj(input)) return input;
@@ -91,38 +91,36 @@ export function migrateContent(input, { translations = true } = {}) {
   if (!Array.isArray(doc.logos)) doc.logos = structuredClone(defaultContent.logos);
 
   // Sections added later start with their default content (existing data is never replaced)
-  for (const k of ['leads', 'stats', 'tools', 'booking', 'seo', 'storySettings']) {
+  for (const k of ['leads', 'stats', 'tools', 'booking', 'seo', 'storySettings', 'ads']) {
     if (doc[k] === undefined) doc[k] = structuredClone(defaultContent[k]);
   }
   // Tools list: categories and tools added to the reference list are merged in once per
   // list version (tools the owner deleted afterwards are not brought back).
   if (Array.isArray(doc.tools) && (doc.toolsSeed || 0) < TOOLS_SEED) {
     const key = (v) => normalizeText(v).toLowerCase();
-    for (const ref of defaultContent.tools) {
-      const cat = doc.tools.find((c) => isObj(c) && key(c.title) === key(ref.title));
-      if (!cat) doc.tools.push(structuredClone(ref));
-      else {
-        if (!Array.isArray(cat.tools)) cat.tools = [];
-        for (const t of ref.tools) if (!cat.tools.some((x) => isObj(x) && key(x.name) === key(t.name))) cat.tools.push(structuredClone(t));
-      }
-    }
-  }
-  // Booking: older content (Calendly with no page yet) moves to the built-in calendar, closed.
-  if (isObj(doc.booking)) {
-    const b = doc.booking;
-    const hasExternal = b.url || (Array.isArray(b.types) && b.types.some((x) => isObj(x) && x.url));
-    if (b.hours === undefined) {
-      const d = defaultContent.booking;
-      if (!hasExternal) b.provider = 'builtin';
-      for (const k of ['open', 'timezone', 'hours', 'interval', 'buffer', 'minNotice', 'maxDays', 'blocked']) if (b[k] === undefined) b[k] = structuredClone(d[k]);
-      if (!Array.isArray(b.types) || !b.types.length) b.types = structuredClone(d.types);
-    }
-    if (b.note === 'Choose a day and a time that suit you. You will receive a confirmation by email.') {
-      b.note = defaultContent.booking.note;
-      if (isObj(b.i18n)) delete b.i18n;
-    }
+    // version 2: the owner's chosen list replaces the earlier one; a logo, link or description
+    // already set for a tool of the same name is kept.
+    const before = new Map();
+    for (const c of doc.tools) for (const t of (isObj(c) && Array.isArray(c.tools) ? c.tools : [])) if (isObj(t)) before.set(key(t.name), t);
+    doc.tools = structuredClone(defaultContent.tools).map((c) => ({
+      ...c,
+      tools: c.tools.map((t) => {
+        const old = before.get(key(t.name));
+        return old ? { ...t, icon: old.icon || t.icon, url: old.url || t.url, description: old.description || t.description } : t;
+      }),
+    }));
   }
   doc.toolsSeed = Math.max(doc.toolsSeed || 0, TOOLS_SEED);
+  // Social links given by the owner: filled in once, only where the field is still empty
+  // (a link changed or removed in the dashboard afterwards is left alone).
+  if (!doc.socialsSeed) {
+    if (isObj(doc.site)) {
+      const so = isObj(doc.site.socials) ? { ...doc.site.socials } : {};
+      for (const k of ['instagram', 'linkedin']) if (!so[k]) so[k] = defaultContent.site.socials[k];
+      doc.site = { ...doc.site, socials: so };
+    }
+    doc.socialsSeed = 1;
+  }
   if (isObj(doc.text) && !doc.text.tools) doc.text = { ...doc.text, tools: structuredClone(defaultContent.text.tools) };
 
   // Products: the first one becomes the free PDF; others stay "coming soon"

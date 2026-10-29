@@ -1,3 +1,4 @@
+import { DEFAULT_TOOLS as TOOLS } from './tools-list.js';
 // ─────────────────────────────────────────────────────────────
 //  DEFAULT CONTENT — the approved website content.
 //  Used once to seed the database on first start, and as the
@@ -17,27 +18,6 @@ const emptyCase = {
   archived: false, client: '', objective: '', strategy: '', execution: '', toolsUsed: [], url: '', sourceUrl: '', links: [], related: [], seoTitle: '', seoDescription: '', results: [], feedback: { quote: '', name: '', role: '' }, learning: '', cover: '', coverAlt: '', logo: '', gallery: [],
 };
 
-const tool = (name, url = '') => ({ name, description: '', url, icon: '', visible: true });
-const cat = (title, names) => ({ title, visible: true, tools: names.map((n) => tool(n)) });
-// Tools, platforms & technologies — names only (no logos are invented); add official logos in the dashboard.
-const TOOLS = [
-  cat('Digital Advertising', ['Meta Ads Manager', 'TikTok Ads Manager']),
-  cat('Social Media Management', ['Meta Business Suite', 'TikTok Studio', 'YouTube Studio', 'Buffer', 'Later']),
-  cat('Marketing Analytics', ['Google Analytics 4', 'Google Tag Manager', 'Google Search Console', 'Looker Studio', 'Meta Events Manager', 'Microsoft Clarity']),
-  cat('SEO & Market Research', ['Semrush', 'Google Trends', 'Google Keyword Planner', 'Ubersuggest', 'AnswerThePublic', 'Similarweb']),
-  cat('Graphic Design & Branding', ['Adobe Photoshop', 'Adobe Illustrator', 'Adobe InDesign', 'Canva', 'Figma', 'Adobe XD', 'Adobe Express']),
-  cat('Video Editing & Production', ['CapCut']),
-  cat('AI Assistants & Research', ['ChatGPT', 'Claude AI', 'Gemini', 'Perplexity', 'NotebookLM', 'Google AI Studio']),
-  cat('AI Image Generation', ['ComfyUI', 'Midjourney', 'Adobe Firefly', 'Leonardo AI', 'Ideogram']),
-  cat('AI Video Generation', ['Kling AI', 'Google Veo']),
-  cat('AI Voice & Audio', ['ElevenLabs']),
-  cat('AI Automation', ['n8n']),
-  cat('Project Management', ['Notion', 'Trello']),
-  cat('E-commerce & CMS', ['Shopify', 'YouCan', 'Salla', 'Converty']),
-  cat('CRM & Email Marketing', ['HubSpot CRM', 'Mailchimp']),
-  cat('UX/UI & Web Design', ['Figma', 'Adobe XD']),
-  cat('Productivity & Collaboration', ['Google Workspace', 'Microsoft 365', 'Google Sheets']),
-];
 export const BOOKING_CARD = { id: 'booking', kind: 'booking', title: 'Book a meeting', text: 'Pick a time that suits you for a video call.', icon: '', visible: true };
 export const DEFAULT_TOOLS = TOOLS;
 
@@ -56,7 +36,7 @@ export const defaultContent = {
     cv: '',
     url: '',
     codastudioUrl: '',
-    socials: { linkedin: '', instagram: '', youtube: '' },
+    socials: { linkedin: 'https://www.linkedin.com/in/nourhane-thabet-a656b729b', instagram: 'https://www.instagram.com/nourhane_thabet', youtube: '' },
     codastudio: { logo: '', work: ['', ''] },
     training: ['', ''],
     seoTitle: 'Nourhane Thabet — Creative & Digital Marketing Strategist',
@@ -275,7 +255,9 @@ export const defaultContent = {
   storySettings: { dots: true, counter: true },
 
   ui: {},
-  toolsSeed: 1,
+  toolsSeed: 2,
+  socialsSeed: 1,
+  ads: { currency: 'TND', googleMonthly: 0, metaMonthly: 0 },
 
   projects: [
     {
