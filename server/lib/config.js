@@ -22,6 +22,7 @@ export function loadConfig(env = process.env) {
       url: (env.SUPABASE_URL || '').replace(/\/+$/, ''),
       key: env.SUPABASE_SECRET_KEY || '',
       bucket: env.SUPABASE_BUCKET || 'portfolio',
+      privateBucket: env.SUPABASE_PRIVATE_BUCKET || 'portfolio-private',
     },
     admin: {
       email: (env.ADMIN_EMAIL || '').trim().toLowerCase(),
@@ -31,6 +32,10 @@ export function loadConfig(env = process.env) {
     cookieSecure: bool(env.COOKIE_SECURE, production),
     trustProxy: bool(env.TRUST_PROXY, false),
     maxUploadBytes: Math.min(20, Math.max(1, Number(env.MAX_UPLOAD_MB) || 5)) * 1024 * 1024,
+    maxPdfBytes: Math.min(50, Math.max(1, Number(env.MAX_PDF_MB) || 20)) * 1024 * 1024,
+    downloadSecret: env.DOWNLOAD_SECRET || '',
+    calendlyToken: env.CALENDLY_TOKEN || '',
+    calcomApiKey: env.CALCOM_API_KEY || '',
     allowFileInProduction: bool(env.ALLOW_FILE_STORAGE_IN_PRODUCTION, false),
     allowedOrigins: (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
   };

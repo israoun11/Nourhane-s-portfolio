@@ -13,16 +13,48 @@ const photoSlots = () => [0, 1, 2, 3].map(() => ({ src: '', caption: '' }));
 
 const emptyCase = {
   industry: '', year: '', role: '', deliverables: '', context: '', problem: '', challenge: '', solution: '',
-  approach: [0, 1, 2, 3].map(() => ({ text: '', image: '' })), results: [], feedback: { quote: '', name: '', role: '' }, learning: '', cover: '', gallery: [],
+  approach: [0, 1, 2, 3].map(() => ({ text: '', image: '' })),
+  archived: false, client: '', objective: '', strategy: '', execution: '', toolsUsed: [], url: '', sourceUrl: '', links: [], related: [], seoTitle: '', seoDescription: '', results: [], feedback: { quote: '', name: '', role: '' }, learning: '', cover: '', coverAlt: '', logo: '', gallery: [],
 };
+
+const tool = (name, url = '') => ({ name, description: '', url, icon: '', visible: true });
+const cat = (title, names) => ({ title, visible: true, tools: names.map((n) => tool(n)) });
+// Tools, platforms & technologies — names only (no logos are invented); add official logos in the dashboard.
+const TOOLS = [
+  cat('Digital Advertising', ['Meta Ads Manager', 'TikTok Ads Manager']),
+  cat('Social Media Management', ['Meta Business Suite', 'TikTok Studio', 'YouTube Studio', 'Buffer', 'Later']),
+  cat('Marketing Analytics', ['Google Analytics 4', 'Google Tag Manager', 'Google Search Console', 'Looker Studio', 'Meta Events Manager', 'Microsoft Clarity']),
+  cat('SEO & Market Research', ['Semrush', 'Google Trends', 'Google Keyword Planner', 'Ubersuggest', 'AnswerThePublic', 'Similarweb']),
+  cat('Graphic Design & Branding', ['Adobe Photoshop', 'Adobe Illustrator', 'Adobe InDesign', 'Canva', 'Figma', 'Adobe XD', 'Adobe Express']),
+  cat('Video Editing & Production', ['CapCut']),
+  cat('AI Assistants & Research', ['ChatGPT', 'Claude AI', 'Gemini', 'Perplexity', 'NotebookLM', 'Google AI Studio']),
+  cat('AI Image Generation', ['ComfyUI', 'Midjourney', 'Adobe Firefly', 'Leonardo AI', 'Ideogram']),
+  cat('AI Video Generation', ['Kling AI', 'Google Veo']),
+  cat('AI Voice & Audio', ['ElevenLabs']),
+  cat('AI Automation', ['n8n']),
+  cat('Project Management', ['Notion', 'Trello']),
+  cat('E-commerce & CMS', ['Shopify', 'YouCan', 'Salla', 'Converty']),
+  cat('CRM & Email Marketing', ['HubSpot CRM', 'Mailchimp']),
+  cat('UX/UI & Web Design', ['Figma', 'Adobe XD']),
+  cat('Productivity & Collaboration', ['Google Workspace', 'Microsoft 365', 'Google Sheets']),
+];
+export const BOOKING_CARD = { id: 'booking', kind: 'booking', title: 'Book a meeting', text: 'Pick a time that suits you for a video call.', icon: '', visible: true };
+export const DEFAULT_TOOLS = TOOLS;
 
 export const defaultContent = {
   site: {
     name: 'Nourhane Thabet',
     role: 'Creative & Digital Marketing Strategist',
     portrait: '',
+    portraitAlt: '',
+    portraitPos: 'center',
     email: '',
+    whatsapp: '',
+    whatsappMessage: '',
+    cvFile: '',
+    cvLabel: '',
     cv: '',
+    url: '',
     codastudioUrl: '',
     socials: { linkedin: '', instagram: '', youtube: '' },
     codastudio: { logo: '', work: ['', ''] },
@@ -85,6 +117,7 @@ export const defaultContent = {
     proof: { title: 'THE PEOPLE BEHIND', titleEm: 'the projects.', note: 'Only authentic, approved feedback is published here.' },
     contact: { title: 'Got an idea?', titleEm: "Let's make it matter." },
     footer: { motto1: 'Still creating.', motto2: 'Still learning.', motto3: 'Still evolving.' },
+    tools: { title: 'Tools, Platforms', titleEm: '& Technologies', intro: 'The tools I use every day — for advertising, content, analytics, design, AI and project management.' },
     portfolio: {
       eyebrow: 'PORTFOLIO · 2021 — 2026',
       title: 'Selected',
@@ -148,12 +181,12 @@ export const defaultContent = {
   ],
 
   timeline: [
-    { y: '2021', t: 'The Beginning', phase: 'EXECUTION', photos: photoSlots(), d: 'Graduated in Graphic Advertising / Graphic Design, with a final-year project focused on UX/UI Design. Worked as a graphic designer in a printing company and gained UX/UI and social media design experience through a marketing agency internship.', chips: ['Graphic design', 'Print', 'First UX/UI'] },
-    { y: '2022', t: 'Growing Responsibility', phase: 'CRAFT + LEADERSHIP', photos: photoSlots(), d: 'Lead Graphic Designer at a large printing company, supervising a junior designer. Pursued master’s-level studies in Theories of Creativity, and gained experience through an internship with a marketing company in Saudi Arabia.', chips: ['Lead designer', 'Branding', 'Creativity studies'] },
-    { y: '2023', t: 'Independent Practice', phase: 'INDEPENDENCE', photos: photoSlots(), d: 'Developed freelance experience across creative and marketing-related projects.', chips: ['Freelance', 'Creative', 'Marketing'] },
-    { y: '2024', t: 'Understanding Business', phase: 'COMMERCE', photos: photoSlots(), d: 'A year on an e-commerce project, combining marketing, design, project management, and commercial operations.', chips: ['E-commerce', 'Project management', 'Operations'] },
-    { y: '2025', t: 'From Practice to Education', phase: 'EDUCATION', photos: photoSlots(), d: 'Continued freelance work and trained more than 50 people in digital marketing.', chips: ['Training', '50+ people trained', 'Freelance'] },
-    { y: '2026', t: 'Building Something of My Own', phase: 'STRATEGY + STUDIO', photos: photoSlots(), d: 'Established CodaStudio and expanded into independent creative and strategic client projects.', chips: ['CodaStudio', 'Strategy', 'Client projects'] },
+    { y: '2021', t: 'The Beginning', phase: 'EXECUTION', cover: '', coverAlt: '', coverPosition: 'first', photos: photoSlots(), d: 'Graduated in Graphic Advertising / Graphic Design, with a final-year project focused on UX/UI Design. Worked as a graphic designer in a printing company and gained UX/UI and social media design experience through a marketing agency internship.', chips: ['Graphic design', 'Print', 'First UX/UI'] },
+    { y: '2022', t: 'Growing Responsibility', phase: 'CRAFT + LEADERSHIP', cover: '', coverAlt: '', coverPosition: 'first', photos: photoSlots(), d: 'Lead Graphic Designer at a large printing company, supervising a junior designer. Pursued master’s-level studies in Theories of Creativity, and gained experience through an internship with a marketing company in Saudi Arabia.', chips: ['Lead designer', 'Branding', 'Creativity studies'] },
+    { y: '2023', t: 'Independent Practice', phase: 'INDEPENDENCE', cover: '', coverAlt: '', coverPosition: 'first', photos: photoSlots(), d: 'Developed freelance experience across creative and marketing-related projects.', chips: ['Freelance', 'Creative', 'Marketing'] },
+    { y: '2024', t: 'Understanding Business', phase: 'COMMERCE', cover: '', coverAlt: '', coverPosition: 'first', photos: photoSlots(), d: 'A year on an e-commerce project, combining marketing, design, project management, and commercial operations.', chips: ['E-commerce', 'Project management', 'Operations'] },
+    { y: '2025', t: 'From Practice to Education', phase: 'EDUCATION', cover: '', coverAlt: '', coverPosition: 'first', photos: photoSlots(), d: 'Continued freelance work and trained more than 50 people in digital marketing.', chips: ['Training', '50+ people trained', 'Freelance'] },
+    { y: '2026', t: 'Building Something of My Own', phase: 'STRATEGY + STUDIO', cover: '', coverAlt: '', coverPosition: 'first', photos: photoSlots(), d: 'Established CodaStudio and expanded into independent creative and strategic client projects.', chips: ['CodaStudio', 'Strategy', 'Client projects'] },
   ],
 
   method: [
@@ -189,12 +222,30 @@ export const defaultContent = {
   ],
 
   products: [
-    { t: 'Marketing e-books', d: 'Practical guides on strategy and content.', bg: B, c: P },
-    { t: 'Digital templates', d: 'Content calendars, briefs and planning tools.', bg: P, c: B },
-    { t: 'Practical resources', d: 'Checklists and frameworks from real projects.', bg: A, c: K },
-    { t: 'Educational tools', d: 'Exercises that support workshops and self-study.', bg: K, c: A },
-    { t: 'Online courses', d: 'Structured digital marketing learning paths.', bg: S, c: B },
+    { t: 'Marketing e-books', slug: 'marketing-e-books', kind: 'free', d: 'Practical guides on strategy and content.', long: '', image: '', imageAlt: '', file: '', cta: '', price: 0, currency: '', promo: '', seoTitle: '', seoDescription: '', published: true, bg: B, c: P },
+    { t: 'Digital templates', slug: 'digital-templates', kind: 'soon', d: 'Content calendars, briefs and planning tools.', long: '', image: '', imageAlt: '', file: '', cta: '', price: 0, currency: '', promo: '', seoTitle: '', seoDescription: '', published: true, bg: P, c: B },
+    { t: 'Practical resources', slug: 'practical-resources', kind: 'soon', d: 'Checklists and frameworks from real projects.', long: '', image: '', imageAlt: '', file: '', cta: '', price: 0, currency: '', promo: '', seoTitle: '', seoDescription: '', published: true, bg: A, c: K },
+    { t: 'Educational tools', slug: 'educational-tools', kind: 'soon', d: 'Exercises that support workshops and self-study.', long: '', image: '', imageAlt: '', file: '', cta: '', price: 0, currency: '', promo: '', seoTitle: '', seoDescription: '', published: true, bg: K, c: A },
+    { t: 'Online courses', slug: 'online-courses', kind: 'soon', d: 'Structured digital marketing learning paths.', long: '', image: '', imageAlt: '', file: '', cta: '', price: 0, currency: '', promo: '', seoTitle: '', seoDescription: '', published: true, bg: S, c: B },
   ],
+
+  leads: {
+    formIntro: 'Leave your name and email address to receive the free PDF.',
+    privacy: 'Your name and email are used only to send you this download and are never shared. You can ask for them to be deleted at any time by writing to me.',
+    consentLabel: 'Yes, I would also like to hear about new free resources (optional).',
+    success: 'Thank you! Your download is ready.',
+    retentionMonths: 24,
+    linkHours: 24,
+    messagesRetentionMonths: 0,
+  },
+
+  // Figures supplied by Nourhane — keep them accurate before publishing.
+  stats: [
+    { value: '+70', label: 'Projects', description: '', href: '', visible: true },
+    { value: '+50', label: 'Candidates', description: '', href: '', visible: true },
+  ],
+
+  tools: TOOLS,
 
   testimonials: [
     { kind: 'WRITTEN TESTIMONIAL', big: 'Words', bg: B, fg: '#FFFFFF', quote: '', name: '', meta: '[Role · Company]', image: '', audio: '' },
@@ -204,10 +255,27 @@ export const defaultContent = {
   ],
 
   contactPaths: [
-    { id: 'work', title: "Let's work together", text: 'For brands, entrepreneurs, and consulting inquiries.' },
-    { id: 'collab', title: "Let's collaborate", text: 'For professional opportunities, employment, and creative partnerships.' },
-    { id: 'share', title: "Let's share knowledge", text: 'For training, speaking, and educational collaborations.' },
+    { id: 'work', kind: 'form', title: "Let's work together", text: 'For brands, entrepreneurs, and consulting inquiries.', icon: '', visible: true },
+    { id: 'collab', kind: 'form', title: "Let's collaborate", text: 'For professional opportunities, employment, and creative partnerships.', icon: '', visible: true },
+    { id: 'share', kind: 'form', title: "Let's share knowledge", text: 'For training, speaking, and educational collaborations.', icon: '', visible: true },
+    BOOKING_CARD,
   ],
+
+  // Built-in calendar: a proposed week (Mon–Fri, 9:00–17:00) — bookings stay closed until the owner switches them on.
+  booking: {
+    provider: 'builtin', open: false, timezone: 'Africa/Tunis',
+    hours: ['1', '2', '3', '4', '5'].map((day) => ({ day, start: '09:00', end: '17:00' })),
+    interval: 30, buffer: 15, minNotice: 24, maxDays: 30, blocked: [], url: '',
+    types: [{ name: 'Discovery call', duration: 30, url: '' }],
+    note: 'Choose a meeting type, a day and a time that suit you. Times are shown in your own time zone.',
+  },
+
+  seo: { indexing: true, workTitle: '', workDescription: '', ogImage: '', robotsExtra: '', structuredData: true, redirects: [] },
+
+  storySettings: { dots: true, counter: true },
+
+  ui: {},
+  toolsSeed: 1,
 
   projects: [
     {
@@ -230,7 +298,7 @@ export const defaultContent = {
       ],
     },
     {
-      ...emptyCase, slug: 'novaseeds', n: '02', published: true, title: 'NovaSeeds', mono: 'Nova',
+      ...emptyCase, slug: 'novaseeds', n: '02', published: true, title: 'NovaSeeds', mono: 'Nova', logo: '/logos/novaseeds.png',
       tags: ['Brand Identity', 'Creative Direction', 'UX/UI'], cats: ['branding', 'ux'],
       short: 'Identity & landing page', summary: 'Identity, creative direction and landing page for an innovation hub in Gabès.',
       bg: A, fg: K,

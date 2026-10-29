@@ -3,10 +3,10 @@
 // Tables and bucket are created by server/supabase.sql.
 import { ConflictError } from './store-file.js';
 
-export function createSupabaseStore({ url, key, bucket }, fetchImpl = globalThis.fetch) {
+export function createSupabaseStore({ url, key, bucket, privateBucket = 'portfolio-private' }, fetchImpl = globalThis.fetch) {
   const headers = { apikey: key, Authorization: `Bearer ${key}` };
 
-  async function call(pathname, { method = 'GET', body, headers: h = {}, raw = false } = {}) {
+  async function call(pathname, { method = 'GET', body, headers: h = {}, raw = false, binary = false } = {}) {
     let res;
     try {
       res = await fetchImpl(`${url}${pathname}`, {
@@ -25,6 +25,7 @@ export function createSupabaseStore({ url, key, bucket }, fetchImpl = globalThis
       err.detail = text.slice(0, 300);
       throw err;
     }
+    if (binary) return Buffer.from(await res.arrayBuffer());
     // Some responses (e.g. "return=minimal", 204) have an empty body.
     const text = await res.text();
     if (!text) return null;
@@ -41,6 +42,7 @@ export function createSupabaseStore({ url, key, bucket }, fetchImpl = globalThis
   const fromRow = (r) => ({
     id: r.id, createdAt: r.created_at, name: r.name, email: r.email, category: r.category || '',
     categoryLabel: r.category_label || '', message: r.message, lang: r.lang || 'en', read: !!r.read,
+    status: r.status || 'new', notes: r.notes || '', source: r.source || {},
   });
 
   return {
@@ -114,6 +116,57 @@ export function createSupabaseStore({ url, key, bucket }, fetchImpl = globalThis
       await call(`/storage/v1/object/${bucket}`, { method: 'DELETE', body: { prefixes: [name] } });
     },
 
+    // ── private files (bucket without public access) ──
+    async putPrivate(name, buffer) {
+      await call(`/storage/v1/object/${privateBucket}/${encodeURIComponent(name)}`, {
+        method: 'POST', raw: true, body: buffer, headers: { 'Content-Type': 'application/pdf', 'x-upsert': 'true' },
+      });
+    },
+    async getPrivate(name) {
+      try {
+        return await call(`/storage/v1/object/authenticated/${privateBucket}/${encodeURIComponent(name)}`, { binary: true });
+      } catch (e) {
+        if (e.status === 404 || e.status === 400) return null;
+        throw e;
+      }
+    },
+    async hasPrivate(name) {
+      try {
+        await call(`/storage/v1/object/info/authenticated/${privateBucket}/${encodeURIComponent(name)}`);
+        return true;
+      } catch (e) {
+        if (e.status === 404 || e.status === 400) return false;
+        throw e;
+      }
+    },
+    async deletePrivate(name) {
+      await call(`/storage/v1/object/${privateBucket}`, { method: 'DELETE', body: { prefixes: [name] } });
+    },
+
+    // ── records (table nt_records: leads…) ──
+    async addRecord(col, rec) {
+      await call('/rest/v1/nt_records', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: { id: rec.id, collection: col, created_at: rec.createdAt, data: rec } });
+    },
+    async listRecords(col) {
+      const rows = await call(`/rest/v1/nt_records?collection=eq.${encodeURIComponent(col)}&select=data&order=created_at.desc&limit=10000`);
+      return (rows || []).map((r) => r.data);
+    },
+    async getRecord(col, id) {
+      const rows = await call(`/rest/v1/nt_records?collection=eq.${encodeURIComponent(col)}&id=eq.${encodeURIComponent(id)}&select=data`);
+      return rows && rows.length ? rows[0].data : null;
+    },
+    async updateRecord(col, id, patch) {
+      const cur = await this.getRecord(col, id);
+      if (!cur) return null;
+      const next = { ...cur, ...patch };
+      await call(`/rest/v1/nt_records?collection=eq.${encodeURIComponent(col)}&id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { data: next } });
+      return next;
+    },
+    async deleteRecord(col, id) {
+      const rows = await call(`/rest/v1/nt_records?collection=eq.${encodeURIComponent(col)}&id=eq.${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Prefer: 'return=representation' } });
+      return Array.isArray(rows) && rows.length > 0;
+    },
+
     // ── contact messages (table nt_messages) ──
     async addMessage(m) {
       await call('/rest/v1/nt_messages', {
@@ -122,6 +175,7 @@ export function createSupabaseStore({ url, key, bucket }, fetchImpl = globalThis
         body: {
           id: m.id, created_at: m.createdAt, name: m.name, email: m.email, category: m.category,
           category_label: m.categoryLabel, message: m.message, lang: m.lang, read: m.read,
+          status: m.status, notes: m.notes, source: m.source,
         },
       });
     },
@@ -141,7 +195,7 @@ export function createSupabaseStore({ url, key, bucket }, fetchImpl = globalThis
       const rows = await call(`/rest/v1/nt_messages?id=eq.${encodeURIComponent(id)}`, {
         method: 'PATCH',
         headers: { Prefer: 'return=representation' },
-        body: { read: patch.read },
+        body: Object.fromEntries(Object.entries({ read: patch.read, status: patch.status, notes: patch.notes }).filter(([, v]) => v !== undefined)),
       });
       return Array.isArray(rows) && rows.length ? fromRow(rows[0]) : null;
     },

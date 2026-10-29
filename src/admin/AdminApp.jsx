@@ -5,6 +5,8 @@ import { EditorProvider, ToastProvider, useEditor, useToast } from './state.jsx'
 import { ConfirmProvider, Modal, useConfirm } from './ui.jsx';
 import { History, Overview, ProjectEdit, Projects, SECTION_PAGES, SectionPage, SiteInfo, Texts } from './pages.jsx';
 import { Inbox } from './Inbox.jsx';
+import { Translations, useMissingCounts } from './Translations.jsx';
+import { BookingPage, ContactPage, FilesPage, IntegrationsPage, LeadsPage, ProductsPage, SeoPage, StatsPage, StoryPage, ToolsPage, UiTextsPage } from './modules.jsx';
 import { AdminI18n, EditLangProvider, LANGS, inputLangProps, useAdminT, useEditLang, useErrorText } from './i18n.jsx';
 import LangSwitcher from '../components/LangSwitcher.jsx';
 import './admin.css';
@@ -78,13 +80,29 @@ function useNav() {
   const t = useAdminT();
   return [
     { to: '/admin', label: t('ad.nav.overview') },
-    { to: '/admin/inbox', label: t('ad.nav.inbox'), badge: true },
+    { group: t('ad.nav.g.content') },
     { to: '/admin/projects', label: t('ad.nav.projects') },
+    { to: '/admin/products', label: t('ad.mod.products') },
+    { to: '/admin/story', label: t('ad.mod.story') },
+    { to: '/admin/tools', label: t('ad.mod.tools') },
+    { to: '/admin/stats', label: t('ad.mod.stats') },
     { to: '/admin/texts', label: t('ad.nav.texts') },
-    { to: '/admin/site', label: t('ad.nav.site') },
+    { group: t('ad.nav.g.relations') },
+    { to: '/admin/inbox', label: t('ad.nav.inbox'), badge: true },
+    { to: '/admin/leads', label: t('ad.mod.leads') },
+    { to: '/admin/booking', label: t('ad.mod.booking') },
+    { to: '/admin/contact', label: t('ad.mod.contact') },
+    { to: '/admin/files', label: t('ad.mod.files') },
+    { group: t('ad.nav.g.growth') },
+    { to: '/admin/seo', label: t('ad.mod.seo') },
+    { to: '/admin/integrations', label: t('ad.mod.integrations') },
+    { group: t('ad.nav.g.languages') },
+    { to: '/admin/translations', label: t('ad.nav.translations'), missing: true },
+    { to: '/admin/interface', label: t('ad.mod.ui') },
     { group: t('ad.nav.sections') },
     ...SECTION_PAGES.map((k) => ({ to: `/admin/sections/${k}`, label: t(`ad.sec.${k}`) })),
     { group: t('ad.nav.safety') },
+    { to: '/admin/site', label: t('ad.nav.site') },
     { to: '/admin/history', label: t('ad.nav.history') },
   ];
 }
@@ -132,19 +150,27 @@ function SaveBar() {
   );
 }
 
-const EDITING = /^\/admin\/(projects\/\d+|texts|site|sections\/)/;
+const EDITING = /^\/admin\/(projects\/\d+|texts|site|sections\/|products|story|tools|stats|contact|booking|files|seo|leads|interface)/;
 
 function Route({ path, status, email, unread, setUnread }) {
   const t = useAdminT();
   const clean = path.replace(/\/+$/, '');
   if (clean === '/admin') return <Overview status={status} email={email} unread={unread} />;
   if (clean === '/admin/inbox') return <Inbox onUnread={setUnread} />;
+  if (clean === '/admin/translations') return <Translations />;
   if (clean === '/admin/projects') return <Projects />;
   const pm = clean.match(/^\/admin\/projects\/(\d+)$/);
   if (pm) return <ProjectEdit index={Number(pm[1])} />;
   if (clean === '/admin/texts') return <Texts />;
   if (clean === '/admin/site') return <SiteInfo />;
   if (clean === '/admin/history') return <History />;
+  const MODULES = {
+    '/admin/story': StoryPage, '/admin/stats': StatsPage, '/admin/tools': ToolsPage, '/admin/products': ProductsPage,
+    '/admin/leads': LeadsPage, '/admin/contact': ContactPage, '/admin/booking': BookingPage, '/admin/files': FilesPage,
+    '/admin/seo': SeoPage, '/admin/interface': UiTextsPage, '/admin/integrations': IntegrationsPage,
+  };
+  const Mod = MODULES[clean];
+  if (Mod) return <Mod status={status} />;
   const sm = clean.match(/^\/admin\/sections\/([a-zA-Z]+)$/);
   if (sm) return <SectionPage k={sm[1]} />;
   return <p className="ad-empty">{t('ad.notFound')} <Link to="/admin">{t('ad.toOverview')}</Link></p>;
@@ -158,6 +184,7 @@ function Dashboard({ session, onLogout, expired, onRelogin }) {
   const t = useAdminT();
   const errText = useErrorText();
   const nav = useNav();
+  const missing = useMissingCounts();
   const [status, setStatus] = useState(null);
   const [unread, setUnread] = useState(null);
   const [menu, setMenu] = useState(false);
@@ -168,6 +195,7 @@ function Dashboard({ session, onLogout, expired, onRelogin }) {
       setStatus(s);
       setUnread(s.unreadMessages);
       window.__ntMaxUploadMb = s.maxUploadMb;
+      window.__ntMaxPdfMb = s.maxPdfMb;
     }, () => {});
   }, [editor.saved && editor.saved.version]);
 
@@ -237,6 +265,7 @@ function Dashboard({ session, onLogout, expired, onRelogin }) {
               <Link key={n.to} to={n.to} className="ad-nav__link" aria-current={current(n.to) ? 'page' : undefined}>
                 {n.label}
                 {n.badge && unread > 0 && <span className="ad-nav__badge" aria-label={t('ad.unreadBadge', { n: unread })}>{unread}</span>}
+                {n.missing && missing.fr + missing.ar > 0 && <span className="ad-nav__badge ad-nav__badge--warn" aria-label={t('ad.tr.badge', { n: missing.fr + missing.ar })}>{missing.fr + missing.ar}</span>}
               </Link>
             )
           )}

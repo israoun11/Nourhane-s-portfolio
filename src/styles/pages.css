@@ -190,3 +190,35 @@
 .lb__nav--prev { inset-inline-start: 16px; }
 .lb__nav--next { inset-inline-end: 16px; }
 @media (max-width: 600px) { .lb__nav { top: auto; bottom: 16px; translate: none; } }
+
+/* ═════════════ Product page (free PDF / paid / coming soon) ═════════════ */
+.prodpage { padding: clamp(120px, 14vw, 180px) var(--gutter) clamp(72px, 9vw, 120px); }
+.prodpage__wrap { max-width: 1120px; margin: 0 auto; }
+.prodpage__grid { display: flex; flex-wrap: wrap; gap: clamp(32px, 5vw, 72px); margin-top: 24px; align-items: flex-start; }
+.prodpage__art { flex: 1 1 340px; max-width: 460px; aspect-ratio: 4 / 5; position: relative; overflow: hidden; }
+.prodpage__art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.prodpage__art span { position: absolute; left: 20%; top: 14%; width: 56%; height: 72%; background: var(--ivory); }
+.prodpage__body { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+.prodpage__title { margin: 0; font-family: var(--f-display); font-weight: 500; font-size: clamp(38px, 4.6vw, 64px); line-height: 1.04; letter-spacing: -0.02em; }
+.prodpage__promo { margin: 0; padding: 4px 12px; background: var(--pink-tint); font-weight: 700; font-size: 14px; }
+.prodpage__lead { margin: 0; font-size: 19px; line-height: 1.5; color: var(--body); }
+.prodpage__long { white-space: pre-line; color: var(--body); line-height: 1.7; }
+.prodpage__price { margin: 0; font-family: var(--f-cond); font-weight: 800; font-size: 40px; color: var(--blue); }
+.prodpage__buy { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.lead { align-self: stretch; margin-top: 6px; }
+.lead__intro { margin: 0; font-weight: 600; }
+.lead__consent { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; cursor: pointer; }
+.lead__consent input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--blue); flex: none; }
+.lead__privacy { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+.lead__small { margin: 0; font-size: 13px; color: var(--muted); }
+.lead--done { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: clamp(22px, 3vw, 36px); background: #fff; border: 1px solid var(--line); }
+.lead__ok { margin: 0; padding: 12px 14px; background: #D6F2DF; font-weight: 600; align-self: stretch; }
+
+/* meeting page (private link from a booking) */
+.bk-sum { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 24px; align-self: stretch; }
+.bk-sum dt { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.bk-sum dd { margin: 4px 0 0; font-weight: 600; text-transform: none; }
+.bk-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.bk-link { word-break: break-all; }
+
+.exp__art { position: absolute; inset: 14%; width: 72%; height: 72%; }

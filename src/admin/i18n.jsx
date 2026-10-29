@@ -63,6 +63,13 @@ export function EditLangProvider({ children }) {
 }
 export const useEditLang = () => useContext(EditCtx);
 
+/** Renders fields for one content language regardless of the language chosen at the top. */
+export function FixedEditLang({ lang, children }) {
+  const parent = useContext(EditCtx);
+  const value = useMemo(() => ({ ...parent, editLang: lang }), [parent, lang]);
+  return <EditCtx.Provider value={value}>{children}</EditCtx.Provider>;
+}
+
 /**
  * Where a field is stored for the language being edited:
  * texts in French/Arabic go to `<object>.i18n.<lang>.<key>`, everything else is shared.

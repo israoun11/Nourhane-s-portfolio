@@ -25,5 +25,13 @@ services:
         sync: false
       - key: SUPABASE_BUCKET
         value: portfolio
+      - key: SUPABASE_PRIVATE_BUCKET
+        value: portfolio-private
+      - key: DOWNLOAD_SECRET
+        generateValue: true
+      - key: CALENDLY_TOKEN
+        sync: false
+      - key: CALCOM_API_KEY
+        sync: false
       - key: VITE_ARABIC_HEADING_FONT
         sync: false

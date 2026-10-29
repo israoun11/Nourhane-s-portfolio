@@ -1,13 +1,11 @@
 import { useRef } from 'react';
 import { useContent } from '../content/ContentProvider.jsx';
-import { Media, Words, countWords } from '../components/ui.jsx';
-import { useT } from '../i18n/index.jsx';
+import { Words, countWords } from '../components/ui.jsx';
 import { useScrollVar } from '../hooks/motion.js';
 
 // Connected four-step diagram; the blue and pink lines draw with scroll.
 export default function Method() {
   const { method, text } = useContent();
-  const t = useT();
   const ref = useRef(null);
   useScrollVar(ref, { mode: 'cover', from: 0.12, to: 0.55, name: '--draw' });
   return (
@@ -29,8 +27,6 @@ export default function Method() {
                 <span className="method__dot" style={{ background: m.bg, color: m.fg }}>{m.n}</span>
                 <h3>{m.t}</h3>
                 <p className="body-muted">{m.d}</p>
-                <Media className="method__media" src={m.image} alt={m.t} bg={m.bg} ratio="16 / 10" label={m.image ? undefined : t('img.placeholder')}
-                  art={[{ width: '34%', left: '58%', top: '-12%', borderRadius: '50%', background: m.fg }]} />
               </li>
             ))}
           </ol>

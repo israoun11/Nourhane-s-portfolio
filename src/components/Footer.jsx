@@ -7,6 +7,8 @@ export default function Footer() {
   const { site, text } = useContent();
   const t = useT();
   const f = text.footer;
+  // the uploaded CV PDF first, otherwise the CV link
+  const cvUrl = site.cvFile || site.cv || '';
   const socials = [
     ['LinkedIn', site.socials.linkedin],
     ['Instagram', site.socials.instagram],
@@ -28,11 +30,6 @@ export default function Footer() {
             ))}
           </nav>
           <div className="footer__links">
-            {site.cv ? (
-              <a className="ulink" href={site.cv} target="_blank" rel="noreferrer">
-                {t('footer.cv')}
-              </a>
-            ) : null}
             {site.codastudioUrl && (
               <a className="ulink" href={site.codastudioUrl} target="_blank" rel="noreferrer">
                 {t('footer.coda')}
@@ -51,6 +48,21 @@ export default function Footer() {
               <span className="footer__note">{t('footer.socialsNote')}</span>
             )}
           </div>
+        </div>
+        <div className="footer__cv">
+          {cvUrl ? (
+            <>
+              <a className="btn btn--pink btn--md" href={cvUrl} target="_blank" rel="noreferrer" {...(site.cvFile ? { download: '' } : {})} aria-label={t('footer.cvAria', { name: site.name })}>
+                {site.cvLabel || t('footer.cvBtn')} <span className="ar" aria-hidden="true">↓</span>
+              </a>
+              <span className="footer__note">{t('footer.cvNote')}</span>
+            </>
+          ) : (
+            <>
+              <Link className="btn btn--pink btn--md" to="/#contact">{t('footer.cvRequest')} <span className="ar" aria-hidden="true">↗</span></Link>
+              <span className="footer__note">{t('footer.cvRequestNote')}</span>
+            </>
+          )}
         </div>
         <p className="footer__mark" aria-hidden="true">
           NOURHANE <em>Thabet</em>

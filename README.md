@@ -39,14 +39,23 @@ In development, content, images and contact messages are saved in `server/data/`
 
 1. Go to **yourwebsite.com/admin** and sign in.
 2. Choose what to edit in the menu:
-   - **Messages** — everything sent with the contact form: name, email, category, message, date and time, language. Open a message (it is marked as read), mark it unread again, reply by email, or delete it. The number of unread messages shows next to "Messages".
-   - **Projects** — add, edit, hide/show, reorder (↑ ↓) or delete projects. The first project is featured on the home page. Each project has its own page; "Preview page" shows it before saving.
-     - **Cover & gallery**: "+ Add photos" uploads several images at once (they fill empty places first). For each image: Replace, ← → to reorder, ⌫ remove the image but keep its place, ✕ delete the place, and a caption. The gallery is "The work" on the project page; visitors can open each image full screen.
-     - **"How it came together" — 4 cards**: each card has its own text and its own small image.
-   - **Page texts** — every headline, introduction and button label, section by section.
-   - **Website info & photos** — portrait, contact email, CV link, CodaStudio link and images, social profiles, training photos, Google title/description.
-   - **Sections** — logo carousel (brand logos scrolling under the hero), ways of thinking, **My story** (each year has at least four photo places — same photo tools as galleries), journey milestones, method, expertise, CodaStudio capabilities, training offers, content series, digital products, testimonials, contact paths.
-   - **History** — the last 10 saved versions; one click restores an older one.
+   - **Content**
+     - **Projects** — add, edit, hide/show, **archive** (hidden but kept), reorder (↑ ↓) or delete projects. The first project is featured on the home page. Each project page shows the case study: context, problem, role, **objective, strategy, execution, tools used, project website, source code, other links, related case studies**, gallery, results (real figures only) and its own search title/description. Parts left empty are simply not shown.
+     - **Digital products** — free PDFs, paid products (price shown, online payment not connected yet) and "coming soon". Each product has a page at `/resources/<address>`. For a free product, upload the PDF: it stays **private** and visitors get a temporary download link after entering their name and email.
+     - **My story** — no slider: each year's design has photo positions (its circles, squares, cards, screens). Photo 1 fills position 1, photo 2 position 2… Upload, replace, delete and reorder (← →) photos per year; the page shows a preview of which photo goes in which position. Extra photos open in the viewer with a "+N" button.
+     - **Tools & technologies** — 16 categories / 55 tools seeded from your list. Add, edit, delete, reorder and hide categories and tools, upload a logo, move a tool to another category. Brand icons come from Simple Icons (CC0) where the brand is published there; others show a neutral letter until you upload an official logo you may use.
+     - **Statistics** — "+70 Projects", "+50 Candidates"… value, label, description, link, visibility. Publish only accurate figures.
+     - **Page texts** — every headline, introduction and button label, section by section.
+   - **Contacts & leads**
+     - **Messages** — everything sent with the contact form: search, filter by status (new / in progress / done), private notes, where the visitor came from (UTM / referrer), CSV export, reply by email, delete.
+     - **Leads (downloads)** — people who downloaded a free PDF: search, filter by product or newsletter consent, number of downloads, CSV export, delete. Privacy notice, consent checkbox (never pre-ticked) and **retention** (automatic deletion after N months) are set here.
+     - **Booking calendar** — the built-in calendar (default): weekly availability, time zone, meeting types and durations, start-time interval, break between meetings, minimum notice, booking window, days off, and an on/off switch (**off by default** — switch it on once your hours are right). Visitors pick a day and a free time (shown in their own time zone), enter name and email, and get a confirmation with an "Add to my calendar" file and a private link to cancel. Booked times disappear immediately (no double booking). Appointments are listed here: mark done, cancel, delete, reply by email. No email is sent automatically (no email service is connected). Calendly or Cal.com can still be chosen instead.
+     - **Contact & social links** — email (`mailto:`), WhatsApp (`https://wa.me/<number>` + optional pre-filled message), Instagram, LinkedIn, and the contact cards (form / booking, order, visibility). Empty methods are hidden on the website.
+     - **CV & downloads** — upload, preview, replace or remove your CV (checked to be a real PDF).
+   - **Visibility** — **SEO** (website address, home and portfolio search texts, sharing image, indexing on/off, extra robots rules, structured data, redirects, missing alt texts and translations, broken-link checker; sitemap.xml and robots.txt are generated) and **Integrations** (honest connection status; Search Console, GA4, Google Ads, Meta Ads, AI assistant and payments arrive in phase 2).
+   - **Languages** — **Translations** (every text still missing in French or Arabic) and **Interface texts** (change any button, label or message of the website, per language).
+   - **Sections** — logo carousel, ways of thinking ("One creative mind": the photo sits in a frame, the coloured shapes stay), method, expertise (image shown in the hover card, link), CodaStudio capabilities, training offers, content series, testimonials.
+   - **Website info & photos** and **History** — portrait (description, focus point), CodaStudio, training photos; the last 10 saved versions with one-click restore.
 3. When you change something, a dark bar appears at the bottom:
    - **Preview ↗** opens the website in a new tab with your unsaved changes (only you see it).
    - **Discard** returns to the last saved version.
@@ -67,7 +76,8 @@ Safety nets: leaving with unsaved changes asks for confirmation · deletions ask
 ### 3.1 Create the Supabase project (database + images) — free plan is enough
 1. Create an account at [supabase.com](https://supabase.com) → **New project**.
 2. **SQL Editor → New query** → paste the content of [`server/supabase.sql`](server/supabase.sql) → **Run**. This creates the three tables — content, sessions and **contact messages** (`nt_messages`) — locked so only your server can use them, and the public `portfolio` image bucket (images only, max 5 MB).
-   **Already set up an earlier version?** Run the same file again: it only adds what is missing (the `nt_messages` table). Without it, sending the contact form fails with an error (nothing is lost silently).
+   It also creates the **private** `portfolio-private` bucket (PDFs given after the lead form) and the `nt_records` table (leads).
+   **Already set up an earlier version?** Run the same file again: it only adds what is missing (message status/notes/source columns, `nt_records`, the private bucket, PDF in the public bucket). Without it, the new features answer with a clear error (nothing is lost silently).
 3. **Project Settings → API Keys**: copy the **Project URL** and the **secret key** (`sb_secret_…`; the legacy `service_role` key also works). Keep the secret key private — it only goes into the server settings, never into the website code.
 
 ### 3.2 Deploy (example: Render)
@@ -82,6 +92,8 @@ Safety nets: leaving with unsaved changes asks for confirmation · deletions ask
 | `SUPABASE_URL` | Supabase Project URL |
 | `SUPABASE_SECRET_KEY` | Supabase secret key |
 | `VITE_ARABIC_HEADING_FONT` | optional — `bukra` once the licensed 29LT Bukra files are added (see 3.3) |
+| `DOWNLOAD_SECRET` | generated automatically by the blueprint (signs download links) |
+| `CALENDLY_TOKEN` or `CALCOM_API_KEY` | optional — lists your appointments in the dashboard |
 
 4. Deploy. Visit `https://<your-site>/admin` and sign in. On first start the server copies the approved content into Supabase.
 
@@ -90,11 +102,16 @@ Static-only hosts (Netlify drop, GitHub Pages) **cannot** run the dashboard.
 
 > The server refuses to start in production with local file storage, so content can never silently vanish on redeploy. If you host on a machine with a persistent disk, you may set `ALLOW_FILE_STORAGE_IN_PRODUCTION=true` and `DATA_DIR=/path/on/that/disk`.
 
-### 3.3 Contact form & Arabic fonts
+### 3.3 Downloads, booking, SEO
+- **Free PDFs**: visitors enter name + email on the product page; the server stores the lead and answers with a signed link valid for the hours set in the dashboard (24 h by default). The PDF itself lives in the private bucket and is never public. If the PDF is missing, the visitor sees a clear message and nothing is stored.
+- **Booking**: availability, time zones, confirmations, cancellations and double-booking protection are handled by Calendly / Cal.com; the website shows their calendar inside the "Book a meeting" card. Nothing is shown as booked by this website.
+- **SEO**: `/sitemap.xml` (with the three languages), `/robots.txt`, canonical and `hreflang` links, social image and JSON-LD are generated by the server from the content. Redirects set in the dashboard answer with 301.
+
+### 3.4 Contact form & Arabic fonts
 - **Contact form**: nothing to set up. Messages are sent to this server (`POST /api/contact`), checked again there, stored with the content (Supabase table `nt_messages` in production) and shown in the dashboard. The visitor sees "Thank you" only after the server confirms the message is stored; otherwise a clear error. Protection: same-site only, JSON only, 5 messages per 10 minutes per visitor (100/hour overall), hidden anti-bot field, length limits, plain text only.
 - **Arabic typography**: paragraphs use **Tajawal** (self-hosted in `public/fonts/tajawal`, open licence). Titles are meant for **29LT Bukra Bold**, subtitles **29LT Bukra Medium** — a commercial font that is **not included**: add the licensed web-font files as `public/fonts/bukra/29LT-Bukra-Bold.woff2` and `29LT-Bukra-Medium.woff2`, set `VITE_ARABIC_HEADING_FONT=bukra`, rebuild. Until then titles use Tajawal ExtraBold and subtitles Tajawal Bold. Details: `public/fonts/README.txt`.
 
-### 3.4 Changing the admin password
+### 3.5 Changing the admin password
 Run `npm run admin:password` again, replace `ADMIN_PASSWORD_HASH` in your hosting settings, redeploy/restart. Sessions already open stay valid until they expire (max 8 h); to end them immediately, delete the rows in the Supabase table `nt_sessions`.
 
 ---
@@ -109,7 +126,11 @@ See [`.env.example`](.env.example) — placeholders only. Only variables startin
 | `SESSION_HOURS` | 8 | login lifetime (1–72) |
 | `STORAGE_DRIVER` | `supabase` if Supabase vars are set, else `file` | where content and images live |
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_BUCKET` | —, —, `portfolio` | production storage |
-| `MAX_UPLOAD_MB` | 5 | upload limit (keep in line with the bucket limit) |
+| `MAX_UPLOAD_MB` | 5 | image upload limit (keep in line with the bucket limit) |
+| `MAX_PDF_MB` | 20 | PDF upload limit (CV, e-books) |
+| `SUPABASE_PRIVATE_BUCKET` | `portfolio-private` | private PDFs (lead downloads) |
+| `DOWNLOAD_SECRET` | generated and stored | signs the temporary download links |
+| `CALENDLY_TOKEN`, `CALCOM_API_KEY` | — | read-only list of upcoming appointments in the dashboard |
 | `PORT` | 8787 | server port |
 | `TRUST_PROXY` | false | use the visitor IP from `X-Forwarded-For` (rate limiting) behind a proxy |
 | `COOKIE_SECURE` | true in production | session cookie only over HTTPS |

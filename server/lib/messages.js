@@ -2,9 +2,11 @@
 import crypto from 'node:crypto';
 import { HttpError } from './http.js';
 import { isLang } from '../../shared/i18n/langs.js';
+import { cleanSource } from './leads.js';
 
 export const MAX_MESSAGES = 5000; // the inbox refuses new messages beyond this (delete old ones in the dashboard)
-export const CATEGORIES = ['work', 'collab', 'share'];
+export const CATEGORIES = ['work', 'collab', 'share']; // defaults; the real list comes from the contact cards
+export const STATUSES = ['new', 'progress', 'done'];
 export const LIMITS = { name: 100, email: 200, messageMin: 20, messageMax: 5000 };
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const EMAIL = /^[^\s@<>"']+@[^\s@<>"'.]+(\.[^\s@<>"'.]+)+$/;
@@ -13,13 +15,13 @@ const clean = (s) => String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\
 const oneLine = (s) => clean(s).replace(/[\r\n\u2028\u2029]+/g, ' ').trim();
 
 /** Checks a submission. Returns { ok, fields, value } — `fields` maps a field to an error code. */
-export function validateMessage(body) {
+export function validateMessage(body, categories = CATEGORIES) {
   const b = body && typeof body === 'object' ? body : {};
   const fields = {};
   const name = oneLine(b.name);
   const email = oneLine(b.email).toLowerCase();
   const message = clean(b.message).replace(/\r\n?/g, '\n').trim();
-  const category = CATEGORIES.includes(b.category) ? b.category : '';
+  const category = categories.includes(b.category) ? b.category : '';
   if (!name) fields.name = 'required';
   else if (name.length > LIMITS.name) fields.name = 'tooLong';
   if (!email) fields.email = 'required';
@@ -29,7 +31,7 @@ export function validateMessage(body) {
   return {
     ok: Object.keys(fields).length === 0,
     fields,
-    value: { name, email, category, message, lang: isLang(b.lang) ? b.lang : 'en' },
+    value: { name, email, category, message, lang: isLang(b.lang) ? b.lang : 'en', source: cleanSource(b.source) },
   };
 }
 
@@ -50,6 +52,9 @@ export function createMessageService(store) {
         message: value.message,
         lang: value.lang,
         read: false,
+        status: 'new',
+        notes: '',
+        source: value.source || {},
       };
       await store.addMessage(msg);
       return msg;
@@ -61,12 +66,31 @@ export function createMessageService(store) {
     async unread() {
       return store.countUnreadMessages();
     },
-    async setRead(id, read) {
+    /** Changes read/unread, follow-up status and private notes. */
+    async update(id, body) {
       if (!ID.test(id)) throw new HttpError(404, 'Message not found.');
-      if (typeof read !== 'boolean') throw new HttpError(400, 'Missing “read”.');
-      const m = await store.updateMessage(id, { read });
+      const patch = {};
+      if (typeof body.read === 'boolean') patch.read = body.read;
+      if (body.status !== undefined) {
+        if (!STATUSES.includes(body.status)) throw new HttpError(422, 'Unknown status.', { code: 'INVALID' });
+        patch.status = body.status;
+      }
+      if (typeof body.notes === 'string') patch.notes = body.notes.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').slice(0, 4000);
+      if (!Object.keys(patch).length) throw new HttpError(400, 'Nothing to change.');
+      const m = await store.updateMessage(id, patch);
       if (!m) throw new HttpError(404, 'Message not found.');
       return m;
+    },
+    async setRead(id, read) {
+      return this.update(id, { read });
+    },
+    /** Deletes messages older than the retention period (0 = keep). */
+    async purge(months) {
+      if (!months) return 0;
+      const limit = Date.now() - months * 30 * 24 * 3600 * 1000;
+      const old = (await store.listMessages()).filter((m) => Date.parse(m.createdAt) < limit);
+      for (const m of old) await store.deleteMessage(m.id);
+      return old.length;
     },
     async remove(id) {
       if (!ID.test(id)) throw new HttpError(404, 'Message not found.');

@@ -3,12 +3,13 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { startTestServer, client, PNG } from './helpers.js';
+import { startTestServer, client, PNG, PDF } from './helpers.js';
 import { createSupabaseStore } from '../lib/store-supabase.js';
 
 const KEY = 'sb_secret_test_key';
-const db = { nt_content: new Map(), nt_sessions: new Map(), nt_messages: new Map() };
+const db = { nt_content: new Map(), nt_sessions: new Map(), nt_messages: new Map(), nt_records: new Map() };
 const objects = new Map();
+const privateObjects = new Map();
 const seen = [];
 
 function mock(req, res) {
@@ -84,6 +85,46 @@ function mock(req, res) {
         rows.forEach((r) => db.nt_messages.delete(r.id));
         return send(200, rows);
       }
+    }
+    if (url.pathname === '/rest/v1/nt_records') {
+      let rows = [...db.nt_records.values()].filter((r) => !q.collection || r.collection === q.collection);
+      if (q.id) rows = rows.filter((r) => r.id === q.id);
+      if (req.method === 'POST') {
+        const b = JSON.parse(raw);
+        for (const k of ['id', 'collection', 'created_at', 'data']) if (b[k] === undefined) return send(400, { message: `missing ${k}` });
+        db.nt_records.set(b.id, b);
+        return send(201);
+      }
+      if (req.method === 'GET') return send(200, rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1)).map((r) => ({ data: r.data })));
+      if (req.method === 'PATCH') {
+        const patch = JSON.parse(raw);
+        rows.forEach((r) => Object.assign(r, patch));
+        return send(204);
+      }
+      if (req.method === 'DELETE') {
+        rows.forEach((r) => db.nt_records.delete(r.id));
+        return send(200, rows);
+      }
+    }
+    const priv = url.pathname.match(/^\/storage\/v1\/object\/(?:(authenticated|info\/authenticated)\/)?portfolio-private\/(.+)$/);
+    if (priv) {
+      const name = decodeURIComponent(priv[2]);
+      if (req.method === 'POST' && !priv[1]) {
+        privateObjects.set(name, raw);
+        return send(200, { Key: name });
+      }
+      if (req.method === 'GET' && priv[1]) {
+        if (!privateObjects.has(name)) return send(400, { statusCode: '404', error: 'not_found' });
+        if (priv[1] === 'authenticated') {
+          res.writeHead(200, { 'Content-Type': 'application/pdf' });
+          return res.end(privateObjects.get(name));
+        }
+        return send(200, { name });
+      }
+    }
+    if (url.pathname === '/storage/v1/object/portfolio-private' && req.method === 'DELETE') {
+      JSON.parse(raw).prefixes.forEach((p) => privateObjects.delete(p));
+      return send(200, []);
     }
     const obj = url.pathname.match(/^\/storage\/v1\/object\/portfolio\/(.+)$/);
     if (obj && req.method === 'POST') {
@@ -170,4 +211,37 @@ test('Supabase driver: contact messages are stored in nt_messages and managed fr
   assert.equal(db.nt_messages.get(id).read, true);
   assert.equal((await c.req('DELETE', `/api/admin/messages/${id}`)).status, 200);
   assert.equal(db.nt_messages.has(id), false);
+});
+
+test('Supabase driver: private PDF, lead stored in nt_records, signed download', async () => {
+  const c = client(srv.base);
+  await c.login();
+  const up = await c.req('POST', '/api/admin/upload?access=private', { body: PDF, headers: { 'Content-Type': 'application/pdf' } });
+  assert.equal(up.status, 200);
+  assert.match(up.data.url, /^private:[a-f0-9]{64}\.pdf$/);
+  assert.equal(privateObjects.size, 1, 'stored in the private bucket');
+  assert.ok(![...objects.keys()].some((k) => k.endsWith('.pdf')), 'not in the public bucket');
+  const cur = (await c.req('GET', '/api/admin/content')).data;
+  const d = structuredClone(cur.data);
+  d.products[0].file = up.data.url;
+  assert.equal((await c.req('PUT', '/api/admin/content', { json: { data: d, version: cur.version } })).status, 200);
+  const r = await fetch(srv.base + '/api/leads', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ product: d.products[0].slug, name: 'Reader', email: 'reader@example.com' }),
+  });
+  assert.equal(r.status, 201);
+  const { url } = await r.json();
+  assert.equal(db.nt_records.size, 1);
+  const rec = [...db.nt_records.values()][0];
+  assert.equal(rec.collection, 'leads');
+  assert.equal(rec.data.email, 'reader@example.com');
+  const dl = await fetch(srv.base + url);
+  assert.equal(dl.status, 200);
+  assert.ok(Buffer.from(await dl.arrayBuffer()).equals(PDF));
+  assert.equal([...db.nt_records.values()][0].data.downloads, 1, 'download counted');
+  const list = await c.req('GET', '/api/admin/leads');
+  assert.equal(list.data.items[0].email, 'reader@example.com');
+  assert.equal((await c.req('DELETE', `/api/admin/leads/${rec.id}`)).status, 200);
+  assert.equal(db.nt_records.size, 0);
 });

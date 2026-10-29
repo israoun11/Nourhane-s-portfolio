@@ -6,6 +6,10 @@ import { HttpError, clientIp, cookie, parseCookies, readBody, readJson, security
 import { RateLimiter, newToken, safeEqual, tokenHash, verifyPassword } from './lib/auth.js';
 import { createContentService } from './lib/content.js';
 import { createMessageService, validateMessage } from './lib/messages.js';
+import { createLeadService, toCsv, validateLead } from './lib/leads.js';
+import { createBookingService } from './lib/booking.js';
+import { createScheduler, validateBooking } from './lib/scheduler.js';
+import { baseUrl, checkLinks, collectLinks, findRedirect, headTags, robots, sitemap } from './lib/seo.js';
 import { localize } from '../shared/i18n/localize.js';
 import { dirOf, isLang } from '../shared/i18n/langs.js';
 
@@ -16,11 +20,12 @@ const MIME = {
   '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.woff': 'font/woff',
   '.txt': 'text/plain; charset=utf-8', '.pdf': 'application/pdf', '.map': 'application/json', '.mp3': 'audio/mpeg',
 };
-const UPLOAD_NAME = /^[a-f0-9]{64}\.(jpg|png|webp)$/;
+const UPLOAD_NAME = /^[a-f0-9]{64}\.(jpg|png|webp|pdf)$/;
+const PRIVATE_NAME = /^private:([a-f0-9]{64}\.pdf)$/;
 const escHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export function createApp(cfg, store, log = console) {
+export function createApp(cfg, store, log = console, deps = {}) {
   const content = createContentService(store, log);
   const loginIp = new RateLimiter({ max: 5, windowMs: 15 * 60 * 1000 });
   const loginGlobal = new RateLimiter({ max: 30, windowMs: 15 * 60 * 1000 });
@@ -28,6 +33,37 @@ export function createApp(cfg, store, log = console) {
   const contactIp = new RateLimiter({ max: 5, windowMs: 10 * 60 * 1000 });
   const contactGlobal = new RateLimiter({ max: 100, windowMs: 60 * 60 * 1000 });
   const messages = createMessageService(store);
+  const leads = createLeadService(store, cfg, log);
+  const booking = createBookingService(cfg, deps.fetch || globalThis.fetch);
+  const scheduler = createScheduler(store, log);
+  const bookIp = new RateLimiter({ max: 5, windowMs: 10 * 60 * 1000 });
+  const bookGlobal = new RateLimiter({ max: 100, windowMs: 60 * 60 * 1000 });
+  const leadIp = new RateLimiter({ max: 10, windowMs: 10 * 60 * 1000 });
+  const leadGlobal = new RateLimiter({ max: 300, windowMs: 60 * 60 * 1000 });
+  const linkCheck = new RateLimiter({ max: 6, windowMs: 60 * 60 * 1000 });
+  /** Public forms only accept requests coming from this website. */
+  function sameSite(req) {
+    const origin = req.headers.origin;
+    if (!origin) return;
+    let host = '';
+    try {
+      host = new URL(origin).host;
+    } catch {
+      /* invalid */
+    }
+    if (host !== req.headers.host && !cfg.allowedOrigins.includes(origin)) throw new HttpError(403, 'Request blocked.', { code: 'BLOCKED' });
+  }
+  const sendFile = (res, buffer, { type, name, inline = false }) => {
+    res.writeHead(200, {
+      ...sec,
+      'Content-Type': type,
+      'Content-Length': buffer.length,
+      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${name.replace(/[^\w.-]/g, '_')}"`,
+      'Cache-Control': 'no-store',
+      'X-Robots-Tag': 'noindex',
+    });
+    res.end(buffer);
+  };
   const sec = securityHeaders({ production: cfg.production });
 
   // ── auth helpers ──
@@ -84,29 +120,86 @@ export function createApp(cfg, store, log = console) {
     // Contact form: public, but only from this website (JSON + same Origin), rate-limited,
     // and validated again here. Answers 201 only once the message is stored.
     if (pathname === '/api/contact' && m === 'POST') {
-      const origin = req.headers.origin;
-      if (origin) {
-        let host = '';
-        try {
-          host = new URL(origin).host;
-        } catch {
-          /* invalid */
-        }
-        if (host !== req.headers.host && !cfg.allowedOrigins.includes(origin)) throw new HttpError(403, 'Request blocked.', { code: 'BLOCKED' });
-      }
+      sameSite(req);
       const ip = clientIp(req, cfg.trustProxy);
       const wait = contactIp.blocked(ip) || contactGlobal.blocked('all');
       if (wait) throw new HttpError(429, 'Too many messages. Please try again later.', { code: 'RATE', retryAfter: wait });
       const body = await readJson(req, 32 * 1024);
       if (body.company) throw new HttpError(400, 'Your message could not be sent.', { code: 'REJECTED' }); // honeypot
-      const check = validateMessage(body);
+      const c = await content.get();
+      const cats = c.data.contactPaths.filter((p) => p.kind !== 'booking').map((p) => p.id);
+      const check = validateMessage(body, cats);
       if (!check.ok) throw new HttpError(422, 'Some fields need attention.', { code: 'INVALID', fields: check.fields });
       contactIp.hit(ip);
       contactGlobal.hit('all');
-      const c = await content.get();
+      await messages.purge(c.data.leads && c.data.leads.messagesRetentionMonths).catch((e) => log.warn?.(`Message retention skipped: ${e.message}`));
       const path = c.data.contactPaths.find((p) => p.id === check.value.category);
       const saved = await messages.add(check.value, path ? path.title : '');
       return sendJson(res, 201, { ok: true, id: saved.id, receivedAt: saved.createdAt });
+    }
+
+    // Free PDF: name + email → temporary download link (only if the PDF really exists).
+    if (pathname === '/api/leads' && m === 'POST') {
+      sameSite(req);
+      const ip = clientIp(req, cfg.trustProxy);
+      const wait = leadIp.blocked(ip) || leadGlobal.blocked('all');
+      if (wait) throw new HttpError(429, 'Too many requests. Please try again later.', { code: 'RATE', retryAfter: wait });
+      const body = await readJson(req, 16 * 1024);
+      if (body.company) throw new HttpError(400, 'Your request could not be processed.', { code: 'REJECTED' });
+      const c = await content.get();
+      const product = c.data.products.find((p) => p.slug === body.product && p.published && p.kind === 'free');
+      if (!product) throw new HttpError(404, 'This download does not exist.', { code: 'NO_PRODUCT' });
+      const check = validateLead(body);
+      if (!check.ok) throw new HttpError(422, 'Some fields need attention.', { code: 'INVALID', fields: check.fields });
+      leadIp.hit(ip);
+      leadGlobal.hit('all');
+      const r = await leads.request(product, check.value, c.data.leads);
+      return sendJson(res, 201, { ok: true, url: r.url, expiresInHours: r.expiresInHours });
+    }
+
+    // ── built-in meeting calendar ──
+    if (pathname === '/api/booking/slots' && m === 'GET') {
+      const c = await content.get();
+      const b = c.data.booking;
+      if (b.provider !== 'builtin' || !b.open) return sendJson(res, 200, { open: false }, { 'Cache-Control': 'no-store' });
+      const days = await scheduler.slots(b, Number(url.searchParams.get('type') || 0));
+      return sendJson(res, 200, { open: true, timezone: b.timezone, days }, { 'Cache-Control': 'no-store' });
+    }
+    if (pathname === '/api/booking' && m === 'POST') {
+      sameSite(req);
+      const ip = clientIp(req, cfg.trustProxy);
+      const wait = bookIp.blocked(ip) || bookGlobal.blocked('all');
+      if (wait) throw new HttpError(429, 'Too many requests. Please try again later.', { code: 'RATE', retryAfter: wait });
+      const body = await readJson(req, 16 * 1024);
+      if (body.company) throw new HttpError(400, 'Your request could not be processed.', { code: 'REJECTED' });
+      const c = await content.get();
+      const b = c.data.booking;
+      if (b.provider !== 'builtin' || !b.open) throw new HttpError(409, 'Online booking is closed.', { code: 'CLOSED' });
+      const check = validateBooking(body, b);
+      if (!check.ok) throw new HttpError(422, 'Some fields need attention.', { code: 'INVALID', fields: check.fields });
+      bookIp.hit(ip);
+      bookGlobal.hit('all');
+      const r = await scheduler.book(b, check.value);
+      const bk = r.booking;
+      return sendJson(res, 201, {
+        ok: true,
+        booking: { id: bk.id, start: bk.start, end: bk.end, type: bk.type, duration: bk.duration, timezone: bk.timezone },
+        manage: `/booking/manage?id=${bk.id}&t=${r.token}`,
+      });
+    }
+    const bm = pathname.match(/^\/api\/booking\/([0-9a-f-]{36})(\/cancel)?$/);
+    if (bm && m === 'GET' && !bm[2]) return sendJson(res, 200, { booking: await scheduler.view(bm[1], url.searchParams.get('t')) }, { 'Cache-Control': 'no-store' });
+    if (bm && m === 'POST' && bm[2]) {
+      sameSite(req);
+      const body = await readJson(req, 4 * 1024);
+      const r = await scheduler.cancelByVisitor(bm[1], body.t);
+      return sendJson(res, 200, { ok: true, status: r.status });
+    }
+
+    const dl = pathname.match(/^\/api\/download\/([\w.-]{20,700})$/);
+    if (dl && m === 'GET') {
+      const f = await leads.download(dl[1]);
+      return sendFile(res, f.buffer, { type: 'application/pdf', name: f.filename });
     }
 
     if (pathname === '/api/auth/login' && m === 'POST') {
@@ -162,6 +255,12 @@ export function createApp(cfg, store, log = console) {
         const key = s.idHash;
         if (uploads.blocked(key)) throw new HttpError(429, 'Upload limit reached. Please try again in an hour.');
         const type = String(req.headers['content-type'] || '');
+        if (type === 'application/pdf') {
+          const buf = await readBody(req, cfg.maxPdfBytes);
+          if (!buf.length) throw new HttpError(400, 'The file is empty.');
+          uploads.hit(key);
+          return sendJson(res, 200, await content.uploadPdf(buf, url.searchParams.get('access') === 'private' ? 'private' : 'public'));
+        }
         if (!/^image\/(jpeg|png|webp)$/.test(type)) throw new HttpError(415, 'Only JPEG, PNG and WebP images can be uploaded.');
         const buf = await readBody(req, cfg.maxUploadBytes);
         if (!buf.length) throw new HttpError(400, 'The file is empty.');
@@ -171,6 +270,61 @@ export function createApp(cfg, store, log = console) {
 
       if (pathname === '/api/admin/history' && m === 'GET') return sendJson(res, 200, { items: await content.history() });
 
+      // preview of a private PDF (admin only)
+      if (pathname === '/api/admin/file' && m === 'GET') {
+        const pm = String(url.searchParams.get('name') || '').match(PRIVATE_NAME);
+        if (!pm) throw new HttpError(404, 'Not found.');
+        const buf = await store.getPrivate(pm[1]);
+        if (!buf) throw new HttpError(404, 'This file is missing from storage.', { code: 'NO_FILE' });
+        return sendFile(res, buf, { type: 'application/pdf', name: 'preview.pdf', inline: true });
+      }
+
+      // ── leads (free PDF downloads) ──
+      if ((pathname === '/api/admin/leads' || pathname === '/api/admin/leads.csv') && m === 'GET') {
+        const c = await content.get();
+        const items = await leads.list(c.data.leads);
+        if (pathname.endsWith('.csv')) {
+          const csv = toCsv(items, [
+            { label: 'Date', get: (l) => l.createdAt }, { label: 'Name', get: (l) => l.name }, { label: 'Email', get: (l) => l.email },
+            { label: 'Product', get: (l) => l.productName }, { label: 'Newsletter consent', get: (l) => (l.consent ? 'yes' : 'no') },
+            { label: 'Language', get: (l) => l.lang }, { label: 'Downloads', get: (l) => l.downloads }, { label: 'Last download', get: (l) => l.lastDownloadAt },
+            { label: 'Source', get: (l) => l.source },
+          ]);
+          res.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="leads.csv"', 'Cache-Control': 'no-store' });
+          return res.end(csv);
+        }
+        return sendJson(res, 200, { items, total: items.length });
+      }
+      const lm = pathname.match(/^\/api\/admin\/leads\/([^/]+)$/);
+      if (lm && m === 'DELETE') {
+        await leads.remove(lm[1]);
+        return sendJson(res, 200, { ok: true });
+      }
+
+      // ── appointments (Calendly / Cal.com, read-only) ──
+      if (pathname === '/api/admin/bookings' && m === 'GET') {
+        const c = await content.get();
+        const b = c.data.booking;
+        // bookings made with the built-in calendar are always listed (also after switching service)
+        const own = await scheduler.list();
+        if (b.provider === 'builtin') return sendJson(res, 200, { provider: 'builtin', connected: true, open: b.open, items: own });
+        return sendJson(res, 200, { ...(await booking.upcoming(b.provider)), own });
+      }
+      const abm = pathname.match(/^\/api\/admin\/bookings\/([^/]+)$/);
+      if (abm && m === 'PATCH') return sendJson(res, 200, { item: await scheduler.update(abm[1], await readJson(req, 16 * 1024)) });
+      if (abm && m === 'DELETE') {
+        await scheduler.remove(abm[1]);
+        return sendJson(res, 200, { ok: true });
+      }
+
+      // ── SEO: link checker ──
+      if (pathname === '/api/admin/seo/check-links' && m === 'POST') {
+        if (linkCheck.blocked(s.idHash)) throw new HttpError(429, 'The link check can run 6 times per hour.');
+        linkCheck.hit(s.idHash);
+        const c = await content.get();
+        return sendJson(res, 200, await checkLinks(collectLinks(c.data), { pub: publicView(c.data), fetchImpl: deps.fetch || globalThis.fetch }));
+      }
+
       if (pathname === '/api/admin/restore' && m === 'POST') {
         const body = await readJson(req, 10 * 1024);
         return sendJson(res, 200, await content.restore(Number(body.version), Number(body.currentVersion)));
@@ -178,10 +332,20 @@ export function createApp(cfg, store, log = console) {
 
       // ── inbox ──
       if (pathname === '/api/admin/messages' && m === 'GET') return sendJson(res, 200, await messages.list());
+      if (pathname === '/api/admin/messages.csv' && m === 'GET') {
+        const { items } = await messages.list();
+        const csv = toCsv(items, [
+          { label: 'Date', get: (x) => x.createdAt }, { label: 'Name', get: (x) => x.name }, { label: 'Email', get: (x) => x.email },
+          { label: 'Category', get: (x) => x.categoryLabel || x.category }, { label: 'Message', get: (x) => x.message }, { label: 'Language', get: (x) => x.lang },
+          { label: 'Read', get: (x) => (x.read ? 'yes' : 'no') }, { label: 'Status', get: (x) => x.status }, { label: 'Notes', get: (x) => x.notes }, { label: 'Source', get: (x) => x.source },
+        ]);
+        res.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="messages.csv"', 'Cache-Control': 'no-store' });
+        return res.end(csv);
+      }
       const mm = pathname.match(/^\/api\/admin\/messages\/([^/]+)$/);
       if (mm && m === 'PATCH') {
         const body = await readJson(req, 4 * 1024);
-        return sendJson(res, 200, { item: await messages.setRead(mm[1], body.read) });
+        return sendJson(res, 200, { item: await messages.update(mm[1], body) });
       }
       if (mm && m === 'DELETE') {
         await messages.remove(mm[1]);
@@ -199,6 +363,16 @@ export function createApp(cfg, store, log = console) {
           media: await content.mediaCount(),
           maxUploadMb: Math.round(cfg.maxUploadBytes / 1024 / 1024),
           unreadMessages: await messages.unread(),
+          maxPdfMb: Math.round(cfg.maxPdfBytes / 1024 / 1024),
+          integrations: {
+            booking: c.data.booking.provider === 'builtin' ? { provider: 'builtin', connected: true, open: c.data.booking.open } : booking.status(c.data.booking.provider),
+            searchConsole: { connected: false, envVar: 'GOOGLE_SEARCH_CONSOLE (phase 2)' },
+            analytics: { connected: false, envVar: 'GA4 (phase 2)' },
+            googleAds: { connected: false, envVar: 'GOOGLE_ADS (phase 2)' },
+            metaAds: { connected: false, envVar: 'META_ADS (phase 2)' },
+            ai: { connected: false, envVar: 'AI provider key (phase 2)' },
+            payments: { connected: false, envVar: 'payment gateway (phase 2)' },
+          },
           sessionExpiresAt: s.expiresAt,
         });
       }
@@ -246,14 +420,28 @@ export function createApp(cfg, store, log = console) {
       let title = loc.site.seoTitle || `${loc.site.name} — ${loc.site.role}`;
       let desc = loc.site.seoDescription || '';
       const mm = clean.match(/^\/work\/([^/]+)$/);
+      const rm = clean.match(/^\/resources\/([^/]+)$/);
+      let project = null;
+      let product = null;
       if (mm) {
-        const p = loc.projects.find((x) => x.slug === decodeURIComponent(mm[1]));
-        if (p) {
-          title = `${p.title} — ${loc.site.name}`;
-          desc = p.summary;
+        project = loc.projects.find((x) => x.slug === decodeURIComponent(mm[1])) || null;
+        if (project) {
+          title = project.seoTitle || `${project.title} — ${loc.site.name}`;
+          desc = project.seoDescription || project.summary;
         } else status = 404;
-      } else if (clean === '/work') title = `Portfolio — ${loc.site.name}`;
-      else if (clean !== '/') status = 404;
+      } else if (rm) {
+        product = loc.products.find((x) => x.slug === decodeURIComponent(rm[1])) || null;
+        if (product) {
+          title = product.seoTitle || `${product.t} — ${loc.site.name}`;
+          desc = product.seoDescription || product.d;
+        } else status = 404;
+      } else if (clean === '/work') {
+        title = loc.seo.workTitle || `Portfolio — ${loc.site.name}`;
+        desc = loc.seo.workDescription || desc;
+      } else if (clean === '/booking/manage') {
+        title = `${loc.site.name}`;
+      } else if (clean !== '/') status = 404;
+      const head = clean === '/booking/manage' ? '<meta name="robots" content="noindex">' : status === 200 ? headTags({ content: pub, loc, base: baseUrl(pub, req, cfg.trustProxy), path: clean, lang, project, product }) : '<meta name="robots" content="noindex">';
       html = html.replace(/<html[^>]*>/, `<html lang="${lang}" dir="${dirOf(lang)}">`);
       const json = JSON.stringify({ data: pub, version: c.version })
         .replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
@@ -262,7 +450,7 @@ export function createApp(cfg, store, log = console) {
         .replace(/(<meta name="description" content=")[^"]*(")/, `$1${escHtml(desc)}$2`)
         .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escHtml(title)}$2`)
         .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escHtml(desc)}$2`)
-        .replace('</head>', `<script id="nt-content" type="application/json">${json}</script></head>`);
+        .replace('</head>', `${head}<script id="nt-content" type="application/json">${json}</script></head>`);
     }
     res.writeHead(status, headers);
     res.end(html);
@@ -276,6 +464,25 @@ export function createApp(cfg, store, log = console) {
       throw new HttpError(400, 'Bad request.');
     }
     if (pathname.includes('\0')) throw new HttpError(400, 'Bad request.');
+
+    // SEO files and redirects set in the dashboard
+    if (pathname === '/sitemap.xml' || pathname === '/robots.txt') {
+      const c = await content.get();
+      const pub = publicView(c.data);
+      const base = baseUrl(pub, req, cfg.trustProxy);
+      const isMap = pathname === '/sitemap.xml';
+      const body = isMap ? sitemap(pub, base, c.updatedAt) : robots(pub, base);
+      res.writeHead(200, { ...sec, 'Content-Type': isMap ? 'application/xml; charset=utf-8' : 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=600' });
+      return res.end(body);
+    }
+    if (!pathname.startsWith('/uploads/') && !pathname.startsWith('/assets/')) {
+      const c = await content.get();
+      const to = findRedirect(c.data, pathname);
+      if (to && to !== pathname) {
+        res.writeHead(301, { Location: to, 'Cache-Control': 'public, max-age=3600' });
+        return res.end();
+      }
+    }
 
     if (pathname.startsWith('/uploads/') && store.uploadsDir) {
       const name = pathname.slice('/uploads/'.length);

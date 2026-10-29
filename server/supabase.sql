@@ -31,19 +31,41 @@ create table if not exists public.nt_messages (
   read           boolean not null default false
 );
 create index if not exists nt_messages_created_at on public.nt_messages (created_at desc);
+alter table public.nt_messages add column if not exists status text not null default 'new';
+alter table public.nt_messages add column if not exists notes  text not null default '';
+alter table public.nt_messages add column if not exists source jsonb not null default '{}'::jsonb;
+
+-- Other records (download leads…), one row each
+create table if not exists public.nt_records (
+  id          uuid primary key,
+  collection  text not null,
+  created_at  timestamptz not null default now(),
+  data        jsonb not null
+);
+create index if not exists nt_records_collection on public.nt_records (collection, created_at desc);
 
 -- Lock all tables: only the server (secret key) may read or write them.
 alter table public.nt_content  enable row level security;
 alter table public.nt_sessions enable row level security;
 alter table public.nt_messages enable row level security;
+alter table public.nt_records  enable row level security;
 revoke all on public.nt_content  from anon, authenticated;
 revoke all on public.nt_sessions from anon, authenticated;
 revoke all on public.nt_messages from anon, authenticated;
+revoke all on public.nt_records  from anon, authenticated;
 
--- Public image bucket (read: everyone, write: server only), 5 MB, images only.
+-- Public bucket (read: everyone, write: server only): images and public PDFs (CV), 20 MB.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('portfolio', 'portfolio', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+values ('portfolio', 'portfolio', true, 20971520, array['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
 on conflict (id) do update
   set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+-- Private bucket for downloadable products (only the server can read; visitors get a temporary link).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('portfolio-private', 'portfolio-private', false, 52428800, array['application/pdf'])
+on conflict (id) do update
+  set public = false,
       file_size_limit = excluded.file_size_limit,
       allowed_mime_types = excluded.allowed_mime_types;

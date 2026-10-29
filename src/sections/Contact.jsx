@@ -24,7 +24,9 @@ function check(data) {
 }
 
 export default function Contact() {
-  const { site, contactPaths, text } = useContent();
+  const { site, contactPaths: allPaths, text } = useContent();
+  // the original three cards (the booking card is managed in the dashboard but not shown here)
+  const contactPaths = allPaths.filter((p) => p.kind !== 'booking');
   const { t, lang } = useI18n();
   const [inquiry, setInquiry] = useState('work');
   const [err, setErr] = useState({});

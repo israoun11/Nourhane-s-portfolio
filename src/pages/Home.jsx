@@ -5,6 +5,7 @@ import Journey from '../sections/Journey.jsx';
 import SelectedWork from '../sections/SelectedWork.jsx';
 import Method from '../sections/Method.jsx';
 import Expertise from '../sections/Expertise.jsx';
+import Tools from '../sections/Tools.jsx';
 import CodaStudio from '../sections/CodaStudio.jsx';
 import Learning from '../sections/Learning.jsx';
 import Personality from '../sections/Personality.jsx';
@@ -30,6 +31,7 @@ export default function Home() {
         <SelectedWork />
         <Method />
         <Expertise />
+        <Tools />
         <CodaStudio />
         <Learning />
         <Personality />

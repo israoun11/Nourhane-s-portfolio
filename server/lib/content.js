@@ -16,6 +16,13 @@ export function sniffImage(buf) {
   return null;
 }
 
+/** A real PDF starts with "%PDF-" and contains an end-of-file marker. */
+export function sniffPdf(buf) {
+  if (buf.length < 64 || buf.toString('ascii', 0, 5) !== '%PDF-') return null;
+  if (!buf.subarray(Math.max(0, buf.length - 2048)).toString('latin1').includes('%%EOF')) return null;
+  return { ext: 'pdf', type: 'application/pdf' };
+}
+
 export function createContentService(store, log = console) {
   // Retry loop for small bookkeeping documents (history, media index).
   async function updateDoc(key, fn, init) {
@@ -61,7 +68,8 @@ export function createContentService(store, log = console) {
     if (!remove.length) return;
     for (const m of remove) {
       try {
-        await store.deleteObject(m.path);
+        if (m.private) await store.deletePrivate(m.path);
+        else await store.deleteObject(m.path);
       } catch (e) {
         log.warn?.(`Could not delete unused image ${m.path}: ${e.message}`);
       }
@@ -117,6 +125,27 @@ export function createContentService(store, log = console) {
     return save(structuredClone(item.data), currentVersion);
   }
 
+  /** PDF upload. access 'public' → /uploads/<hash>.pdf (CV); 'private' → never served directly. */
+  async function uploadPdf(buffer, access = 'public') {
+    const kind = sniffPdf(buffer);
+    if (!kind) throw new HttpError(415, 'This file is not a valid PDF.', { code: 'NOT_PDF' });
+    const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+    const name = `${hash}.pdf`;
+    let url;
+    if (access === 'private') {
+      await store.putPrivate(name, buffer);
+      url = `private:${name}`;
+    } else {
+      url = (await store.putObject(name, buffer, kind.type)).url;
+    }
+    await updateDoc(
+      'media',
+      (v) => ({ items: [...v.items.filter((m) => m.url !== url), { url, path: name, type: kind.type, size: buffer.length, private: access === 'private', createdAt: new Date().toISOString() }] }),
+      { items: [] }
+    );
+    return { url, size: buffer.length, type: kind.type };
+  }
+
   async function upload(buffer) {
     const kind = sniffImage(buffer);
     if (!kind) throw new HttpError(415, 'Only JPEG, PNG and WebP images can be uploaded.');
@@ -139,5 +168,5 @@ export function createContentService(store, log = console) {
     return m ? m.value.items.length : 0;
   }
 
-  return { get, save, history, restore, upload, mediaCount, cleanupMedia };
+  return { get, save, history, restore, upload, uploadPdf, mediaCount, cleanupMedia };
 }

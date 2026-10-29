@@ -10,6 +10,8 @@ export function createFileStore(dataDir) {
   const sessFile = path.join(dataDir, 'sessions.json');
   const upDir = path.join(dataDir, 'uploads');
   const msgDir = path.join(dataDir, 'messages');
+  const privDir = path.join(dataDir, 'private'); // files never served directly (product PDFs)
+  const recDir = path.join(dataDir, 'records'); // leads and other records, one file each
   let chain = Promise.resolve();
   const lock = (fn) => {
     const run = chain.then(fn, fn);
@@ -17,7 +19,9 @@ export function createFileStore(dataDir) {
     return run;
   };
 
-  const ready = Promise.all([kvDir, upDir, msgDir].map((d) => fs.mkdir(d, { recursive: true })));
+  const ready = Promise.all([kvDir, upDir, msgDir, privDir, recDir].map((d) => fs.mkdir(d, { recursive: true })));
+  const safe = (s) => String(s).replace(/[^a-z0-9._-]/gi, '');
+  const recFile = (col, id) => path.join(recDir, safe(col), `${safe(id)}.json`);
   const msgFile = (id) => path.join(msgDir, `${String(id).replace(/[^a-f0-9-]/gi, '')}.json`);
   async function allMessages() {
     await ready;
@@ -95,6 +99,72 @@ export function createFileStore(dataDir) {
       await fs.rm(path.join(upDir, path.basename(name)), { force: true });
     },
     uploadsDir: upDir,
+
+    // ── private files ──
+    async putPrivate(name, buffer) {
+      await ready;
+      await fs.writeFile(path.join(privDir, safe(name)), buffer);
+    },
+    async getPrivate(name) {
+      try {
+        return await fs.readFile(path.join(privDir, safe(name)));
+      } catch (e) {
+        if (e.code === 'ENOENT') return null;
+        throw e;
+      }
+    },
+    async hasPrivate(name) {
+      try {
+        await fs.access(path.join(privDir, safe(name)));
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    async deletePrivate(name) {
+      await fs.rm(path.join(privDir, safe(name)), { force: true });
+    },
+
+    // ── records (leads…) ──
+    async addRecord(col, rec) {
+      await ready;
+      await fs.mkdir(path.join(recDir, safe(col)), { recursive: true });
+      await writeAtomic(recFile(col, rec.id), rec);
+    },
+    async listRecords(col) {
+      await ready;
+      let names = [];
+      try {
+        names = (await fs.readdir(path.join(recDir, safe(col)))).filter((n) => n.endsWith('.json'));
+      } catch (e) {
+        if (e.code !== 'ENOENT') throw e;
+      }
+      const items = [];
+      for (const n of names) {
+        const r = await readJson(path.join(recDir, safe(col), n), null);
+        if (r) items.push(r);
+      }
+      return items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    },
+    getRecord: (col, id) => readJson(recFile(col, id), null),
+    updateRecord: (col, id, patch) =>
+      lock(async () => {
+        const cur = await readJson(recFile(col, id), null);
+        if (!cur) return null;
+        const next = { ...cur, ...patch };
+        await writeAtomic(recFile(col, id), next);
+        return next;
+      }),
+    deleteRecord: (col, id) =>
+      lock(async () => {
+        try {
+          await fs.unlink(recFile(col, id));
+          return true;
+        } catch (e) {
+          if (e.code === 'ENOENT') return false;
+          throw e;
+        }
+      }),
 
     // ── contact messages (one file per message) ──
     async addMessage(msg) {

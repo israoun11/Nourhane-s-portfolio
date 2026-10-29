@@ -3,7 +3,7 @@
 // Arabic); images, colours and links are shared by all languages.
 import { useEffect, useId, useRef, useState } from 'react';
 import { PALETTE, isTranslatable } from '../../shared/schema.js';
-import { pathKey, uploadImage } from './api.js';
+import { pathKey, uploadImage, uploadPdf } from './api.js';
 import { useEditor, useToast } from './state.jsx';
 import { useConfirm } from './ui.jsx';
 import { editPath, inputLangProps, useAdminT, useEditLang, useErrorText, useL } from './i18n.jsx';
@@ -80,7 +80,7 @@ function TextField({ def, path }) {
       ) : def.type === 'number' ? (
         <input className="ad-input ad-input--sm" type="number" min={def.min} max={def.max} {...props} onChange={(e) => update(ep.path, e.target.value === '' ? '' : Number(e.target.value))} />
       ) : (
-        <input className="ad-input" type={def.type === 'email' ? 'email' : def.type === 'url' && def.kind !== 'file' ? 'url' : 'text'} inputMode={def.type === 'url' ? 'url' : undefined} {...props} />
+        <input className="ad-input" type={def.type === 'email' ? 'email' : def.type === 'phone' ? 'tel' : def.type === 'url' && def.kind !== 'file' ? 'url' : 'text'} inputMode={def.type === 'url' ? 'url' : def.type === 'phone' ? 'tel' : undefined} {...props} />
       )}
     </Frame>
   );
@@ -97,14 +97,16 @@ function BoolField({ def, path }) {
   const t = useAdminT();
   const L = useL();
   const id = useId();
-  const on = read(path) === true;
+  const cur = read(path);
+  const on = cur === undefined ? def.default === true : cur === true;
+  const vis = ['published', 'visible'].includes(path[path.length - 1]);
   return (
     <div className="ad-field ad-field--inline">
       <button id={id} type="button" role="switch" aria-checked={on} className={`ad-switch${on ? ' is-on' : ''}`} onClick={() => update(path, !on)}>
         <span />
       </button>
       <label htmlFor={id} className="ad-label">{L(def.label)}</label>
-      <span className={`ad-badge ${on ? 'ad-badge--ok' : 'ad-badge--muted'}`}>{on ? t('ad.f.visible') : t('ad.f.hidden')}</span>
+      <span className={`ad-badge ${on ? 'ad-badge--ok' : 'ad-badge--muted'}`}>{vis ? (on ? t('ad.f.visible') : t('ad.f.hidden')) : on ? t('ad.f.on') : t('ad.f.off')}</span>
       <SharedNote />
     </div>
   );
@@ -138,7 +140,7 @@ function SelectField({ def, path }) {
   const id = useId();
   return (
     <Frame id={id} def={def} shared={editLang !== 'en'}>
-      <select id={id} className="ad-input" value={read(path)} onChange={(e) => update(path, e.target.value)}>
+      <select id={id} className="ad-input" value={read(path) ?? def.default ?? def.options[0].value} onChange={(e) => update(path, e.target.value)}>
         {def.options.map((o) => <option key={o.value} value={o.value}>{L(o.label)}</option>)}
       </select>
     </Frame>
@@ -304,6 +306,83 @@ export function ImageField({ def, path }) {
   );
 }
 
+/** A PDF file: upload (checked to be a real PDF by the server), preview, replace, remove. */
+export function FileField({ def, path }) {
+  const { read, readSaved, update } = useEditor();
+  const { editLang } = useEditLang();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const t = useAdminT();
+  const value = read(path) || '';
+  const savedValue = readSaved(path) || '';
+  const id = useId();
+  const error = useFieldError(path);
+  const input = useRef(null);
+  const [busy, setBusy] = useState(null);
+  const maxPdf = window.__ntMaxPdfMb || 20;
+  const priv = def.access === 'private';
+
+  const pick = async (file) => {
+    if (!file) return;
+    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+      toast(t('ad.f.pdf.type'), 'error');
+      return;
+    }
+    if (file.size > maxPdf * 1024 * 1024) {
+      toast(t('ad.f.pdf.size', { size: (file.size / 1024 / 1024).toFixed(1), max: maxPdf }), 'error');
+      return;
+    }
+    setBusy(0);
+    try {
+      const blob = file.type === 'application/pdf' ? file : new File([file], file.name, { type: 'application/pdf' });
+      const res = await uploadPdf(blob, def.access, (p) => setBusy(p));
+      update(path, res.url);
+      toast(t('ad.f.pdf.uploaded', { name: file.name }));
+    } catch (e) {
+      toast(t('ad.f.pdf.failed', { msg: e.status === 415 ? t('ad.f.pdf.notPdf') : e.status === 413 ? t('ad.f.pdf.tooBig', { max: maxPdf }) : e.status === 0 ? t('ad.err.network') : e.message }), 'error');
+    } finally {
+      setBusy(null);
+      if (input.current) input.current.value = '';
+    }
+  };
+  const previewUrl = value.startsWith('private:') ? `/api/admin/file?name=${encodeURIComponent(value)}` : value;
+  const changed = value !== savedValue;
+  return (
+    <Frame id={id} def={def} error={error} shared={editLang !== 'en'}>
+      <div className={`ad-file${value ? '' : ' is-empty'}`}>
+        <div className="ad-file__icon" aria-hidden="true">PDF</div>
+        <div className="ad-file__main">
+          {busy !== null ? (
+            <div className="ad-progress ad-progress--inline" role="progressbar" aria-valuenow={busy} aria-valuemin={0} aria-valuemax={100}>
+              <span style={{ width: `${busy}%` }} />
+              <b>{busy < 100 ? t('ad.f.img.uploading', { p: busy }) : t('ad.f.pdf.checking')}</b>
+            </div>
+          ) : value ? (
+            <>
+              <b>{t(priv ? 'ad.f.pdf.privateOk' : 'ad.f.pdf.publicOk')}</b>
+              <a className="ad-link" href={previewUrl} target="_blank" rel="noreferrer">{t('ad.f.pdf.preview')} ↗</a>
+            </>
+          ) : (
+            <span className="ad-help">{t('ad.f.pdf.none')}</span>
+          )}
+          {changed && busy === null && <span className="ad-badge ad-badge--warn">{t('ad.f.img.changed')}</span>}
+        </div>
+        <div className="ad-row">
+          <input ref={input} id={id} type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(e) => pick(e.target.files[0])} disabled={busy !== null} />
+          <label htmlFor={id} className={`ad-btn ad-btn--primary${busy !== null ? ' is-disabled' : ''}`}>{value ? t('ad.f.pdf.replace') : t('ad.f.pdf.upload')}</label>
+          {value && busy === null && (
+            <button type="button" className="ad-btn ad-btn--ghost" onClick={async () => (await confirm({ title: t('ad.f.pdf.removeTitle'), body: t('ad.f.pdf.removeBody'), ok: t('ad.f.img.remove') })) && update(path, '')}>
+              {t('ad.f.img.remove')}
+            </button>
+          )}
+          {changed && busy === null && <button type="button" className="ad-btn ad-btn--ghost" onClick={() => update(path, savedValue)}>{t('ad.f.img.undo')}</button>}
+        </div>
+      </div>
+      <p className="ad-help">{t(priv ? 'ad.f.pdf.privateHelp' : 'ad.f.pdf.publicHelp', { max: maxPdf })}</p>
+    </Frame>
+  );
+}
+
 function RemoveImage({ onRemove }) {
   const confirm = useConfirm();
   const t = useAdminT();
@@ -324,7 +403,10 @@ export function Field({ def, path }) {
     case 'url':
     case 'number':
     case 'slug':
+    case 'phone':
       return <TextField def={def} path={path} />;
+    case 'file':
+      return <FileField def={def} path={path} />;
     case 'image':
       return <ImageField def={def} path={path} />;
     case 'boolean':
@@ -379,9 +461,9 @@ export const blankLike = (def, sample) => {
       case 'select':
         return s !== undefined ? s : f.options[0].value;
       case 'boolean':
-        return false;
+        return f.default === true;
       case 'number':
-        return 0;
+        return f.default ?? 0;
       case 'tags':
       case 'multiselect':
         return [];
@@ -401,6 +483,13 @@ function useItemTitle(def) {
     if (typeof item === 'string') return item ? item.slice(0, 60) : t('ad.f.list.item', { label: L(def.of.label), n: i + 1 });
     let v = k && item && item[k];
     if (k && editLang !== 'en' && item && item.i18n && item.i18n[editLang] && item.i18n[editLang][k]) v = item.i18n[editLang][k];
+    // a choice (e.g. a weekday) shows its name; a time range shows its hours
+    const fd = k && def.of.fields && def.of.fields[k];
+    if (fd && fd.options) {
+      const o = fd.options.find((x) => x.value === v);
+      if (o) v = L(o.label);
+      if (item && item.start && item.end) v = `${v} · ${item.start}–${item.end}`;
+    }
     if (Array.isArray(v)) v = v.join(', ');
     return v ? String(v).slice(0, 60) : t('ad.f.list.item', { label: L(def.of.label), n: i + 1 });
   };

@@ -107,6 +107,14 @@ export function WithDictionaries({ dicts, children }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+/** Interface texts changed by the owner in the dashboard ({ en|fr|ar: { key: text } }) win over the built-in ones. */
+export function UiTexts({ ui, children }) {
+  const parent = useContext(Ctx);
+  const t = useMemo(() => (ui && Object.keys(ui).length ? makeT([ui, SITE], parent.lang) : parent.t), [ui, parent.lang, parent.t]);
+  const value = useMemo(() => ({ ...parent, t }), [parent, t]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
 export const useI18n = () => useContext(Ctx);
 export const useT = () => useContext(Ctx).t;
 export const useLang = () => useContext(Ctx).lang;

@@ -100,6 +100,7 @@ export function securityHeaders({ production, extraImg = [] }) {
     ["img-src 'self' data: blob: https:", ...extraImg].join(' '),
     "media-src 'self' https:",
     "connect-src 'self'",
+    "frame-src https://calendly.com https://*.calendly.com https://cal.com https://app.cal.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

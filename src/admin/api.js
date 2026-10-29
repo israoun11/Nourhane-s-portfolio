@@ -45,10 +45,10 @@ export async function api(path, { method = 'GET', json } = {}) {
 }
 
 /** Uploads an image with progress (0–100). Returns { url }. */
-export function uploadImage(file, onProgress) {
+export function uploadImage(file, onProgress, query = '') {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/admin/upload');
+    xhr.open('POST', `/api/admin/upload${query}`);
     xhr.withCredentials = true;
     xhr.setRequestHeader('X-Requested-With', 'nt-admin');
     xhr.setRequestHeader('Content-Type', file.type);
@@ -68,6 +68,9 @@ export function uploadImage(file, onProgress) {
     xhr.send(file);
   });
 }
+
+/** Uploads a PDF (public: CV · private: downloads given after the lead form). */
+export const uploadPdf = (file, access, onProgress) => uploadImage(file, onProgress, `?access=${access === 'private' ? 'private' : 'public'}`);
 
 // ── tiny immutable helpers for editing nested content ──
 export const getIn = (obj, path) => path.reduce((o, k) => (o == null ? o : o[k]), obj);

@@ -11,10 +11,13 @@ export const EMAIL = 'owner@example.com';
 export const PASSWORD = 'a long test passphrase';
 export const quiet = process.env.TEST_LOG ? console : { info() {}, warn() {}, error() {} };
 
+// Smallest valid-looking PDF
+export const PDF = Buffer.from('%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [] /Count 0 >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF\n');
+
 // 1×1 PNG
 export const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 
-export async function startTestServer({ store: makeStore, env = {} } = {}) {
+export async function startTestServer({ store: makeStore, env = {}, deps = {} } = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'nt-test-'));
   const dist = path.join(dir, 'dist');
   await fs.mkdir(path.join(dist, 'assets'), { recursive: true });
@@ -31,7 +34,7 @@ export async function startTestServer({ store: makeStore, env = {} } = {}) {
     ...env,
   });
   const store = makeStore ? makeStore(cfg) : createFileStore(cfg.dataDir);
-  const server = http.createServer(createApp(cfg, store, quiet));
+  const server = http.createServer(createApp(cfg, store, quiet, deps));
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${server.address().port}`;
   return {

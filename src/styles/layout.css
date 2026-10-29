@@ -79,3 +79,6 @@
 .mmenu__foot { margin-top: auto; display: flex; flex-direction: column; gap: 16px; }
 .mmenu__foot .lang { align-self: flex-start; }
 @media (max-width: 560px) { .header__end .lang { display: none; } }
+
+/* footer: CV button */
+.footer__cv { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; margin-top: 36px; }

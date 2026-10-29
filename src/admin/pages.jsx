@@ -6,6 +6,7 @@ import { Field, ImageField, ListField, ObjectFields } from './fields.jsx';
 import { useEditor, useToast } from './state.jsx';
 import { Card, PageHead, useConfirm } from './ui.jsx';
 import { useAdminT, useFmtDate, useL } from './i18n.jsx';
+import { useMissingCounts } from './Translations.jsx';
 
 const F = schema.fields;
 
@@ -15,21 +16,30 @@ export function Overview({ status, email, unread }) {
   const t = useAdminT();
   const fmt = useFmtDate();
   const pub = draft.projects.filter((p) => p.published).length;
-  const emptyStory = draft.timeline.reduce((n, y) => n + Math.max(0, 4 - (y.photos || []).filter((p) => p.src).length), 0);
+  const emptyStory = draft.timeline.filter((y) => !(y.photos || []).some((p) => p.src)).length;
   const noGallery = draft.projects.filter((p) => !(p.gallery || []).some((g) => g.src)).length;
+  const tr = useMissingCounts();
   const missing = [
+    tr.fr > 0 && { t: t('ad.ov.todo.trFr', { n: tr.fr }), to: '/admin/translations' },
+    tr.ar > 0 && { t: t('ad.ov.todo.trAr', { n: tr.ar }), to: '/admin/translations' },
     !draft.site.portrait && { t: t('ad.ov.todo.portrait'), to: '/admin/site' },
-    !draft.site.email && { t: t('ad.ov.todo.email'), to: '/admin/site' },
+    !draft.site.email && { t: t('ad.ov.todo.email'), to: '/admin/contact' },
     draft.projects.some((p) => !p.cover) && { t: t('ad.ov.todo.covers', { n: draft.projects.filter((p) => !p.cover).length }), to: '/admin/projects' },
-    emptyStory > 0 && { t: t('ad.ov.todo.story', { n: emptyStory }), to: '/admin/sections/timeline' },
+    emptyStory > 0 && { t: t('ad.ov.todo.story', { n: emptyStory }), to: '/admin/story' },
+    draft.products.some((p) => p.kind === 'free' && p.published && !p.file) && { t: t('ad.ov.todo.freePdf'), to: '/admin/products' },
+    !draft.site.cvFile && !draft.site.cv && { t: t('ad.ov.todo.cv'), to: '/admin/files' },
+    draft.booking.provider === 'builtin' && !draft.booking.open && { t: t('ad.ov.todo.bookingOpen'), to: '/admin/booking' },
+    draft.booking.provider !== 'builtin' && !draft.booking.url && { t: t('ad.ov.todo.booking'), to: '/admin/booking' },
+    !draft.site.url && { t: t('ad.ov.todo.siteUrl'), to: '/admin/seo' },
     noGallery > 0 && { t: t('ad.ov.todo.galleries', { n: noGallery }), to: '/admin/projects' },
-    !Object.values(draft.site.socials).some(Boolean) && { t: t('ad.ov.todo.socials'), to: '/admin/site' },
+    !Object.values(draft.site.socials).some(Boolean) && { t: t('ad.ov.todo.socials'), to: '/admin/contact' },
   ].filter(Boolean);
   const quick = [
     ['/admin/inbox', 'inbox'],
     ['/admin/projects', 'projects'],
     ['/admin/texts', 'texts'],
-    ['/admin/sections/timeline', 'story'],
+    ['/admin/story', 'story'],
+    ['/admin/leads', 'leads'],
     ['/admin/site', 'site'],
     ['/admin/history', 'history'],
   ];
@@ -78,10 +88,10 @@ export function SiteInfo() {
     <>
       <PageHead title={t('ad.site.title')} intro={t('ad.site.intro')} />
       <Card title={t('ad.site.identity')}>
-        <ObjectFields def={F.site} path={['site']} only={['name', 'role', 'portrait']} />
+        <ObjectFields def={F.site} path={['site']} only={['name', 'role', 'portrait', 'portraitAlt', 'portraitPos']} />
       </Card>
       <Card title={t('ad.site.contact')}>
-        <ObjectFields def={F.site} path={['site']} only={['email', 'cv', 'codastudioUrl', 'socials']} />
+        <ObjectFields def={F.site} path={['site']} only={['codastudioUrl']} />
       </Card>
       <Card title={t('ad.site.photos')}>
         <ObjectFields def={F.site} path={['site']} only={['codastudio', 'training']} />
@@ -89,6 +99,7 @@ export function SiteInfo() {
       <Card title={t('ad.site.seo')} intro={t('ad.site.seoIntro')}>
         <ObjectFields def={F.site} path={['site']} only={['seoTitle', 'seoDescription']} />
       </Card>
+      <p className="ad-help">{t('ad.site.moved')} <Link to="/admin/contact">{t('ad.mod.contact')}</Link> · <Link to="/admin/files">{t('ad.mod.files')}</Link> · <Link to="/admin/seo">{t('ad.mod.seo')}</Link></p>
     </>
   );
 }
@@ -112,12 +123,14 @@ export function Texts() {
 }
 
 // ═════════════ Section lists ═════════════
-export const SECTION_PAGES = ['logos', 'mind', 'timeline', 'method', 'expertise', 'codaServices', 'learning', 'series', 'products', 'testimonials', 'contactPaths'];
+// Sections without a page of their own (story, products, contact cards… have their own module).
+export const SECTION_PAGES = ['logos', 'mind', 'method', 'expertise', 'codaServices', 'learning', 'series', 'testimonials'];
+const OTHER_SECTIONS = ['timeline', 'products', 'contactPaths'];
 
 export function SectionPage({ k }) {
   const t = useAdminT();
   const def = F[k];
-  if (!SECTION_PAGES.includes(k) || !def) return <p className="ad-empty">{t('ad.sec.unknown')}</p>;
+  if (!(SECTION_PAGES.includes(k) || OTHER_SECTIONS.includes(k)) || !def) return <p className="ad-empty">{t('ad.sec.unknown')}</p>;
   return (
     <>
       <PageHead title={t(`ad.sec.${k}`)} intro={t(`ad.sec.${k}Intro`)} />
@@ -167,6 +180,7 @@ export function Projects() {
               <span className="ad-proj__n">{String(i + 1).padStart(2, '0')}{i === 0 ? t('ad.pr.featured') : ''} · {t('ad.pr.images', { n: (p.gallery || []).filter((g) => g.src).length })}</span>
               <Link to={`/admin/projects/${i}`} className="ad-proj__t">{p.title || t('ad.pr.untitled')}</Link>
               <span className="ad-proj__meta" dir="ltr">/work/{p.slug}</span>
+              {p.archived && <span className="ad-badge ad-badge--muted ad-badge--xs">{t('ad.pr.archived')}</span>}
             </div>
             <div className="ad-proj__tools">
               <button type="button" className={`ad-badge ${p.published ? 'ad-badge--ok' : 'ad-badge--muted'} ad-badge--btn`} onClick={() => update(['projects', i, 'published'], !p.published)} aria-label={p.published ? t('ad.pr.hide', { title: p.title }) : t('ad.pr.show', { title: p.title })}>
@@ -207,6 +221,7 @@ export function ProjectEdit({ index }) {
       </PageHead>
       <Card title={t('ad.pe.basics')}>
         <Field def={pf.published} path={['projects', index, 'published']} />
+        <Field def={pf.archived} path={['projects', index, 'archived']} />
         {only(['title'])}
         <div className="ad-field">
           {only(['slug'])}
@@ -217,10 +232,20 @@ export function ProjectEdit({ index }) {
       </Card>
       <Card title={t('ad.pe.images')} intro={t('ad.pe.imagesIntro')}>
         <ImageField def={pf.cover} path={['projects', index, 'cover']} />
+        {only(['coverAlt', 'logo'])}
         <Field def={pf.gallery} path={['projects', index, 'gallery']} />
       </Card>
       <Card title={t('ad.pe.details')} intro={t('ad.pe.detailsIntro')}>
-        {only(['industry', 'year', 'role', 'deliverables', 'challenge', 'context', 'problem', 'solution', 'learning'])}
+        {only(['client', 'industry', 'year', 'role', 'deliverables', 'challenge', 'context', 'problem', 'solution', 'learning'])}
+      </Card>
+      <Card title={t('ad.pe.case')} intro={t('ad.pe.caseIntro')}>
+        {only(['objective', 'strategy', 'execution', 'toolsUsed'])}
+      </Card>
+      <Card title={t('ad.pe.linksCard')}>
+        {only(['url', 'sourceUrl', 'links', 'related'])}
+      </Card>
+      <Card title={t('ad.pe.seo')}>
+        {only(['seoTitle', 'seoDescription'])}
       </Card>
       <Card title={t('ad.pe.approach')} intro={t('ad.pe.approachIntro')}>
         <div className="ad-approach">

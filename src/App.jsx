@@ -4,23 +4,31 @@ import { exitPreview, useContent, useIsPreview } from './content/ContentProvider
 import Home from './pages/Home.jsx';
 import Work from './pages/Work.jsx';
 import CaseStudy from './pages/CaseStudy.jsx';
+import Product from './pages/Product.jsx';
+import BookingManage from './pages/BookingManage.jsx';
 import NotFound from './pages/NotFound.jsx';
 import RevealObserver from './components/RevealObserver.jsx';
 import ViewCursor from './components/ViewCursor.jsx';
-import { useT } from './i18n/index.jsx';
+import { UiTexts, useT } from './i18n/index.jsx';
 
 // The dashboard is loaded only when someone opens /admin — visitors never download it.
 const AdminApp = lazy(() => import('./admin/AdminApp.jsx'));
 
 function PublicPage({ path }) {
-  const { projects } = useContent();
+  const { projects, products } = useContent();
   const clean = path.replace(/\/+$/, '') || '/';
   if (clean === '/') return <Home />;
   if (clean === '/work') return <Work />;
+  if (clean === '/booking/manage') return <BookingManage />;
   const m = clean.match(/^\/work\/([^/]+)$/);
   if (m) {
     const project = projects.find((p) => p.slug === decodeURIComponent(m[1]));
     return project ? <CaseStudy key={project.slug} project={project} /> : <NotFound />;
+  }
+  const r = clean.match(/^\/resources\/([^/]+)$/);
+  if (r) {
+    const product = products.find((p) => p.slug === decodeURIComponent(r[1]));
+    return product ? <Product key={product.slug} product={product} /> : <NotFound />;
   }
   return <NotFound />;
 }
@@ -38,6 +46,7 @@ function PreviewBar() {
 export default function App() {
   const { path } = useRouter();
   const preview = useIsPreview();
+  const content = useContent();
   const t = useT();
   const isAdmin = path === '/admin' || path.startsWith('/admin/');
 
@@ -63,6 +72,7 @@ export default function App() {
   }
 
   return (
+    <UiTexts ui={content.ui}>
     <div className="app">
       <a className="skip-link" href="#main">{t('app.skip')}</a>
       <RevealObserver />
@@ -72,5 +82,6 @@ export default function App() {
         <PublicPage path={path} />
       </div>
     </div>
+    </UiTexts>
   );
 }
