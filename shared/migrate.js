@@ -1,12 +1,11 @@
 // Brings content saved by earlier versions of the website up to date, without
-// losing anything, and fills in the default French/Arabic translations of texts
+// losing anything, and fills in the default French translations of texts
 // that are still the original English (shared/i18n/content-*.js).
 // Used by the server whenever content is read, and by the browser for previews.
 import { schema, isTranslatable } from './schema.js';
 import { BOOKING_CARD, defaultContent } from './default-content.js';
 import { TRANSLATED } from './i18n/langs.js';
 import fr from './i18n/content-fr.js';
-import ar from './i18n/content-ar.js';
 
 // Texts are matched loosely: spacing, apostrophe/quote style and capital letters don't matter,
 // so a text that was only retyped or re-capitalised still gets its translation.
@@ -24,13 +23,12 @@ const index = (dict) => {
   for (const [k, v] of Object.entries(dict)) m.set(normalizeText(k), v);
   return m;
 };
-const DICTS = { fr: index(fr), ar: index(ar) };
+const DICTS = { fr: index(fr) };
 const isUpper = (s) => /[A-Z]/.test(s) && s === s.toUpperCase();
 function lookup(dict, lang, value) {
   const t = dict.get(normalizeText(value));
   if (t === undefined) return undefined;
-  // keep the capitalisation style of the original (Arabic has no capitals)
-  if (lang === 'ar') return t;
+  // keep the capitalisation style of the original
   if (isUpper(value)) return t.toUpperCase();
   if (isUpper(t)) return t.charAt(0) + t.slice(1).toLowerCase();
   return t;

@@ -166,7 +166,8 @@ test('booking URL must be a Calendly / Cal.com address', async () => {
 test('SEO: sitemap with languages, robots, head tags, redirects, noindex switch', async () => {
   const sm = await (await fetch(srv.base + '/sitemap.xml')).text();
   assert.match(sm, /<urlset/);
-  assert.match(sm, /hreflang="ar"/);
+  assert.match(sm, /hreflang="fr"/);
+  assert.doesNotMatch(sm, /hreflang="ar"/);
   const { data } = await getContent();
   assert.ok(sm.includes(`/work/${data.projects.find((p) => p.published).slug}`));
   const rb = await (await fetch(srv.base + '/robots.txt')).text();

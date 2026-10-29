@@ -21,7 +21,6 @@ export function Overview({ status, email, unread }) {
   const tr = useMissingCounts();
   const missing = [
     tr.fr > 0 && { t: t('ad.ov.todo.trFr', { n: tr.fr }), to: '/admin/translations' },
-    tr.ar > 0 && { t: t('ad.ov.todo.trAr', { n: tr.ar }), to: '/admin/translations' },
     !draft.site.portrait && { t: t('ad.ov.todo.portrait'), to: '/admin/site' },
     !draft.site.email && { t: t('ad.ov.todo.email'), to: '/admin/contact' },
     draft.projects.some((p) => !p.cover) && { t: t('ad.ov.todo.covers', { n: draft.projects.filter((p) => !p.cover).length }), to: '/admin/projects' },

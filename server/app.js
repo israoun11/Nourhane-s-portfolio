@@ -427,7 +427,7 @@ export function createApp(cfg, store, log = console, deps = {}) {
       const c = await content.get();
       const pub = publicView(c.data);
       // The visitor's language (chosen with the language switcher, remembered in a cookie)
-      // sets <html lang/dir> and the page title right away, so Arabic never flashes left-to-right.
+      // sets <html lang/dir> and the page title right away.
       const cookieLang = parseCookies(req).nt_lang;
       const lang = isLang(url.searchParams.get('lang')) ? url.searchParams.get('lang') : isLang(cookieLang) ? cookieLang : 'en';
       const loc = localize(pub, lang);

@@ -36,14 +36,21 @@ test('tools list v2: the owner’s list replaces the earlier one once, keeping l
   assert.equal(migrateContent(m).tools[0].tools.length, 2, 'a later deletion stays deleted');
 });
 
-test('tool names are never auto-translated (an earlier "Later" → "سنوات" is corrected)', () => {
+test('tool names are never auto-translated (an earlier "Later" → "plus tard" is corrected)', () => {
   const doc = migrateContent(structuredClone(old));
   const later = doc.tools[1].tools.find((t) => t.name === 'Later');
-  later.i18n.ar.name = 'سنوات';
-  later.i18n.fr.name = 'Plus tard';
-  const fixed = migrateContent(doc).tools[1].tools.find((t) => t.name === 'Later');
-  assert.equal(fixed.i18n.ar.name, 'Later');
-  assert.equal(fixed.i18n.fr.name, 'Plus tard', 'a name changed on purpose is kept');
+  later.i18n.fr.name = 'plus tard'; // automatic translation from an earlier version
+  assert.equal(migrateContent(doc).tools[1].tools.find((t) => t.name === 'Later').i18n.fr.name, 'Later');
+  later.i18n.fr.name = 'Later (outil)'; // changed on purpose
+  assert.equal(migrateContent(doc).tools[1].tools.find((t) => t.name === 'Later').i18n.fr.name, 'Later (outil)', 'a name changed on purpose is kept');
+});
+
+test('Arabic removed: no Arabic generated, Arabic texts saved earlier are kept (not deleted)', () => {
+  const doc = migrateContent(structuredClone(defaultContent));
+  assert.equal(doc.text.hero.i18n.ar, undefined, 'no new Arabic translations');
+  doc.text.hero.i18n.ar = { line1: 'أفكّر' };
+  const v = validateContent(migrateContent(doc));
+  assert.equal(v.value.text.hero.i18n.ar.line1, 'أفكّر', 'stored Arabic text survives a save');
 });
 
 test('social links: filled once where empty, owner changes kept', () => {

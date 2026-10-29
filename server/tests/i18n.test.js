@@ -10,9 +10,9 @@ const load = async (p) => (await import(path.join(root, p))).default;
 const files = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? files(path.join(dir, d.name)) : [path.join(dir, d.name)]));
 
 for (const part of ['site', 'admin']) {
-  test(`${part} texts: French and Arabic have exactly the English keys, none empty`, async () => {
+  test(`${part} texts: French has exactly the English keys, none empty`, async () => {
     const en = await load(`src/i18n/${part}/en.js`);
-    for (const lang of ['fr', 'ar']) {
+    for (const lang of ['fr']) {
       const d = await load(`src/i18n/${part}/${lang}.js`);
       const missing = Object.keys(en).filter((k) => !(k in d));
       const extra = Object.keys(d).filter((k) => !(k in en));
@@ -41,7 +41,7 @@ test('every text key used in the code exists in English', async () => {
   assert.deepEqual(unknown, []);
 });
 
-test('dashboard field names: every schema label has a French and Arabic name', async () => {
+test('dashboard field names: every schema label has a French name', async () => {
   const { schema, PALETTE, CATEGORIES, TESTIMONIAL_KINDS } = await import(path.join(root, 'shared/schema.js'));
   const labels = new Set();
   const walk = (f) => {
@@ -53,7 +53,7 @@ test('dashboard field names: every schema label has a French and Arabic name', a
   };
   walk(schema);
   [...PALETTE, ...CATEGORIES, ...TESTIMONIAL_KINDS].forEach((o) => labels.add(o.label));
-  for (const lang of ['fr', 'ar']) {
+  for (const lang of ['fr']) {
     const d = await load(`src/i18n/admin/schema-${lang}.js`);
     const missing = [...labels].filter((l) => !(l in d));
     assert.deepEqual(missing, [], `${lang}: ${missing.join(' | ')}`);

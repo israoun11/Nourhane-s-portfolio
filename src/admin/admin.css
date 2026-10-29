@@ -206,7 +206,6 @@ textarea.ad-input { resize: vertical; line-height: 1.5; }
 .ad-chip { min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid rgba(32, 32, 51, .2); background: #fff; color: var(--ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
 .ad-chip:hover { border-color: var(--ink); }
 .ad-chip.is-on { background: var(--ink); border-color: var(--ink); color: var(--ivory); }
-.ad-chip[lang="ar"] { font-family: 'Tajawal', var(--f-ui); font-size: 15px; }
 .ad-english { margin: 0; padding: 6px 10px; border-radius: 8px; background: rgba(21, 52, 221, .06); font-size: 12px; color: var(--body); white-space: pre-line; }
 .ad-badge--xs { min-height: 22px; padding: 0 8px; font-size: 11px; }
 .ad-stat--link { color: var(--ink); text-decoration: none; transition: box-shadow .2s ease, translate .2s ease; }
@@ -261,22 +260,6 @@ textarea.ad-input { resize: vertical; line-height: 1.5; }
   .ad-inbox:not(.has-open) > .ad-card:last-child { display: none; }
   .ad-read__back { display: inline-block; }
 }
-
-/* Arabic dashboard: Tajawal, right to left */
-.admin:lang(ar), html[lang="ar"] .admin { font-family: 'Tajawal', var(--f-ui); }
-html[lang="ar"] .admin * { letter-spacing: 0 !important; }
-html[lang="ar"] .ad-pagehead h1, html[lang="ar"] .ad-modal__title, html[lang="ar"] .ad-read__name, html[lang="ar"] .ad-login__form h1, html[lang="ar"] .ad-stat b, html[lang="ar"] .ad-proj__t { font-family: var(--f-ar-title); font-weight: var(--w-ar-title); }
-[dir="rtl"] .ad-nav__link, [dir="rtl"] .ad-item__toggle, [dir="rtl"] .ad-card--fold .ad-card__title button { text-align: right; }
-[dir="rtl"] .ad-switch span { left: auto; right: 3px; }
-[dir="rtl"] .ad-switch.is-on span { transform: translateX(-22px); }
-[dir="rtl"] .ad-progress span { left: auto; right: 0; }
-[dir="rtl"] .ad-alert ul { padding-left: 0; padding-right: 18px; }
-[dir="rtl"] .ad-toasts { right: auto; left: 16px; }
-[dir="rtl"] .ad-savebar { padding: 12px 20px 12px 12px; }
-@media (min-width: 901px) { [dir="rtl"] .ad-savebar { left: calc(50% - 130px); } }
-[dir="rtl"] .ad-tag { padding: 4px 12px 4px 4px; }
-[dir="rtl"] .ad-quick__item:hover { translate: -4px 0; }
-[dir="rtl"] .ad-item__bar { padding: 6px 6px 6px 8px; }
 
 @media (prefers-reduced-motion: reduce) {
   .admin *, .admin *::before, .admin *::after { animation: none !important; transition: none !important; }

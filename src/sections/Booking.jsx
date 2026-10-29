@@ -8,7 +8,7 @@ import { useI18n } from '../i18n/index.jsx';
 import { getSource } from '../lib/source.js';
 
 const EMAIL_RE = /^[^\s@<>"']+@[^\s@<>"'.]+(\.[^\s@<>"'.]+)+$/;
-export const localeOf = (lang) => (lang === 'ar' ? 'ar-u-nu-latn' : lang === 'fr' ? 'fr-FR' : 'en-GB');
+export const localeOf = (lang) => (lang === 'fr' ? 'fr-FR' : 'en-GB');
 const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const visitorTz = () => {
   try {

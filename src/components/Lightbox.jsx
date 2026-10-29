@@ -1,5 +1,5 @@
 // Full-screen image viewer (project galleries, "My story" photos).
-// Keyboard: ← → to browse (mirrored in Arabic), Escape to close. Focus stays inside while open.
+// Keyboard: ← → to browse, Escape to close. Focus stays inside while open.
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '../i18n/index.jsx';

@@ -131,8 +131,7 @@ test('pages: content injected safely, SEO titles, 404 status for hidden/unknown 
   assert.match(await cs.text(), /<title>VXN Moto \/ PROCAP — Nourhane Thabet<\/title>/);
   // language chosen by the visitor (cookie) → <html lang/dir> and translated title
   const ar = await (await fetch(srv.base + '/', { headers: { Cookie: 'nt_lang=ar' } })).text();
-  assert.match(ar, /<html lang="ar" dir="rtl">/);
-  assert.match(ar, /<title>نورهان ثابت/);
+  assert.match(ar, /<html lang="en" dir="ltr">/, 'Arabic is no longer a website language');
   const fr = await (await fetch(srv.base + '/?lang=fr')).text();
   assert.match(fr, /<html lang="fr" dir="ltr">/);
   const bad = await (await fetch(srv.base + '/', { headers: { Cookie: 'nt_lang="><script>' } })).text();

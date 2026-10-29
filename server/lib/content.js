@@ -52,7 +52,7 @@ export function createContentService(store, log = console) {
       cur = await store.getKV('content');
     }
     // Content saved by an earlier version is brought up to date (nothing is lost),
-    // and default French/Arabic translations are added where none exist yet.
+    // and default French translations are added where none exist yet.
     return { data: migrateContent(cur.value), version: cur.version, updatedAt: cur.updatedAt };
   }
 

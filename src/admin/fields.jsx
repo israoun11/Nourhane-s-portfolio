@@ -1,6 +1,6 @@
 // Form fields generated from shared/schema.js. Each field reads and writes the draft at `path`.
-// Texts follow the content language chosen at the top of the dashboard (English, French or
-// Arabic); images, colours and links are shared by all languages.
+// Texts follow the content language chosen at the top of the dashboard (English or
+// French); images, colours and links are shared by all languages.
 import { useEffect, useId, useRef, useState } from 'react';
 import { PALETTE, isTranslatable } from '../../shared/schema.js';
 import { pathKey, uploadImage, uploadPdf } from './api.js';

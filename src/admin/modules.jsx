@@ -13,10 +13,9 @@ import { Card, PageHead, useConfirm } from './ui.jsx';
 import { LANGS, inputLangProps, useAdminT, useEditLang, useFmtDate } from './i18n.jsx';
 import siteEn from '../i18n/site/en.js';
 import siteFr from '../i18n/site/fr.js';
-import siteAr from '../i18n/site/ar.js';
 
 const F = schema.fields;
-const SITE = { en: siteEn, fr: siteFr, ar: siteAr };
+const SITE = { en: siteEn, fr: siteFr };
 
 const ListCard = ({ k }) => (
   <Card>
@@ -493,10 +492,8 @@ function seoChecks(draft) {
   draft.mind.forEach((m) => m.image && !m.imageAlt && add('info', ['ad.seo.c.mindAlt', { word: m.word }], '/admin/sections/mind'));
   draft.expertise.forEach((e) => e.image && !e.imageAlt && add('info', ['ad.seo.c.expAlt', { title: e.title }], '/admin/sections/expertise'));
   draft.products.forEach((p) => p.image && !p.imageAlt && add('info', ['ad.seo.c.prodAlt', { title: p.t }], '/admin/products'));
-  for (const l of ['fr', 'ar']) {
-    const n = missingTranslations(draft, l).length;
-    if (n) add('warn', [l === 'fr' ? 'ad.ov.todo.trFr' : 'ad.ov.todo.trAr', { n }], '/admin/translations');
-  }
+  const nFr = missingTranslations(draft, 'fr').length;
+  if (nFr) add('warn', ['ad.ov.todo.trFr', { n: nFr }], '/admin/translations');
   if (!draft.seo.ogImage && !draft.site.portrait) add('info', ['ad.seo.c.ogImage'], '/admin/seo');
   return out;
 }

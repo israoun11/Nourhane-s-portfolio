@@ -1,6 +1,6 @@
 # Nourhane Thabet — Website + Content Dashboard
 
-**I think beyond the visual.** The personal brand website (React + Vite) in **English, French and Arabic**, with a secure dashboard at **`/admin`** where the owner edits texts (in the three languages), images, projects, every section — and reads the messages sent with the contact form. No code needed.
+**I think beyond the visual.** The personal brand website (React + Vite) in **English and French**, with a secure dashboard at **`/admin`** where the owner edits texts (in the three languages), images, projects, every section — and reads the messages sent with the contact form. No code needed.
 
 | Part | What it is |
 |---|---|
@@ -53,7 +53,7 @@ In development, content, images and contact messages are saved in `server/data/`
      - **Contact & social links** — email (`mailto:`), WhatsApp (`https://wa.me/<number>` + optional pre-filled message), Instagram, LinkedIn, and the contact cards (form / booking, order, visibility). Empty methods are hidden on the website.
      - **CV & downloads** — upload, preview, replace or remove your CV (checked to be a real PDF).
    - **Visibility** — **SEO** (website address, home and portfolio search texts, sharing image, indexing on/off, extra robots rules, structured data, redirects, missing alt texts and translations, broken-link checker; sitemap.xml and robots.txt are generated) and **Integrations** (honest connection status; Search Console, GA4, Google Ads, Meta Ads, AI assistant and payments arrive in phase 2).
-   - **Languages** — **Translations** (every text still missing in French or Arabic) and **Interface texts** (change any button, label or message of the website, per language).
+   - **Languages** — **Translations** (every text still missing in French) and **Interface texts** (change any button, label or message of the website, per language).
    - **Sections** — logo carousel, ways of thinking ("One creative mind": the photo sits in a frame, the coloured shapes stay), method, expertise (image shown in the hover card, link), CodaStudio capabilities, training offers, content series, testimonials.
    - **Website info & photos** and **History** — portrait (description, focus point), CodaStudio, training photos; the last 10 saved versions with one-click restore.
 3. When you change something, a dark bar appears at the bottom:
@@ -62,9 +62,9 @@ In development, content, images and contact messages are saved in `server/data/`
    - **Save changes** (or Ctrl/⌘ + S) publishes. The green "Saved — your changes are now live" message appears **only after the server confirms it**.
 4. **Images:** click *Upload image* / *Replace image*, pick a JPEG, PNG or WebP (max 5 MB). You see a preview and a progress bar; press **Save changes** to publish. *Undo* returns to the saved image, *Remove* shows the placeholder design again.
 5. **Languages.**
-   - *Dashboard language*: EN · FR · ع at the top of the menu (the dashboard itself switches, Arabic right to left).
-   - *Content language*: on every editing page, choose **English · Français · العربية** at the top. English is the main version. In French or Arabic you edit the translation of each text; the English text is shown under each field for reference. An empty translation shows the English text on the website. Images, colours and links are the same in every language ("Same in all languages").
-   - The website's own labels (menu, buttons, form messages…) are translated in `src/i18n/site/en.js`, `fr.js`, `ar.js`; the dashboard's in `src/i18n/admin/`. The first French/Arabic versions of the content come from `shared/i18n/content-fr.js` and `content-ar.js` (used only for texts that have no translation yet).
+   - *Dashboard language*: EN · FR at the top of the menu.
+   - *Content language*: on every editing page, choose **English · Français** at the top. English is the main version. In French you edit the translation of each text; the English text is shown under each field for reference. An empty translation shows the English text on the website. Images, colours and links are the same in every language ("Same in all languages").
+   - The website's own labels (menu, buttons, form messages…) are translated in `src/i18n/site/en.js` and `fr.js`; the dashboard's in `src/i18n/admin/`. The first French versions of the content come from `shared/i18n/content-fr.js` (used only for texts that have no translation yet).
 6. **Log out** at the bottom of the menu. Sessions also end automatically after 8 hours — if that happens while you're editing, you're asked to sign in again and **your unsaved changes are kept**.
 
 Safety nets: leaving with unsaved changes asks for confirmation · deletions ask for confirmation · invalid fields are marked in red and nothing is saved · if a save fails, the previous version stays online · if the content was changed in another window, you're asked to reload instead of overwriting it.
@@ -91,7 +91,6 @@ Safety nets: leaving with unsaved changes asks for confirmation · deletions ask
 | `ADMIN_PASSWORD_HASH` | the line from `npm run admin:password` (the part after `=`) |
 | `SUPABASE_URL` | Supabase Project URL |
 | `SUPABASE_SECRET_KEY` | Supabase secret key |
-| `VITE_ARABIC_HEADING_FONT` | optional — `bukra` once the licensed 29LT Bukra files are added (see 3.3) |
 | `DOWNLOAD_SECRET` | generated automatically by the blueprint (signs download links) |
 | `CALENDLY_TOKEN` or `CALCOM_API_KEY` | optional — lists your appointments in the dashboard |
 
@@ -115,9 +114,8 @@ All read-only, all server-side (see `.env.example` for the exact variables):
 - **AI assistant**: `AI_PROVIDER` (`anthropic` or `openai`), `AI_API_KEY`, `AI_MODEL`. It only writes drafts; nothing is published automatically.
 Until a service is configured, its dashboard page says "Not connected" and lists what is missing — no figures are shown.
 
-### 3.5 Contact form & Arabic fonts
+### 3.5 Contact form
 - **Contact form**: nothing to set up. Messages are sent to this server (`POST /api/contact`), checked again there, stored with the content (Supabase table `nt_messages` in production) and shown in the dashboard. The visitor sees "Thank you" only after the server confirms the message is stored; otherwise a clear error. Protection: same-site only, JSON only, 5 messages per 10 minutes per visitor (100/hour overall), hidden anti-bot field, length limits, plain text only.
-- **Arabic typography**: paragraphs use **Tajawal** (self-hosted in `public/fonts/tajawal`, open licence). Titles are meant for **29LT Bukra Bold**, subtitles **29LT Bukra Medium** — a commercial font that is **not included**: add the licensed web-font files as `public/fonts/bukra/29LT-Bukra-Bold.woff2` and `29LT-Bukra-Medium.woff2`, set `VITE_ARABIC_HEADING_FONT=bukra`, rebuild. Until then titles use Tajawal ExtraBold and subtitles Tajawal Bold. Details: `public/fonts/README.txt`.
 
 ### 3.6 Changing the admin password
 Run `npm run admin:password` again, replace `ADMIN_PASSWORD_HASH` in your hosting settings, redeploy/restart. Sessions already open stay valid until they expire (max 8 h); to end them immediately, delete the rows in the Supabase table `nt_sessions`.
@@ -144,7 +142,6 @@ See [`.env.example`](.env.example) — placeholders only. Only variables startin
 | `COOKIE_SECURE` | true in production | session cookie only over HTTPS |
 | `ALLOW_FILE_STORAGE_IN_PRODUCTION`, `DATA_DIR` | false, `server/data` | file storage on a persistent disk |
 | `ALLOWED_ORIGINS` | — | extra allowed origins for admin requests (normally not needed) |
-| `VITE_ARABIC_HEADING_FONT` | — | `bukra` = use the licensed 29LT Bukra files for Arabic titles |
 
 ---
 
@@ -152,7 +149,7 @@ See [`.env.example`](.env.example) — placeholders only. Only variables startin
 
 - **Content model:** one validated JSON document. `shared/schema.js` defines every field once and drives both the **server validation** and the **dashboard forms**. `shared/default-content.js` is the approved content used to seed the database (and as offline fallback).
 - **Public pages:** the server embeds the latest published content in the HTML (`<script id="nt-content" type="application/json">`, safely escaped), sets per-page titles/descriptions and returns real 404s. No rebuild is needed after content edits. Hidden projects are removed server-side.
-- **Languages:** `src/i18n/index.jsx` (choice remembered in this browser and in an `nt_lang` cookie, so the server sends `<html lang dir>` right away; `?lang=fr` also works). Content translations live next to each English text as `i18n: { fr: {…}, ar: {…} }` inside the same object (they move with reordering). `shared/i18n/localize.js` returns the content in one language; `shared/migrate.js` upgrades older saved content (single story image → photo list, approach text → text + image, missing logos) without losing anything and adds the default translations. Arabic layout and typography: `src/styles/rtl.css`.
+- **Languages:** `src/i18n/index.jsx` (choice remembered in this browser and in an `nt_lang` cookie, so the server sends `<html lang dir>` right away; `?lang=fr` also works). Content translations live next to each English text as `i18n: { fr: {…} }` inside the same object (they move with reordering). `shared/i18n/localize.js` returns the content in one language; `shared/migrate.js` upgrades older saved content (single story image → photo list, approach text → text + image, missing logos) without losing anything and adds the default translations. Arabic was removed as a website language; Arabic texts saved by an earlier version stay in the stored content untouched (not shown, not deleted).
 - **API:** `GET /api/content` (public) · `POST /api/contact` (public, rate-limited) · `GET /api/admin/messages` · `PATCH|DELETE /api/admin/messages/<id>` · `POST /api/auth/login|logout` · `GET /api/auth/session` · `GET|PUT /api/admin/content` · `POST /api/admin/upload` · `GET /api/admin/history` · `POST /api/admin/restore` · `GET /api/admin/status` · `GET /api/health`.
 - **Saving:** optimistic version check (409 instead of overwriting newer content) · previous 10 versions kept · uploads no longer used anywhere (including history) are deleted after 24 h.
 - **Security:** scrypt-hashed password from env · random session tokens, only their SHA-256 stored · `HttpOnly; SameSite=Strict; Secure` cookie · CSRF: custom header + Origin check on every state change · login rate limit (5 failures / 15 min per IP, 30 overall) · server-side validation of every field (URLs limited to `https://` or site paths — no `javascript:`) · uploads checked by file content (JPEG/PNG/WebP magic bytes, not the name), size-limited, stored under their SHA-256 name (duplicates reused) · CSP, `nosniff`, `frame-ancestors 'none'`, HSTS in production · no stack traces or secrets in responses · React escapes all text (no raw HTML rendering).
@@ -188,7 +185,6 @@ See [`.env.example`](.env.example) — placeholders only. Only variables startin
 | Changes don't appear | Make sure you pressed **Save changes** and saw the green confirmation. Visitors' open tabs refresh content when they come back to the tab. |
 | Port already in use | Set another `PORT` in `.env`. |
 | Contact form says the message was not sent (production) | Run `server/supabase.sql` again in Supabase — it adds the `nt_messages` table needed by the inbox. |
-| Arabic titles are not in 29LT Bukra | Expected until the licensed font files are added — see section 3.3. |
 
 ---
 

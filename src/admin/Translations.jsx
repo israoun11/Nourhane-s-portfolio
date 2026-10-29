@@ -1,4 +1,4 @@
-// Every text that has no French or Arabic version yet — filled in right here.
+// Every text that has no French version yet — filled in right here.
 // (On the website, a text without translation would otherwise appear in English.)
 import { useMemo, useState } from 'react';
 import { Link } from '../router.jsx';
@@ -19,7 +19,7 @@ const SECTION_LINK = (path) => {
 
 export const useMissingCounts = () => {
   const { draft } = useEditor();
-  return useMemo(() => (draft ? { fr: missingTranslations(draft, 'fr').length, ar: missingTranslations(draft, 'ar').length } : { fr: 0, ar: 0 }), [draft]);
+  return useMemo(() => (draft ? { fr: missingTranslations(draft, 'fr').length } : { fr: 0 }), [draft]);
 };
 
 export function Translations() {

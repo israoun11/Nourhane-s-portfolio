@@ -9,10 +9,7 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/home.css';
 import './styles/pages.css';
-import './styles/rtl.css';
-
-// Optional licensed Arabic heading font (29LT Bukra) — see public/fonts/README.txt.
-if (import.meta.env.VITE_ARABIC_HEADING_FONT === 'bukra') import('./styles/fonts-bukra.css');
+import './styles/type.css';
 
 captureSource();
 

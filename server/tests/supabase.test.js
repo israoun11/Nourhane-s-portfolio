@@ -200,7 +200,7 @@ test('Supabase driver: contact messages are stored in nt_messages and managed fr
   const row = db.nt_messages.get(id);
   assert.equal(row.name, 'Visitor');
   assert.equal(row.category_label, "Let's work together");
-  assert.equal(row.lang, 'ar');
+  assert.equal(row.lang, 'en', 'Arabic no longer accepted: English');
   const c = client(srv.base);
   await c.login();
   const list = await c.req('GET', '/api/admin/messages');

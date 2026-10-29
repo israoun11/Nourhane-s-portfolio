@@ -1,4 +1,4 @@
-// Dashboard interface texts — English (the reference). French: fr.js · Arabic: ar.js — same keys.
+// Dashboard interface texts — English (the reference). French: fr.js — same keys.
 export default {
   'ad.title': 'Dashboard — Nourhane Thabet',
   'ad.brand': 'Dashboard',
@@ -318,14 +318,13 @@ export default {
   'val.slugTaken': 'Page address “{slug}” is used by two projects',
   "ad.nav.translations": "Translations",
   "ad.tr.title": "Translations",
-  "ad.tr.intro": "Every text of your website that has no French or Arabic version yet. Type the translation here and press “Save changes”. Names (brands, projects) are kept as they are.",
+  "ad.tr.intro": "Every text of your website that has no French version yet. Type the translation here and press “Save changes”. Names (brands, projects) are kept as they are.",
   "ad.tr.count": "{n} missing",
   "ad.tr.missing": "{n} text(s) still have no {lang} version — until you translate them, the website shows the English text there.",
   "ad.tr.done": "Everything is translated into {lang}. ✓",
   "ad.tr.open": "Open this section →",
   "ad.tr.badge": "{n} translations missing",
   "ad.ov.todo.trFr": "Translate {n} text(s) into French",
-  "ad.ov.todo.trAr": "Translate {n} text(s) into Arabic",
   // phase 1 modules
   'ad.nav.g.content': "Content",
   'ad.nav.g.relations': "Contacts & leads",

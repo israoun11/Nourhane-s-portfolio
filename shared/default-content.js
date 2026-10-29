@@ -4,7 +4,7 @@ import { DEFAULT_TOOLS as TOOLS } from './tools-list.js';
 //  Used once to seed the database on first start, and as the
 //  offline fallback. After that, edit everything in /admin.
 //  French and Arabic translations of these texts: shared/i18n/content-fr.js
-//  and content-ar.js (filled in automatically when the site starts).
+//  (filled in automatically when the site starts).
 // ─────────────────────────────────────────────────────────────
 
 const B = '#1534DD', P = '#F174AB', I = '#FFF9F5', K = '#202033', A = '#B9E8E5', K2 = '#2E2E46', S = '#EFE6DC';

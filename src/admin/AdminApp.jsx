@@ -269,7 +269,7 @@ function Dashboard({ session, onLogout, expired, onRelogin }) {
               <Link key={n.to} to={n.to} className="ad-nav__link" aria-current={current(n.to) ? 'page' : undefined}>
                 {n.label}
                 {n.badge && unread > 0 && <span className="ad-nav__badge" aria-label={t('ad.unreadBadge', { n: unread })}>{unread}</span>}
-                {n.missing && missing.fr + missing.ar > 0 && <span className="ad-nav__badge ad-nav__badge--warn" aria-label={t('ad.tr.badge', { n: missing.fr + missing.ar })}>{missing.fr + missing.ar}</span>}
+                {n.missing && missing.fr > 0 && <span className="ad-nav__badge ad-nav__badge--warn" aria-label={t('ad.tr.badge', { n: missing.fr })}>{missing.fr}</span>}
               </Link>
             )
           )}

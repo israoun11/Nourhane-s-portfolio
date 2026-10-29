@@ -67,7 +67,6 @@
   font-family: var(--f-ui); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; cursor: pointer;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
-.lang__btn[lang="ar"] { font-family: 'Tajawal', var(--f-ui); font-size: 15px; letter-spacing: 0; line-height: 1; }
 .lang__btn:hover { background: rgba(21, 52, 221, 0.08); }
 .lang__btn.is-on { background: var(--ink); color: var(--ivory); }
 .lang__btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
@@ -75,7 +74,6 @@
 .lang--light .lang__btn:hover { background: rgba(255, 249, 245, 0.12); }
 .lang--light .lang__btn.is-on { background: var(--ivory); color: var(--ink); }
 .lang--lg .lang__btn { min-width: 52px; min-height: 44px; font-size: 13px; }
-.lang--lg .lang__btn[lang="ar"] { font-size: 19px; }
 .mmenu__foot { margin-top: auto; display: flex; flex-direction: column; gap: 16px; }
 .mmenu__foot .lang { align-self: flex-start; }
 @media (max-width: 560px) { .header__end .lang { display: none; } }

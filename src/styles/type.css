@@ -1,0 +1,125 @@
+/* ─────────────────────────────────────────────────────────────
+   Typography system — minimalist, premium editorial.
+   One scale for every page. Loaded after the other style sheets:
+   it only changes type (size, weight, line height, spacing, width),
+   never colours, images or layouts.
+
+   Fonts (unchanged): Playfair Display = serif headings and expressive
+   phrases · Manrope = body, descriptions, labels · Barlow Condensed =
+   the brand's condensed display words.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* display — the brand's big statement words */
+  --fs-display-xl: clamp(60px, 8vw, 128px);   /* hero "I think … Visual." */
+  --fs-display:    clamp(50px, 6.2vw, 100px); /* section statements (story, method, studio…) */
+  --fs-display-it: clamp(44px, 5.4vw, 88px);  /* italic serif inside statements */
+  /* headings */
+  --fs-h1: clamp(46px, 7vw, 112px);           /* page titles: portfolio, case study */
+  --fs-h2: clamp(34px, 4vw, 56px);            /* section titles */
+  --fs-h3: clamp(24px, 2.3vw, 32px);          /* card / item titles */
+  --fs-h4: clamp(20px, 1.6vw, 22px);
+  /* text */
+  --fs-lead:  clamp(19px, 1.6vw, 22px);       /* serif introductions and summaries */
+  --fs-quote: clamp(20px, 2vw, 26px);
+  --fs-body:  16px;
+  --fs-small: 14px;
+  --fs-caption: 13px;
+  --fs-label: 11px;                           /* eyebrows, metadata, buttons */
+  /* rhythm */
+  --lh-tight: 1.05;
+  --lh-heading: 1.15;
+  --lh-lead: 1.5;
+  --lh-body: 1.7;
+  --ls-label: 0.14em;
+  --measure: 62ch;                            /* comfortable paragraph width */
+  --w-label: 700;
+}
+
+/* ── base ── */
+body { font-size: var(--fs-body); line-height: var(--lh-body); text-rendering: optimizeLegibility; font-kerning: normal; }
+p { text-wrap: pretty; }
+h1, h2, h3, .h2, .h-cond, .cs-title, .pf-hero__title, .notfound p, .mind__q, .journey__grew, .cs-learning__q, blockquote { text-wrap: balance; }
+
+/* ── labels & small text: lighter, consistent tracking ── */
+.eyebrow { font-size: var(--fs-label); font-weight: var(--w-label); letter-spacing: 0.18em; }
+.pill-eyebrow { font-size: var(--fs-label); letter-spacing: var(--ls-label); }
+.meta, .feature__body .meta, .feature__dl dt, .cs-facts dt, .cs-k, .bk-sum dt, .journey__meta, .cs-next__k, .orbit__count, .proof__kind, .learn__label {
+  font-size: var(--fs-label); font-weight: var(--w-label); letter-spacing: var(--ls-label);
+}
+.btn { font-weight: var(--w-label); font-size: 12.5px; letter-spacing: 0.12em; }
+.btn--sm { letter-spacing: 0.1em; }
+.chip { font-weight: 600; }
+.status { font-size: 10px; font-weight: var(--w-label); }
+.ph-label, .journey__tag { font-weight: var(--w-label); }
+.path__state, .path__cta, .feature__cta, .series__cta { font-weight: var(--w-label); letter-spacing: 0.12em; }
+.tk__cat, .tk__pcat, .tk__eyebrow { font-size: 10px; }
+.footer__note { font-size: var(--fs-small); font-weight: 400; }
+
+/* ── paragraphs: body size, comfortable line height and width ── */
+.body-muted, .hero__intro, .coda__text, .journey__sub, .exp__text, .series__d, .path__text, .prod__card p, .tk__pdesc,
+.cs-section p:not([class]), .cs-body p, .pf-card p, .pf-hero__intro, .section-head p {
+  font-size: var(--fs-body); line-height: var(--lh-body);
+}
+.body-muted, .hero__intro, .coda__text, .journey__sub, .cs-section p:not([class]), .cs-body p { max-width: var(--measure); }
+.exp__text, .path__text, .series__d, .prod__card p { font-size: 15px; line-height: 1.6; }
+.prod__note, .cs-gal__note, .cs-results__note, .proof__note, .form__alt { font-size: var(--fs-small); }
+
+/* ── serif leads & quotes: refined, not oversized ── */
+.hero__tag { font-size: var(--fs-lead); line-height: var(--lh-lead); }
+.cs-summary { font-size: var(--fs-lead); line-height: var(--lh-lead); max-width: 34em; }
+.cs-role p, .cs-section .cs-role p { font-size: clamp(18px, 1.5vw, 21px); line-height: var(--lh-lead); max-width: 36em; }
+.mind__q { font-size: clamp(24px, 2.3vw, 32px); line-height: 1.2; }
+.journey__grew { font-size: clamp(26px, 2.8vw, 40px); line-height: 1.15; }
+.proof__main blockquote, .cs-quote blockquote { font-size: var(--fs-quote); line-height: 1.45; }
+.cs-learning__q { font-size: clamp(24px, 2.6vw, 36px); line-height: 1.3; max-width: 30em; }
+.notfound p { font-size: clamp(20px, 2vw, 26px); line-height: 1.4; }
+
+/* ── headings ── */
+.h2, .pf-head .h2, .pf-index__title, .cs-overview > .h2, .cs-approach__title, .cs-gal__title, .cs-results .h2 {
+  font-size: var(--fs-h2); line-height: var(--lh-tight); letter-spacing: -0.015em;
+}
+.feature__body h3 { font-size: clamp(28px, 2.7vw, 40px); line-height: 1.1; }
+.work-card h3, .pf-card h3, .pf-row__t { font-size: var(--fs-h3); line-height: var(--lh-heading); }
+.journey__item h3, .exp__main h3 { font-size: var(--fs-h3); line-height: var(--lh-heading); }
+.prod__card h3, .bk-side__t, .learn__list li > span:first-child { font-size: var(--fs-h4); line-height: 1.25; }
+.pf-preview__cap p { font-size: 28px; }
+.tk__pname { font-size: 22px; }
+.method__steps h3 { font-size: 32px; }
+.path__title { font-size: 28px; line-height: 1.02; }
+.proof__big { font-size: 46px; }
+.prodpage__title { font-size: clamp(34px, 3.8vw, 52px); line-height: 1.08; }
+.cs-metric__v { font-size: clamp(40px, 4vw, 56px); }
+
+/* page titles */
+.pf-hero__title { font-size: clamp(56px, 9vw, 136px); letter-spacing: -0.03em; }
+.cs-title { font-size: var(--fs-h1); line-height: 0.95; letter-spacing: -0.03em; }
+.cs-next__t { font-size: clamp(46px, 7.4vw, 120px); letter-spacing: -0.03em; }
+.pf-cta h2 { font-size: clamp(42px, 5.6vw, 84px); }
+.notfound h1 { font-size: clamp(88px, 13vw, 180px); }
+
+/* ── brand display words: same character, calmer scale ── */
+.t-cond { font-size: var(--fs-display-xl); }
+.t-serif { font-size: clamp(50px, 6.3vw, 102px); }
+.mind__word { font-size: clamp(54px, 7vw, 108px); }
+.journey__title { font-size: var(--fs-display); }
+.journey__year { font-size: clamp(80px, 8.4vw, 128px); }
+.method__title, .coda__title, .pers__title { font-size: var(--fs-display); line-height: 0.94; }
+.coda__word { font-size: clamp(42px, 4.6vw, 68px); }
+.learn__big { font-size: clamp(96px, 10vw, 150px); }
+.contact__title .h-cond { font-size: clamp(56px, 7.4vw, 120px); }
+.contact__title .it-serif { font-size: clamp(46px, 6vw, 96px); }
+.hero__stats b { font-size: clamp(28px, 2.4vw, 34px); }
+
+/* footer */
+.footer__motto { font-size: clamp(26px, 2.8vw, 38px); }
+.footer__mark { font-size: clamp(40px, 8.2vw, 124px); }
+
+/* ── small screens: no overflow, no awkward breaks ── */
+@media (max-width: 560px) {
+  :root { --fs-body: 15.5px; }
+  .h2, .pf-head .h2, .pf-index__title, .cs-overview > .h2, .cs-approach__title, .cs-gal__title, .cs-results .h2 { font-size: clamp(30px, 8.6vw, 38px); }
+  .cs-title { font-size: clamp(40px, 12vw, 56px); overflow-wrap: anywhere; }
+  .cs-next__t { overflow-wrap: anywhere; }
+  .path__title { font-size: 26px; }
+  .method__steps h3 { font-size: 28px; }
+}

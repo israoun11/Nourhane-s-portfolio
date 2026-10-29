@@ -9,7 +9,7 @@
 //  same object:  { title: 'Hello', i18n: { fr: { title: 'Bonjour' }, ar: { … } } }
 //  so they move along when items are reordered. Empty = the English text is shown.
 // ─────────────────────────────────────────────────────────────
-import { TRANSLATED } from './i18n/langs.js';
+import { KEPT_TRANSLATIONS } from './i18n/langs.js';
 
 export const PALETTE = [
   { value: '#1534DD', label: 'Royal Blue' },
@@ -403,8 +403,8 @@ export const schema = obj('Website', {
     cats: { type: 'multiselect', label: 'Portfolio filters', options: CATEGORIES },
     industry: text('Industry', { max: 60 }),
     year: text('Year', { max: 12, noTranslate: true }),
-    role: text('My role', { max: 200 }),
-    deliverables: text('Deliverables', { max: 200 }),
+    role: text('My role', { max: 400 }),
+    deliverables: text('Deliverables', { max: 500 }),
     challenge: text('Challenge (one line, landing page)', { max: 200 }),
     context: area('Context', { max: 1200 }),
     problem: area('The problem', { max: 1200 }),
@@ -561,7 +561,7 @@ function vField(f, v, path, errs) {
     case 'uitexts': {
       const out = {};
       const src = v && typeof v === 'object' ? v : {};
-      for (const lang of ['en', ...TRANSLATED]) {
+      for (const lang of ['en', ...KEPT_TRANSLATIONS]) {
         const d = src[lang] && typeof src[lang] === 'object' ? src[lang] : {};
         const o = {};
         for (const [k, val] of Object.entries(d)) {
@@ -633,7 +633,7 @@ function vField(f, v, path, errs) {
       const tkeys = Object.keys(f.fields).filter((k) => isTranslatable(f.fields[k]));
       if (tkeys.length && src.i18n && typeof src.i18n === 'object') {
         const i18n = {};
-        for (const lang of TRANSLATED) {
+        for (const lang of KEPT_TRANSLATIONS) {
           const li = src.i18n[lang];
           if (!li || typeof li !== 'object') continue;
           const o = {};

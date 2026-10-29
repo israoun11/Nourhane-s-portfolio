@@ -1,4 +1,4 @@
-// Interface language: English, French or Arabic.
+// Interface language: English or French.
 // The visitor's choice is remembered (this browser + a cookie the server reads to send
 // the page in the right direction straight away) and kept while navigating.
 //
@@ -8,9 +8,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { DEFAULT_LANG, LANGS, dirOf, isLang } from '../../shared/i18n/langs.js';
 import en from './site/en.js';
 import fr from './site/fr.js';
-import ar from './site/ar.js';
 
-const SITE = { en, fr, ar };
+const SITE = { en, fr };
 const STORE_KEY = 'nt-lang';
 const Ctx = createContext(null);
 

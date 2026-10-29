@@ -52,7 +52,7 @@ export function headTags({ content, loc, base, path, lang, project, product }) {
   if (seo.indexing === false) tags.push('<meta name="robots" content="noindex, nofollow">');
   const img = (project && project.cover) || (product && product.image) || seo.ogImage || loc.site.portrait;
   if (img) tags.push(`<meta property="og:image" content="${esc(/^https?:/.test(img) ? img : base + img)}">`);
-  tags.push(`<meta property="og:locale" content="${lang === 'ar' ? 'ar_TN' : lang === 'fr' ? 'fr_FR' : 'en_US'}">`);
+  tags.push(`<meta property="og:locale" content="${lang === 'fr' ? 'fr_FR' : 'en_US'}">`);
   if (seo.structuredData !== false) {
     const person = {
       '@type': 'Person',

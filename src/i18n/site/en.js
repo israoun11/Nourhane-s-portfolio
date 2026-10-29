@@ -1,5 +1,5 @@
 // Interface texts of the public website — English (the reference).
-// French: fr.js · Arabic: ar.js — same keys. {name} style parts are filled in automatically.
+// French: fr.js — same keys. {name} style parts are filled in automatically.
 // Content texts (headlines, projects, story…) are edited in the dashboard instead.
 export default {
   // language switcher

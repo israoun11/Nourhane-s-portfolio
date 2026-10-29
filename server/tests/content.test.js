@@ -33,17 +33,17 @@ test('translations: stored next to the text, validated, English as fallback', ()
   const base = validateContent(migrateContent(defaultContent)).value;
   const d = structuredClone(base);
   d.contactPaths[0].i18n.fr.title = 'x'.repeat(61); // too long
-  d.contactPaths[1].i18n.ar.title = ''; // empty → dropped → English shown
+  d.contactPaths[1].i18n.fr.title = ''; // empty → dropped → English shown
   d.text.hero.i18n.xx = { line1: 'unknown language' };
   const r = validateContent(d);
   assert.equal(r.ok, false);
   assert.ok(r.errors.some((e) => e.path === 'contactPaths[0].i18n.fr.title' && e.code === 'tooLong'));
-  assert.equal(r.value.contactPaths[1].i18n.ar.title, undefined);
+  assert.equal(r.value.contactPaths[1].i18n.fr.title, undefined);
   assert.equal(r.value.text.hero.i18n.xx, undefined);
-  const ar = localize(r.value, 'ar');
-  assert.equal(ar.contactPaths[1].title, "Let's collaborate");
-  assert.equal(ar.contactPaths[2].title, 'لنتشارك المعرفة');
-  assert.equal(ar.text.hero.line1, 'أفكّر');
+  const fr = localize(r.value, 'fr');
+  assert.equal(fr.contactPaths[1].title, "Let's collaborate");
+  assert.notEqual(fr.contactPaths[2].title, base.contactPaths[2].title);
+  assert.equal(fr.contactPaths[2].title, base.contactPaths[2].i18n.fr.title);
   assert.equal(localize(r.value, 'en').text.hero.line1, 'I think');
-  assert.equal(ar.i18n, undefined, 'translations are not sent twice');
+  assert.equal(fr.i18n, undefined, 'translations are not sent twice');
 });
