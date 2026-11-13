@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { defaultContent } from '../../shared/default-content.js';
-import { collectUrls, validateContent } from '../../shared/schema.js';
+import { collectUrls, schema, validateContent } from '../../shared/schema.js';
 import { migrateContent } from '../../shared/migrate.js';
 import { ConflictError } from './store-file.js';
 import { HttpError } from './http.js';
@@ -21,6 +21,34 @@ export function sniffPdf(buf) {
   if (buf.length < 64 || buf.toString('ascii', 0, 5) !== '%PDF-') return null;
   if (!buf.subarray(Math.max(0, buf.length - 2048)).toString('latin1').includes('%%EOF')) return null;
   return { ext: 'pdf', type: 'application/pdf' };
+}
+
+/** The schema definition at a content path (list indexes are numbers), or null. */
+function fieldAt(path) {
+  if (!Array.isArray(path) || !path.length || path.length > 6) return null;
+  let def = schema;
+  for (const k of path) {
+    if (def.type === 'list' && Number.isInteger(k) && k >= 0) def = def.of;
+    else if (def.type === 'object' && typeof k === 'string' && Object.hasOwn(def.fields, k)) def = def.fields[k];
+    else return null;
+  }
+  return def;
+}
+
+/** Original file name, kept only for display (no paths, no markup). */
+function cleanFileName(name) {
+  return String(name || '').replace(/[\u0000-\u001f\\/<>"]/g, '').trim().slice(-160);
+}
+
+/** A clear message when the storage service refuses a file. */
+function storageError(e) {
+  if (e instanceof HttpError) return e;
+  const d = String(e.detail || '');
+  const why = /mime|content.?type|415/i.test(d) ? 'the storage does not accept PDF files yet'
+    : /too large|413|size/i.test(d) || e.status === 413 ? 'the file is larger than the storage allows'
+    : /not.?found|bucket/i.test(d) ? 'the storage folder for PDFs does not exist'
+    : e.message;
+  return new HttpError(502, `The PDF could not be stored: ${why}.`, { code: 'STORAGE' });
 }
 
 export function createContentService(store, log = console) {
@@ -126,24 +154,70 @@ export function createContentService(store, log = console) {
   }
 
   /** PDF upload. access 'public' → /uploads/<hash>.pdf (CV); 'private' → never served directly. */
-  async function uploadPdf(buffer, access = 'public') {
+  async function uploadPdf(buffer, access = 'public', fileName = '') {
     const kind = sniffPdf(buffer);
     if (!kind) throw new HttpError(415, 'This file is not a valid PDF.', { code: 'NOT_PDF' });
     const hash = crypto.createHash('sha256').update(buffer).digest('hex');
     const name = `${hash}.pdf`;
+    const put = async () => (access === 'private' ? (await store.putPrivate(name, buffer), `private:${name}`) : (await store.putObject(name, buffer, kind.type)).url);
     let url;
-    if (access === 'private') {
-      await store.putPrivate(name, buffer);
-      url = `private:${name}`;
-    } else {
-      url = (await store.putObject(name, buffer, kind.type)).url;
+    try {
+      url = await put();
+    } catch (e) {
+      // A storage set up by an earlier version may still refuse PDFs (images only, small size
+      // limit, private bucket missing): repair those settings once, then try again.
+      if (!store.ensurePdfStorage) throw storageError(e);
+      try {
+        await store.ensurePdfStorage(buffer.length);
+        url = await put();
+      } catch (e2) {
+        throw storageError(e2);
+      }
     }
+    const original = cleanFileName(fileName);
     await updateDoc(
       'media',
-      (v) => ({ items: [...v.items.filter((m) => m.url !== url), { url, path: name, type: kind.type, size: buffer.length, private: access === 'private', createdAt: new Date().toISOString() }] }),
+      (v) => ({ items: [...v.items.filter((m) => m.url !== url), { url, path: name, type: kind.type, size: buffer.length, private: access === 'private', name: original, createdAt: new Date().toISOString() }] }),
       { items: [] }
     );
-    return { url, size: buffer.length, type: kind.type };
+    return { url, size: buffer.length, type: kind.type, name: original };
+  }
+
+  /**
+   * Puts an uploaded PDF (or '' to remove it) into one PDF field of the SAVED content right away,
+   * so it is live on the website and survives a refresh without pressing “Save changes”.
+   * `path` points to a field of type 'file' in the schema (e.g. ['site','cvFile'] or ['products',2,'file']).
+   */
+  async function setFile(path, url, fileName = '') {
+    const def = fieldAt(path);
+    if (!def || def.type !== 'file') throw new HttpError(400, 'This is not a PDF field.');
+    if (url) {
+      const media = await store.getKV('media');
+      const item = (media ? media.value.items : []).find((m) => m.url === url && m.type === 'application/pdf');
+      if (!item) throw new HttpError(400, 'Upload the PDF first.');
+      if (!!item.private !== (def.access === 'private')) throw new HttpError(400, 'This PDF was uploaded for another kind of field.');
+      fileName = fileName || item.name || '';
+    }
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const cur = await get();
+      const data = structuredClone(cur.data);
+      let parent = data;
+      for (const k of path.slice(0, -1)) {
+        parent = parent == null ? undefined : parent[k];
+      }
+      if (!parent || typeof parent !== 'object') throw new HttpError(409, 'Save this item first, then upload its PDF.', { code: 'NOT_SAVED' });
+      parent[path[path.length - 1]] = url;
+      const names = { ...(data.fileNames || {}) };
+      if (url && cleanFileName(fileName)) names[url] = cleanFileName(fileName);
+      const used = collectUrls({ ...data, fileNames: {} });
+      data.fileNames = Object.fromEntries(Object.entries(names).filter(([ref]) => used.has(ref)));
+      try {
+        return await save(data, cur.version);
+      } catch (e) {
+        if (!(e instanceof HttpError && e.status === 409)) throw e; // changed meanwhile: try again
+      }
+    }
+    throw new HttpError(409, 'The content is being changed elsewhere. Please try again.');
   }
 
   async function upload(buffer) {
@@ -168,5 +242,5 @@ export function createContentService(store, log = console) {
     return m ? m.value.items.length : 0;
   }
 
-  return { get, save, history, restore, upload, uploadPdf, mediaCount, cleanupMedia };
+  return { get, save, history, restore, upload, uploadPdf, setFile, mediaCount, cleanupMedia };
 }

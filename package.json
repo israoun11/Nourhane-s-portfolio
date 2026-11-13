@@ -9,7 +9,7 @@
     "build": "vite build",
     "start": "node server/index.js",
     "preview": "vite build && node server/index.js",
-    "test": "node --test server/tests/api.test.js server/tests/supabase.test.js server/tests/contact.test.js server/tests/content.test.js server/tests/i18n.test.js server/tests/phase1.test.js server/tests/scheduler.test.js server/tests/upgrade.test.js server/tests/insights.test.js",
+    "test": "node --test server/tests/api.test.js server/tests/supabase.test.js server/tests/contact.test.js server/tests/content.test.js server/tests/i18n.test.js server/tests/phase1.test.js server/tests/scheduler.test.js server/tests/upgrade.test.js server/tests/insights.test.js server/tests/pdf.test.js",
     "admin:password": "node server/scripts/hash-password.mjs"
   },
   "dependencies": {

@@ -43,10 +43,6 @@ export default {
   'logos.newTab': '{name} (opens in a new tab)',
 
   // ways of thinking
-  'mind.tabs': 'Ways of thinking',
-  'mind.imageLabel': 'PROJECT IMAGE · {label}',
-  'mind.imageAlt': '{word} — example work',
-  'mind.informs': 'Informs →',
 
   // my story
   'journey.illustrative': 'ILLUSTRATIVE · ADD REAL WORK FROM {year}',
@@ -97,21 +93,6 @@ export default {
   // products
   'products.notify': 'Get notified ↗',
 
-  // testimonials
-  'proof.kind.WRITTEN TESTIMONIAL': 'WRITTEN TESTIMONIAL',
-  'proof.kind.REVIEW SCREENSHOT': 'REVIEW SCREENSHOT',
-  'proof.kind.AUDIO REVIEW': 'AUDIO REVIEW',
-  'proof.kind.PROJECT FEEDBACK': 'PROJECT FEEDBACK',
-  'proof.ph.WRITTEN TESTIMONIAL': '[Verified client testimonial — to be supplied.]',
-  'proof.ph.REVIEW SCREENSHOT': '[Screenshot of an authentic client review — to be supplied.]',
-  'proof.ph.AUDIO REVIEW': '[Audio player and transcript of a client voice note — to be supplied.]',
-  'proof.ph.PROJECT FEEDBACK': '[Feedback tied to a specific case study — to be supplied.]',
-  'proof.carousel': 'carousel',
-  'proof.prev': 'Previous testimonial',
-  'proof.next': 'Next testimonial',
-  'proof.namePh': '[Client name]',
-  'proof.reviewAlt': 'Client review from {name}',
-  'proof.aClient': 'a client',
 
   // contact
   'contact.paths': 'Choose a collaboration path',
@@ -187,8 +168,16 @@ export default {
   'cs.stepImageAlt': '{step} — {title}',
   'cs.workA': 'The',
   'cs.workB': 'work.',
+  "wsl.carousel": "carousel",
+  "wsl.slide": "slide",
+  "wsl.label": "Images of {title}",
+  "wsl.of": "Image {n} of {total}",
+  "wsl.prev": "Previous image",
+  "wsl.next": "Next image",
+  "wsl.pause": "Pause the slideshow",
+  "wsl.play": "Play the slideshow",
+  "wsl.choose": "Choose an image",
   'cs.galleryCount': '{n} images',
-  'cs.galleryEmpty': 'Images of this project are on their way. The frames below show what will be added.',
   'cs.open': 'Open image: {label}',
   'cs.lightbox': 'Image viewer',
   'cs.lbClose': 'Close',
@@ -197,24 +186,11 @@ export default {
   'cs.lbCount': '{i} / {n}',
   'cs.outcomeA': 'The',
   'cs.outcomeB': 'outcome.',
-  'cs.resultsNote': 'Only verified figures go here. Leave a slot empty rather than estimating.',
-  'cs.metricPh': '[Metric {n} — a verified result]',
-  'cs.quotePh': '[Client feedback on this project — only if verified and approved.]',
-  'cs.quoteNamePh': '[Client name · Role]',
-  'cs.learning': 'Key learning',
-  'cs.takeaway': 'WHAT I TOOK AWAY',
-  'cs.learningPh': "[A key learning from this project, in Nourhane's own words.]",
   'cs.next': 'NEXT PROJECT · {n}',
   'cs.nextCursor': 'Next',
   'cs.allProjects': '← All projects',
   'cs.home': 'Home',
   // default gallery frames (shown while a project has no images)
-  'gal.1': 'Key visual', 'gal.1h': 'the strongest image of the project',
-  'gal.2': 'Detail', 'gal.2h': 'a close-up or supporting visual',
-  'gal.3': 'Process', 'gal.3h': 'sketches, boards or strategy',
-  'gal.4': 'Application', 'gal.4h': 'the work in context',
-  'gal.5': 'Variation', 'gal.5h': 'another format or touchpoint',
-  'gal.6': 'Outcome', 'gal.6h': 'results, before/after or launch',
 
   // portfolio page
   'pf.title': 'Portfolio — {name}',
@@ -355,8 +331,6 @@ export default {
   'bk.cancelYes': "YES, CANCEL IT",
   'bk.keep': "Keep the meeting",
   'bk.backContact': "← Back to the contact section",
-  'proof.empty': "Client feedback is being gathered and will be published here once approved.",
-  'proof.share': "SHARE YOUR FEEDBACK",
   'footer.cvRequest': "REQUEST MY CV",
   'footer.cvRequestNote': "Sent on request — just leave a message.",
   'cs.ctaA': "Have a similar project?",

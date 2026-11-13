@@ -116,6 +116,40 @@ export function createSupabaseStore({ url, key, bucket, privateBucket = 'portfol
       await call(`/storage/v1/object/${bucket}`, { method: 'DELETE', body: { prefixes: [name] } });
     },
 
+    /**
+     * Makes sure PDFs can be stored, also on a project set up with an earlier version of
+     * supabase.sql: the public bucket must accept application/pdf, both buckets must allow the
+     * file size, and the private bucket must exist. Only widens settings, never narrows them.
+     */
+    async ensurePdfStorage(minBytes = 0) {
+      const want = Math.max(20 * 1024 * 1024, minBytes);
+      const getBucket = async (id) => {
+        try {
+          return await call(`/storage/v1/bucket/${encodeURIComponent(id)}`);
+        } catch (e) {
+          if (e.status === 404 || e.status === 400) return null;
+          throw e;
+        }
+      };
+      const fix = async (id, isPublic) => {
+        const b = await getBucket(id);
+        if (!b) {
+          await call('/storage/v1/bucket', { method: 'POST', body: { id, name: id, public: isPublic, file_size_limit: want, allowed_mime_types: isPublic ? ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] : ['application/pdf'] } });
+          return;
+        }
+        const mimes = Array.isArray(b.allowed_mime_types) && b.allowed_mime_types.length ? b.allowed_mime_types : null;
+        const needMime = mimes && !mimes.includes('application/pdf');
+        const needSize = b.file_size_limit && Number(b.file_size_limit) < want;
+        if (!needMime && !needSize) return;
+        await call(`/storage/v1/bucket/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          body: { public: !!b.public, file_size_limit: needSize ? want : b.file_size_limit ?? null, allowed_mime_types: needMime ? [...mimes, 'application/pdf'] : mimes },
+        });
+      };
+      await fix(bucket, true);
+      await fix(privateBucket, false);
+    },
+
     // ── private files (bucket without public access) ──
     async putPrivate(name, buffer) {
       await call(`/storage/v1/object/${privateBucket}/${encodeURIComponent(name)}`, {

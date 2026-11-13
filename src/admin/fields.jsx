@@ -306,9 +306,13 @@ export function ImageField({ def, path }) {
   );
 }
 
-/** A PDF file: upload (checked to be a real PDF by the server), preview, replace, remove. */
+/**
+ * A PDF file: choose it on your device → it is uploaded, checked to be a real PDF and saved
+ * into this field at once (live on the website, still there after a refresh). Shows the file
+ * name, lets you open, replace or remove it.
+ */
 export function FileField({ def, path }) {
-  const { read, readSaved, update } = useEditor();
+  const { read, readSaved, update, saveFile } = useEditor();
   const { editLang } = useEditLang();
   const toast = useToast();
   const confirm = useConfirm();
@@ -319,7 +323,24 @@ export function FileField({ def, path }) {
   const error = useFieldError(path);
   const input = useRef(null);
   const [busy, setBusy] = useState(null);
+  const [note, setNote] = useState(null); // last upload result, shown under the field
   const maxPdf = window.__ntMaxPdfMb || 20;
+  const fileName = (read(['fileNames']) || {})[value] || '';
+  const remove = async () => {
+    if (!(await confirm({ title: t('ad.f.pdf.removeTitle'), body: t('ad.f.pdf.removeBody'), ok: t('ad.f.img.remove') }))) return;
+    setBusy(100);
+    try {
+      await saveFile(path, '', '');
+      setNote({ kind: 'ok', text: t('ad.f.pdf.removed') });
+      toast(t('ad.f.pdf.removed'));
+    } catch (e) {
+      const msg = t('ad.f.pdf.failed', { msg: e.status === 0 ? t('ad.err.network') : e.message });
+      setNote({ kind: 'error', text: msg });
+      toast(msg, 'error');
+    } finally {
+      setBusy(null);
+    }
+  };
   const priv = def.access === 'private';
 
   const pick = async (file) => {
@@ -336,10 +357,14 @@ export function FileField({ def, path }) {
     try {
       const blob = file.type === 'application/pdf' ? file : new File([file], file.name, { type: 'application/pdf' });
       const res = await uploadPdf(blob, def.access, (p) => setBusy(p));
-      update(path, res.url);
-      toast(t('ad.f.pdf.uploaded', { name: file.name }));
+      setBusy(100);
+      const how = await saveFile(path, res.url, file.name);
+      setNote({ kind: 'ok', text: t(how === 'saved' ? 'ad.f.pdf.savedLive' : 'ad.f.pdf.uploaded', { name: file.name }) });
+      toast(t(how === 'saved' ? 'ad.f.pdf.savedLive' : 'ad.f.pdf.uploaded', { name: file.name }));
     } catch (e) {
-      toast(t('ad.f.pdf.failed', { msg: e.status === 415 ? t('ad.f.pdf.notPdf') : e.status === 413 ? t('ad.f.pdf.tooBig', { max: maxPdf }) : e.status === 0 ? t('ad.err.network') : e.message }), 'error');
+      const msg = t('ad.f.pdf.failed', { msg: e.status === 415 ? t('ad.f.pdf.notPdf') : e.status === 413 ? t('ad.f.pdf.tooBig', { max: maxPdf }) : e.status === 0 ? t('ad.err.network') : e.message });
+      setNote({ kind: 'error', text: msg });
+      toast(msg, 'error');
     } finally {
       setBusy(null);
       if (input.current) input.current.value = '';
@@ -359,7 +384,8 @@ export function FileField({ def, path }) {
             </div>
           ) : value ? (
             <>
-              <b>{t(priv ? 'ad.f.pdf.privateOk' : 'ad.f.pdf.publicOk')}</b>
+              <b className="ad-file__name" title={fileName || undefined}>{fileName || t('ad.f.pdf.unnamed')}</b>
+              <span className="ad-help">{t(priv ? 'ad.f.pdf.privateOk' : 'ad.f.pdf.publicOk')}</span>
               <a className="ad-link" href={previewUrl} target="_blank" rel="noreferrer">{t('ad.f.pdf.preview')} ↗</a>
             </>
           ) : (
@@ -371,13 +397,18 @@ export function FileField({ def, path }) {
           <input ref={input} id={id} type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(e) => pick(e.target.files[0])} disabled={busy !== null} />
           <label htmlFor={id} className={`ad-btn ad-btn--primary${busy !== null ? ' is-disabled' : ''}`}>{value ? t('ad.f.pdf.replace') : t('ad.f.pdf.upload')}</label>
           {value && busy === null && (
-            <button type="button" className="ad-btn ad-btn--ghost" onClick={async () => (await confirm({ title: t('ad.f.pdf.removeTitle'), body: t('ad.f.pdf.removeBody'), ok: t('ad.f.img.remove') })) && update(path, '')}>
+            <button type="button" className="ad-btn ad-btn--ghost" onClick={remove}>
               {t('ad.f.img.remove')}
             </button>
           )}
           {changed && busy === null && <button type="button" className="ad-btn ad-btn--ghost" onClick={() => update(path, savedValue)}>{t('ad.f.img.undo')}</button>}
         </div>
       </div>
+      {note && (
+        <p className={`ad-file__note ad-file__note--${note.kind}`} role={note.kind === 'error' ? 'alert' : 'status'}>
+          {note.kind === 'error' ? '! ' : '✓ '}{note.text}
+        </p>
+      )}
       <p className="ad-help">{t(priv ? 'ad.f.pdf.privateHelp' : 'ad.f.pdf.publicHelp', { max: maxPdf })}</p>
     </Frame>
   );

@@ -38,12 +38,12 @@
 /* ── base ── */
 body { font-size: var(--fs-body); line-height: var(--lh-body); text-rendering: optimizeLegibility; font-kerning: normal; }
 p { text-wrap: pretty; }
-h1, h2, h3, .h2, .h-cond, .cs-title, .pf-hero__title, .notfound p, .mind__q, .journey__grew, .cs-learning__q, blockquote { text-wrap: balance; }
+h1, h2, h3, .h2, .h-cond, .cs-title, .pf-hero__title, .notfound p, .journey__grew, blockquote { text-wrap: balance; }
 
 /* ── labels & small text: lighter, consistent tracking ── */
 .eyebrow { font-size: var(--fs-label); font-weight: var(--w-label); letter-spacing: 0.18em; }
 .pill-eyebrow { font-size: var(--fs-label); letter-spacing: var(--ls-label); }
-.meta, .feature__body .meta, .feature__dl dt, .cs-facts dt, .cs-k, .bk-sum dt, .journey__meta, .cs-next__k, .orbit__count, .proof__kind, .learn__label {
+.meta, .feature__body .meta, .feature__dl dt, .cs-facts dt, .cs-k, .bk-sum dt, .journey__meta, .cs-next__k, .orbit__count, .learn__label {
   font-size: var(--fs-label); font-weight: var(--w-label); letter-spacing: var(--ls-label);
 }
 .btn { font-weight: var(--w-label); font-size: 12.5px; letter-spacing: 0.12em; }
@@ -62,20 +62,18 @@ h1, h2, h3, .h2, .h-cond, .cs-title, .pf-hero__title, .notfound p, .mind__q, .jo
 }
 .body-muted, .hero__intro, .coda__text, .journey__sub, .cs-section p:not([class]), .cs-body p { max-width: var(--measure); }
 .exp__text, .path__text, .series__d, .prod__card p { font-size: 15px; line-height: 1.6; }
-.prod__note, .cs-gal__note, .cs-results__note, .proof__note, .form__alt { font-size: var(--fs-small); }
+.prod__note, .cs-gal__note, .form__alt { font-size: var(--fs-small); }
 
 /* ── serif leads & quotes: refined, not oversized ── */
 .hero__tag { font-size: var(--fs-lead); line-height: var(--lh-lead); }
 .cs-summary { font-size: var(--fs-lead); line-height: var(--lh-lead); max-width: 34em; }
 .cs-role p, .cs-section .cs-role p { font-size: clamp(18px, 1.5vw, 21px); line-height: var(--lh-lead); max-width: 36em; }
-.mind__q { font-size: clamp(24px, 2.3vw, 32px); line-height: 1.2; }
 .journey__grew { font-size: clamp(26px, 2.8vw, 40px); line-height: 1.15; }
-.proof__main blockquote, .cs-quote blockquote { font-size: var(--fs-quote); line-height: 1.45; }
-.cs-learning__q { font-size: clamp(24px, 2.6vw, 36px); line-height: 1.3; max-width: 30em; }
+.cs-quote blockquote { font-size: var(--fs-quote); line-height: 1.45; }
 .notfound p { font-size: clamp(20px, 2vw, 26px); line-height: 1.4; }
 
 /* ── headings ── */
-.h2, .pf-head .h2, .pf-index__title, .cs-overview > .h2, .cs-approach__title, .cs-gal__title, .cs-results .h2 {
+.h2, .pf-head .h2, .pf-index__title, .cs-overview > .h2, .cs-approach__title, .cs-gal__title {
   font-size: var(--fs-h2); line-height: var(--lh-tight); letter-spacing: -0.015em;
 }
 .feature__body h3 { font-size: clamp(28px, 2.7vw, 40px); line-height: 1.1; }
@@ -86,9 +84,7 @@ h1, h2, h3, .h2, .h-cond, .cs-title, .pf-hero__title, .notfound p, .mind__q, .jo
 .tk__pname { font-size: 22px; }
 .method__steps h3 { font-size: 32px; }
 .path__title { font-size: 28px; line-height: 1.02; }
-.proof__big { font-size: 46px; }
 .prodpage__title { font-size: clamp(34px, 3.8vw, 52px); line-height: 1.08; }
-.cs-metric__v { font-size: clamp(40px, 4vw, 56px); }
 
 /* page titles */
 .pf-hero__title { font-size: clamp(56px, 9vw, 136px); letter-spacing: -0.03em; }
@@ -100,7 +96,6 @@ h1, h2, h3, .h2, .h-cond, .cs-title, .pf-hero__title, .notfound p, .mind__q, .jo
 /* ── brand display words: same character, calmer scale ── */
 .t-cond { font-size: var(--fs-display-xl); }
 .t-serif { font-size: clamp(50px, 6.3vw, 102px); }
-.mind__word { font-size: clamp(54px, 7vw, 108px); }
 .journey__title { font-size: var(--fs-display); }
 .journey__year { font-size: clamp(80px, 8.4vw, 128px); }
 .method__title, .coda__title, .pers__title { font-size: var(--fs-display); line-height: 0.94; }
@@ -117,7 +112,7 @@ h1, h2, h3, .h2, .h-cond, .cs-title, .pf-hero__title, .notfound p, .mind__q, .jo
 /* ── small screens: no overflow, no awkward breaks ── */
 @media (max-width: 560px) {
   :root { --fs-body: 15.5px; }
-  .h2, .pf-head .h2, .pf-index__title, .cs-overview > .h2, .cs-approach__title, .cs-gal__title, .cs-results .h2 { font-size: clamp(30px, 8.6vw, 38px); }
+  .h2, .pf-head .h2, .pf-index__title, .cs-overview > .h2, .cs-approach__title, .cs-gal__title { font-size: clamp(30px, 8.6vw, 38px); }
   .cs-title { font-size: clamp(40px, 12vw, 56px); overflow-wrap: anywhere; }
   .cs-next__t { overflow-wrap: anywhere; }
   .path__title { font-size: 26px; }

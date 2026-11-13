@@ -107,7 +107,7 @@ export function SiteInfo() {
 export function Texts() {
   const t = useAdminT();
   const L = useL();
-  const groups = Object.entries(F.text.fields);
+  const groups = Object.entries(F.text.fields).filter(([, d]) => !d.hidden);
   const [open, setOpen] = useState('hero');
   return (
     <>
@@ -123,7 +123,7 @@ export function Texts() {
 
 // ═════════════ Section lists ═════════════
 // Sections without a page of their own (story, products, contact cards… have their own module).
-export const SECTION_PAGES = ['logos', 'mind', 'method', 'expertise', 'codaServices', 'learning', 'series', 'testimonials'];
+export const SECTION_PAGES = ['logos', 'method', 'expertise', 'codaServices', 'learning', 'series'];
 const OTHER_SECTIONS = ['timeline', 'products', 'contactPaths'];
 
 export function SectionPage({ k }) {
@@ -235,7 +235,7 @@ export function ProjectEdit({ index }) {
         <Field def={pf.gallery} path={['projects', index, 'gallery']} />
       </Card>
       <Card title={t('ad.pe.details')} intro={t('ad.pe.detailsIntro')}>
-        {only(['client', 'industry', 'year', 'role', 'deliverables', 'challenge', 'context', 'problem', 'solution', 'learning'])}
+        {only(['client', 'industry', 'year', 'role', 'deliverables', 'challenge', 'context', 'problem', 'solution'])}
       </Card>
       <Card title={t('ad.pe.case')} intro={t('ad.pe.caseIntro')}>
         {only(['objective', 'strategy', 'execution', 'toolsUsed'])}
@@ -257,7 +257,7 @@ export function ProjectEdit({ index }) {
         </div>
       </Card>
       <Card title={t('ad.pe.results')} intro={t('ad.pe.resultsIntro')}>
-        {only(['results', 'feedback'])}
+        {only(['resultsIntro', 'results', 'feedback'])}
       </Card>
       <Card title={t('ad.pe.design')}>
         {only(['mono', 'bg', 'fg'])}

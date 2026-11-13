@@ -137,33 +137,13 @@
 .cs-gal__title { margin: 0; font-size: clamp(40px, 4.6vw, 68px); line-height: 1; }
 .cs-gal__count { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .cs-gal__note { margin: 0; max-width: 420px; font-size: 14px; color: var(--muted); }
-.cs-fig__btn { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; text-align: inherit; }
-.cs-fig__btn:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 18px; }
-.cs-gallery { display: flex; flex-wrap: wrap; gap: 16px; }
-.cs-fig { position: relative; min-width: 0; margin: 0; }
-.cs-fig__media { border-radius: 18px; }
-.cs-fig__media .media__art { transition: scale 1.2s var(--ease); }
-.cs-fig:hover .media__art, .cs-fig:hover .media__img { scale: 1.04; }
-.cs-fig__cap { position: absolute; inset-inline: 14px; bottom: 14px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 249, 245, 0.94); font-size: 12px; line-height: 1.4; }
-.cs-fig__cap--real { inset-inline-end: auto; pointer-events: none; }
 
-.cs-results { background: #EAF7F6; }
-.cs-results .h2 { font-size: clamp(40px, 4.6vw, 68px); line-height: 1; }
-.cs-results__note { max-width: 360px; font-size: 14px; color: var(--muted) !important; }
-.cs-metrics { display: flex; flex-wrap: wrap; gap: 12px; }
-.cs-metric { flex: 1 1 240px; padding: 28px; border-radius: 18px; background: #fff; }
-.cs-metric p { margin: 0; }
-.cs-metric__v { font-family: var(--f-display); font-size: clamp(48px, 5vw, 72px); line-height: 1; color: var(--blue); }
-.cs-metric__l { margin-top: 12px !important; font-size: 14px; font-weight: 600; }
 .cs-quote { margin: 12px 0 0; padding: clamp(28px, 4vw, 48px); border-radius: 18px; border: 1px dashed rgba(32, 32, 51, 0.4); display: flex; flex-direction: column; gap: 18px; }
 .cs-quote.is-real { border-style: solid; background: #fff; }
 .cs-quote blockquote { margin: 0; font-family: var(--f-display); font-style: italic; font-size: clamp(22px, 2.4vw, 32px); line-height: 1.4; color: var(--muted); }
 .cs-quote.is-real blockquote { color: var(--ink); }
 .cs-quote figcaption { font-size: 13px; color: var(--muted); }
 
-.cs-learning { text-align: center; }
-.cs-learning .eyebrow { letter-spacing: 0.2em; }
-.cs-learning__q { margin: 0 auto; max-width: 980px; font-family: var(--f-display); font-size: clamp(30px, 3.6vw, 52px); line-height: 1.25; }
 
 .cs-next { display: block; background: var(--blue); color: #fff; text-decoration: none; padding: clamp(64px, 8vw, 120px) clamp(16px, 3vw, 40px); overflow: hidden; }
 .cs-next:hover { color: #fff; }
@@ -233,3 +213,83 @@
 .cs-related__grid { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 32px; }
 .cs-related__grid > .work-card { flex: 1 1 260px; max-width: 420px; }
 
+
+
+/* ═════════════ Project page · “The work” slider ═════════════ */
+.wsl { position: relative; }
+.wsl__frame { position: relative; overflow: hidden; height: min(640px, 72vh, 50vw); min-height: 360px; border-radius: 22px; background: var(--sand); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.wsl__track { display: flex; height: 100%; margin: 0; padding: 0; list-style: none; transition: transform 0.85s cubic-bezier(0.65, 0, 0.35, 1); will-change: transform; }
+.wsl.is-still .wsl__track { transition: none; }
+.wsl__slide { flex: 0 0 100%; min-width: 0; height: 100%; padding: clamp(14px, 2.6vw, 36px); }
+.wsl__open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 12px; }
+.wsl__open:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; }
+.wsl__open img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.wsl__arrow { position: absolute; top: 50%; z-index: 2; display: grid; place-items: center; width: 52px; height: 52px; margin-top: -26px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 249, 245, 0.94); color: var(--ink); font-size: 20px; box-shadow: 0 10px 24px -14px rgba(32, 32, 51, 0.55); cursor: pointer; transition: background 0.25s ease, color 0.25s ease, scale 0.25s var(--ease); }
+.wsl__arrow:hover { background: var(--blue); color: #fff; scale: 1.06; }
+.wsl__arrow:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.wsl__arrow--prev { left: clamp(10px, 1.6vw, 20px); }
+.wsl__arrow--next { right: clamp(10px, 1.6vw, 20px); }
+.wsl__bar { position: absolute; left: 0; bottom: 0; z-index: 2; height: 3px; width: 100%; transform-origin: left; background: var(--blue); animation: wsl-bar linear forwards; }
+@keyframes wsl-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.wsl__foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; }
+.wsl__cap { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wsl__ctrl { display: flex; align-items: center; gap: 14px; flex: none; }
+.wsl__count { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wsl__play { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--line-2); border-radius: 50%; background: none; color: var(--ink); font-size: 10px; letter-spacing: -1px; cursor: pointer; transition: background 0.25s ease, color 0.25s ease; }
+.wsl__play:hover { background: var(--ink); color: var(--ivory); }
+.wsl__play:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.wsl__thumbs { display: flex; gap: 10px; margin: 16px 0 0; padding: 2px 2px 6px; list-style: none; overflow-x: auto; scrollbar-width: thin; }
+.wsl__thumb { position: relative; display: block; width: 88px; height: 62px; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: var(--sand); opacity: 0.5; cursor: pointer; transition: opacity 0.25s ease, box-shadow 0.25s ease; }
+.wsl__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.wsl__thumb:hover { opacity: 0.85; }
+.wsl__thumb.is-on { opacity: 1; box-shadow: 0 0 0 2px var(--ivory), 0 0 0 4px var(--blue); }
+.wsl__thumb:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.wsl__dot { display: none; }
+@media (max-width: 900px) { .wsl__frame { height: auto; min-height: 0; aspect-ratio: 4 / 3; } }
+@media (max-width: 560px) {
+  .wsl__frame { aspect-ratio: 1 / 1; border-radius: 16px; }
+  .wsl__slide { padding: 10px; }
+  .wsl__arrow { width: 42px; height: 42px; margin-top: -21px; font-size: 17px; }
+  .wsl__thumbs { justify-content: center; gap: 4px; overflow: visible; flex-wrap: wrap; }
+  .wsl__thumb { width: 24px; height: 24px; background: none; opacity: 1; border-radius: 50%; box-shadow: none !important; }
+  .wsl__thumb img { display: none; }
+  .wsl__dot { display: block; width: 8px; height: 8px; margin: 8px; border-radius: 50%; background: var(--line-2); transition: background 0.25s ease, width 0.25s ease; }
+  .wsl__thumb.is-on .wsl__dot { background: var(--blue); }
+}
+
+/* ═════════════ Project page · “The outcome” — figures with their proof images ═════════════ */
+.cs-outcome { background: #fff; }
+.cs-outcome__head { margin-bottom: clamp(32px, 4vw, 52px); }
+.cs-outcome__title { margin: 0; font-family: var(--f-cond); font-weight: 700; font-size: clamp(30px, 2.8vw, 40px); line-height: 1; letter-spacing: 0.01em; text-transform: uppercase; color: var(--ink); }
+.cs-outcome__intro { margin: 6px 0 0; max-width: 52ch; font-family: var(--f-cond); font-weight: 500; font-size: clamp(17px, 1.4vw, 20px); line-height: 1.3; color: var(--ink); }
+.cs-outcome__grid { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: clamp(20px, 2.6vw, 36px); margin: 0; padding: 0; list-style: none; align-items: stretch; }
+.cs-outcome__grid.n1 { --cols: 1; max-width: 320px; }
+.cs-outcome__grid.n2 { --cols: 2; max-width: 720px; }
+.cs-outcome__grid.n3 { --cols: 3; }
+.cs-outcome__grid.n4 { --cols: 4; }
+.cs-outcome__grid.n5, .cs-outcome__grid.n6 { --cols: 3; }
+/* as in the reference: text aligned with the edge of its image, images lined up whatever the text length */
+.cs-out { display: flex; flex-direction: column; min-width: 0; text-align: start; }
+.cs-out p { margin: 0; }
+.cs-out__l, .cs-out__v:last-of-type { margin-bottom: clamp(18px, 2vw, 28px) !important; }
+.cs-out__v { font-family: var(--f-cond); font-weight: 700; font-size: clamp(28px, 2.6vw, 40px); line-height: 1; letter-spacing: 0.005em; text-transform: uppercase; color: var(--ink); overflow-wrap: anywhere; }
+.cs-out__l { margin-top: 6px !important; max-width: 32ch; font-family: var(--f-cond); font-weight: 500; font-size: clamp(17px, 1.4vw, 20px); line-height: 1.25; color: var(--ink); }
+.cs-out__img { position: relative; width: 100%; margin-top: auto; aspect-ratio: 9 / 19.5; border-radius: 18px; overflow: hidden; background: var(--sand); }
+.cs-out__img img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.cs-out__img.is-empty { background: var(--ink); }
+.cs-out__art i, .cs-out__art b { position: absolute; display: block; }
+.cs-out__art i { width: 62%; aspect-ratio: 1; left: 30%; top: 14%; border-radius: 50%; background: var(--pink); }
+.cs-out__art b { width: 46%; aspect-ratio: 1; left: 12%; top: 50%; background: var(--blue); }
+.cs-out:nth-child(3n + 2) .cs-out__art i { background: var(--aqua); }
+.cs-out:nth-child(3n + 3) .cs-out__art b { background: var(--pink); border-radius: 50%; }
+.cs-outcome .cs-quote { margin-top: clamp(32px, 4vw, 52px); }
+@media (max-width: 900px) {
+  .cs-outcome__grid.n3, .cs-outcome__grid.n4, .cs-outcome__grid.n5, .cs-outcome__grid.n6 { --cols: 2; }
+}
+@media (max-width: 560px) {
+  /* phones: one row that scrolls sideways, like the reference layout */
+  .cs-outcome__grid, .cs-outcome__grid.n1, .cs-outcome__grid.n2 { display: flex; max-width: none; gap: 16px; margin: 0 calc(-1 * clamp(16px, 3vw, 40px)); padding: 0 clamp(16px, 3vw, 40px) 8px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .cs-outcome__grid::-webkit-scrollbar { display: none; }
+  .cs-out { flex: 0 0 74%; scroll-snap-align: center; }
+  .cs-outcome__grid.n1 .cs-out { flex-basis: 100%; }
+}

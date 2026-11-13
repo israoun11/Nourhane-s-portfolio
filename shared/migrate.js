@@ -182,6 +182,7 @@ export function missingTranslations(content, lang) {
     }
     if (def.type !== 'object' || !isObj(value)) return;
     for (const [k, sub] of Object.entries(def.fields)) {
+      if (sub.hidden && (sub.type === 'object' || sub.type === 'list')) continue; // removed sections
       if (sub.type === 'object' || sub.type === 'list') walk(sub, value[k], [...path, k]);
       else if (isTranslatable(sub)) {
         const en = value[k];

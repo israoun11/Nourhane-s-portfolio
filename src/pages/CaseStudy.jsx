@@ -1,22 +1,12 @@
 import { useRef, useState } from 'react';
 import Header from '../components/Header.jsx';
 import Lightbox from '../components/Lightbox.jsx';
+import WorkSlider from '../components/WorkSlider.jsx';
 import { Link } from '../router.jsx';
-import { defaultGalleryKeys } from '../data/layout.js';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Media, orPlaceholder } from '../components/ui.jsx';
 import { useMeta, useScrollVar } from '../hooks/motion.js';
 import { useT } from '../i18n/index.jsx';
-
-// Gallery rhythm: wide, tall, squares… repeats for any number of images.
-const galleryLayout = [
-  { flex: '2 1 560px', ratio: '16 / 10', bg: '#2E2E46', art: { width: '60%', left: '40%', top: '-10%', borderRadius: '50%', background: '#1534DD' } },
-  { flex: '1 1 300px', ratio: '4 / 5', bg: '#F174AB', art: { width: '50%', left: '30%', top: '20%', background: '#FFF9F5' } },
-  { flex: '1 1 300px', ratio: '1 / 1', bg: '#B9E8E5', art: { width: '56%', left: '10%', top: '30%', borderRadius: '50%', background: '#1534DD' } },
-  { flex: '1 1 300px', ratio: '1 / 1', bg: '#EFE6DC', art: { width: '40%', left: '50%', top: '10%', borderRadius: '16px', background: '#202033' } },
-  { flex: '1 1 300px', ratio: '1 / 1', bg: '#1534DD', art: { width: '44%', left: '20%', top: '36%', borderRadius: '50%', background: '#F174AB' } },
-  { flex: '1 1 100%', ratio: '21 / 8', bg: '#2E2E46', art: { width: '24%', left: '66%', top: '-20%', borderRadius: '50%', background: '#F174AB' } },
-];
 
 const steps = [
   { k: 'cs.step1', ph: 'cs.step1Ph', cls: 'step--line', kc: 'c-pink', bg: '#2E2E46', art: { width: '46%', left: '50%', top: '-20%', borderRadius: '50%', background: '#F174AB' } },
@@ -36,12 +26,13 @@ export default function CaseStudy({ project }) {
 
   const idx = projects.findIndex((x) => x.slug === p.slug);
   const next = projects[(idx + 1) % projects.length];
-  const own = (p.gallery || []).filter((g) => g.src || g.label || g.hint);
-  // No images yet → clean frames that show what will be added.
-  const gallery = own.length ? own : defaultGalleryKeys.map((k) => ({ label: t(`gal.${k}`), hint: t(`gal.${k}h`), src: '' }));
-  const real = gallery.filter((g) => g.src);
+  // “The work” slider: this project's own uploaded images, in the dashboard order.
+  const real = (p.gallery || []).filter((g) => g.src);
+  // “The outcome”: this project's verified figures, each with its own image; client feedback only when real.
+  const results = (p.results || []).filter((r) => r.value || r.label);
+  const isPh = (v) => /^\s*\[.*\]\s*$/.test(v || '');
   const [t1, ...t2] = p.title.split(' / ');
-  const hasFeedback = !!(p.feedback && p.feedback.quote);
+  const hasFeedback = !!(p.feedback && p.feedback.quote && !isPh(p.feedback.quote));
   // Extra case-study parts: shown only once they are filled in (nothing is invented).
   const plan = [
     ['cs.objective', p.objective],
@@ -151,62 +142,51 @@ export default function CaseStudy({ project }) {
           </div>
         </section>
 
-        <section className="cs-section" aria-labelledby="gal-title">
-          <div className="cs-wrap">
-            <div className="cs-gal__head">
-              <h2 id="gal-title" className="h2 cs-gal__title" data-reveal>{t('cs.workA')} <em>{t('cs.workB')}</em></h2>
-              {real.length > 0 ? <p className="cs-gal__count">{t('cs.galleryCount', { n: real.length })}</p> : <p className="cs-gal__note">{t('cs.galleryEmpty')}</p>}
+        {real.length > 0 && (
+          <section className="cs-section cs-work" aria-labelledby="gal-title">
+            <div className="cs-wrap">
+              <div className="cs-gal__head">
+                <h2 id="gal-title" className="h2 cs-gal__title" data-reveal>{t('cs.workA')} <em>{t('cs.workB')}</em></h2>
+                <p className="cs-gal__count">{t('cs.galleryCount', { n: real.length })}</p>
+              </div>
+              <WorkSlider images={real} title={p.title} onOpen={setViewer} />
             </div>
-            <div className="cs-gallery">
-              {gallery.map((g, i) => {
-                const l = galleryLayout[i % galleryLayout.length];
-                const media = <Media src={g.src} alt={g.label} bg={l.bg} art={[l.art]} ratio={l.ratio} className="cs-fig__media" reveal parallax />;
-                return (
-                  <figure key={`${i}-${g.src}`} className={`cs-fig${g.src ? ' has-img' : ''}`} data-reveal style={{ flex: l.flex, '--d': `${(i % 3) * 0.08}s` }}>
-                    {g.src ? (
-                      <button type="button" className="cs-fig__btn" onClick={() => setViewer(real.indexOf(g))} aria-label={t('cs.open', { label: g.label || String(i + 1) })} data-cursor={t("cursor.view")}>
-                        {media}
-                      </button>
-                    ) : (
-                      media
-                    )}
-                    {g.src ? (
-                      g.label && <figcaption className="cs-fig__cap cs-fig__cap--real">{g.label}</figcaption>
-                    ) : (
-                      <figcaption className="cs-fig__cap"><strong>{g.label}</strong>{g.hint ? ` — ${g.hint}` : ''}</figcaption>
-                    )}
-                  </figure>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        <section className="cs-section cs-results" aria-labelledby="res-title">
-          <div className="cs-wrap">
-            <div className="section-head">
-              <h2 id="res-title" className="h2" data-reveal>{t('cs.outcomeA')} <em>{t('cs.outcomeB')}</em></h2>
-              <p className="cs-results__note">{t('cs.resultsNote')}</p>
+        {(results.length > 0 || hasFeedback) && (
+          <section className="cs-section cs-outcome" aria-labelledby="res-title">
+            <div className="cs-wrap">
+              <header className="cs-outcome__head">
+                <h2 id="res-title" className="cs-outcome__title" data-reveal>{t('cs.outcomeA')} {t('cs.outcomeB').replace(/\.$/, '')}</h2>
+                {p.resultsIntro && <p className="cs-outcome__intro">{p.resultsIntro}</p>}
+              </header>
+              {results.length > 0 && (
+                <ul className={`cs-outcome__grid n${Math.min(results.length, 6)}`}>
+                  {results.map((r, i) => (
+                    <li key={i} className="cs-out" data-reveal style={{ '--d': `${(i % 4) * 0.08}s` }}>
+                      <p className="cs-out__v">{r.value}</p>
+                      {r.label && <p className="cs-out__l">{r.label}</p>}
+                      <div className={`cs-out__img${r.image ? '' : ' is-empty'}`}>
+                        {r.image ? (
+                          <img src={r.image} alt={r.imageAlt || [r.value, r.label].filter(Boolean).join(' — ')} loading="lazy" decoding="async" />
+                        ) : (
+                          <span className="cs-out__art" aria-hidden="true"><i /><b /></span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {hasFeedback && (
+                <figure className="cs-quote is-real" data-reveal>
+                  <blockquote>{p.feedback.quote}</blockquote>
+                  {(p.feedback.name || p.feedback.role) && <figcaption>{[p.feedback.name, p.feedback.role].filter(Boolean).join(' · ')}</figcaption>}
+                </figure>
+              )}
             </div>
-            <div className="cs-metrics">
-              {(p.results.length ? p.results : [{}, {}, {}]).map((r, i) => (
-                <div key={i} className="cs-metric" data-reveal style={{ '--d': `${i * 0.1}s` }}>
-                  <p className="cs-metric__v">{r.value || '[—]'}</p>
-                  <p className="cs-metric__l">{r.label || t('cs.metricPh', { n: i + 1 })}</p>
-                </div>
-              ))}
-            </div>
-            <figure className={`cs-quote${hasFeedback ? ' is-real' : ''}`} data-reveal>
-              <blockquote>{hasFeedback ? p.feedback.quote : t('cs.quotePh')}</blockquote>
-              <figcaption>{hasFeedback ? [p.feedback.name, p.feedback.role].filter(Boolean).join(' · ') : t('cs.quoteNamePh')}</figcaption>
-            </figure>
-          </div>
-        </section>
-
-        <section className="cs-section cs-learning" aria-label={t('cs.learning')}>
-          <p className="eyebrow">{t('cs.takeaway')}</p>
-          <p className="cs-learning__q" data-reveal>“{orPlaceholder(p.learning, t('cs.learningPh'))}”</p>
-        </section>
+          </section>
+        )}
 
         {(tools.length > 0 || extLinks.length > 0) && (
           <section className="cs-section cs-tools" aria-labelledby="tl-title">

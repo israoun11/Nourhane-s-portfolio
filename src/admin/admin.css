@@ -305,3 +305,9 @@ textarea.ad-input { resize: vertical; line-height: 1.5; }
 .ad-bars span { flex: 1; min-width: 2px; border-radius: 2px 2px 0 0; background: var(--blue); opacity: .75; }
 .ad-draft { margin-top: 16px; padding: 14px; border-radius: 12px; background: rgba(32, 32, 51, .04); }
 .ad-draft pre { margin: 0 0 12px; white-space: pre-wrap; font: inherit; font-size: 14px; line-height: 1.6; }
+
+/* PDF field: file name + upload result */
+.ad-file__name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.ad-file__note { margin: 8px 0 0; font-size: 13px; font-weight: 600; }
+.ad-file__note--ok { color: #18794e; }
+.ad-file__note--error { color: #c42b2b; }

@@ -254,6 +254,14 @@ export function createApp(cfg, store, log = console, deps = {}) {
         return sendJson(res, 200, await content.save(body.data, body.version));
       }
 
+      // Puts an uploaded PDF into its field and saves it at once (no “Save changes” needed).
+      if (pathname === '/api/admin/content/file' && m === 'POST') {
+        const body = await readJson(req, 16 * 1024);
+        const p = Array.isArray(body.path) ? body.path : [];
+        const fileUrl = typeof body.url === 'string' ? body.url : '';
+        return sendJson(res, 200, await content.setFile(p, fileUrl, typeof body.name === 'string' ? body.name : ''));
+      }
+
       if (pathname === '/api/admin/upload' && m === 'POST') {
         const key = s.idHash;
         if (uploads.blocked(key)) throw new HttpError(429, 'Upload limit reached. Please try again in an hour.');
@@ -262,7 +270,13 @@ export function createApp(cfg, store, log = console, deps = {}) {
           const buf = await readBody(req, cfg.maxPdfBytes);
           if (!buf.length) throw new HttpError(400, 'The file is empty.');
           uploads.hit(key);
-          return sendJson(res, 200, await content.uploadPdf(buf, url.searchParams.get('access') === 'private' ? 'private' : 'public'));
+          let fileName = '';
+          try {
+            fileName = decodeURIComponent(String(req.headers['x-file-name'] || ''));
+          } catch {
+            /* unreadable name: keep none */
+          }
+          return sendJson(res, 200, await content.uploadPdf(buf, url.searchParams.get('access') === 'private' ? 'private' : 'public', fileName));
         }
         if (!/^image\/(jpeg|png|webp)$/.test(type)) throw new HttpError(415, 'Only JPEG, PNG and WebP images can be uploaded.');
         const buf = await readBody(req, cfg.maxUploadBytes);

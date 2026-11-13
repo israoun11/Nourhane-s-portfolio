@@ -489,7 +489,6 @@ function seoChecks(draft) {
     if (!p.seoDescription && (p.summary || '').length < 50) add('info', ['ad.seo.c.projDesc', { title: p.title }], `/admin/projects/${i}`);
     if (p.cover && !p.coverAlt) add('info', ['ad.seo.c.coverAlt', { title: p.title }], `/admin/projects/${i}`);
   });
-  draft.mind.forEach((m) => m.image && !m.imageAlt && add('info', ['ad.seo.c.mindAlt', { word: m.word }], '/admin/sections/mind'));
   draft.expertise.forEach((e) => e.image && !e.imageAlt && add('info', ['ad.seo.c.expAlt', { title: e.title }], '/admin/sections/expertise'));
   draft.products.forEach((p) => p.image && !p.imageAlt && add('info', ['ad.seo.c.prodAlt', { title: p.t }], '/admin/products'));
   const nFr = missingTranslations(draft, 'fr').length;

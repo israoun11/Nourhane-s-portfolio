@@ -38,7 +38,7 @@ export default function Footer() {
                 {t('footer.coda')}
               </a>
             )}
-            <Link className="ulink" to="/work">
+            <Link className="footer__portfolio" to="/work">
               {t('footer.portfolio')}
             </Link>
             {socials.length ? (

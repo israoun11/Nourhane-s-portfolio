@@ -26,7 +26,7 @@ function Socials({ className = '' }) {
   return (
     <div className={`hsoc ${className}`}>
       {items.map(([k, label, href]) => (
-        <a key={k} className="hsoc__btn" href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
+        <a key={k} className={`hsoc__btn hsoc__btn--${k}`} href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
           <svg viewBox="0 0 24 24" aria-hidden="true">{SOCIAL_ICONS[k]}</svg>
         </a>
       ))}

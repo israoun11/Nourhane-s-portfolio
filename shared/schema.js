@@ -102,7 +102,8 @@ export const schema = obj('Website', {
     whatsappMessage: text('WhatsApp — pre-filled message', { max: 200, help: 'Optional. Appears in the visitor’s WhatsApp when they open the chat.' }),
     cvFile: pdf('CV (PDF file)', { help: 'Upload your CV as a PDF. It is checked to be a real PDF before it is published.' }),
     cvLabel: text('CV button label', { max: 40, help: 'Leave empty to use “Download CV”.' }),
-    cv: link('CV link (alternative)', { kind: 'file', help: 'Only if you prefer a link (e.g. Google Drive) instead of uploading the PDF.' }),
+    // Older “CV link” (kept so an existing link still works; the CV is now uploaded as a PDF).
+    cv: link('CV link (alternative)', { kind: 'file', hidden: true }),
     url: link('Website address', { help: 'Your public address, e.g. https://nourhanethabet.com — used for search engines (sitemap, canonical links).' }),
     codastudioUrl: link('CodaStudio website', { help: 'Full address starting with https://' }),
     socials: obj('Social profiles', {
@@ -135,7 +136,9 @@ export const schema = obj('Website', {
       label2: text('Label on the photo — line 2 (pink)', { max: 40 }),
       annotation: text('Handwritten note', { max: 60 }),
     }),
-    mind: obj('“One creative mind” section', heading()),
+    // Removed sections (“One creative mind”, testimonials): their saved texts and images are kept
+    // in storage untouched, but they are no longer shown on the website or in the dashboard.
+    mind: { ...obj('“One creative mind” section', heading()), hidden: true },
     journey: obj('Journey section', {
       eyebrow: text('Small label', { max: 60 }),
       title: area('Heading', { max: 120, help: 'Press Enter to start a new line.' }),
@@ -171,7 +174,7 @@ export const schema = obj('Website', {
     }),
     tools: obj('Tools section', { ...heading(), intro: area('Introduction', { max: 300 }) }),
     products: obj('Digital products section', { ...heading(), note: area('Note', { max: 300 }) }),
-    proof: obj('Testimonials section', { ...heading(), note: text('Small note', { max: 160 }) }),
+    proof: { ...obj('Testimonials section', { ...heading(), note: text('Small note', { max: 160 }) }), hidden: true },
     contact: obj('Contact section', heading()),
     footer: obj('Footer motto', {
       motto1: text('Part 1', { max: 40 }),
@@ -430,16 +433,20 @@ export const schema = obj('Website', {
       // older content stored each step as plain text
       coerce: (v) => (typeof v === 'string' ? { text: v, image: '' } : v),
     }),
+    resultsIntro: text('Line under “The outcome”', { max: 160, help: 'Optional — e.g. “From the client’s accounts, as they sent them.”' }),
     results: list('Results (verified figures only)', obj('Result', {
-      value: text('Figure', { required: true, max: 20 }),
+      value: text('Figure', { required: true, max: 40 }),
       label: text('What it measures', { required: true, max: 120 }),
-    }), { min: 0, max: 6, itemTitle: 'value' }),
+      image: image('Image under the figure', { help: 'The proof of this figure — e.g. a statistics screenshot or the client’s message. Portrait screenshots fit best.' }),
+      imageAlt: text('Image — description for screen readers', { max: 160 }),
+    }), { min: 0, max: 6, itemTitle: 'value', help: 'Shown in “The outcome”: each figure with its own image under it.' }),
     feedback: obj('Client feedback (approved only)', {
       quote: area('Quote', { max: 800 }),
       name: text('Name', { max: 80 }),
       role: text('Role · Company', { max: 120 }),
     }),
-    learning: area('What I took away', { max: 600 }),
+    // “What I took away” is no longer shown on project pages; saved texts are kept, not edited.
+    learning: area('What I took away', { max: 600, hidden: true }),
     cover: image('Cover image', { help: 'Landscape, about 2400 × 1500.' }),
     coverAlt: text('Cover — description for screen readers', { max: 160 }),
     logo: image('Client logo (optional)', { help: 'Shown on the project card while there is no cover image.' }),
@@ -447,13 +454,19 @@ export const schema = obj('Website', {
       src: image('Image'),
       label: text('Caption', { max: 80 }),
       hint: text('Placeholder hint', { max: 120, help: 'Shown only while no image is uploaded.' }),
-    }), { min: 0, max: 24, gallery: true, itemTitle: 'label', help: 'Shown in “The work” on the project page, in this order.' }),
+    }), { min: 0, max: 24, gallery: true, itemTitle: 'label', help: 'Shown in the “The work” slider on the project page, in this order. Every image is shown whole (not cropped).' }),
     mono: text('Placeholder initials', { max: 20, noTranslate: true, help: 'Big letters shown on the card while no cover image is uploaded.' }),
     bg: color('Card colour (without image)'),
     fg: color('Card text colour'),
     art: art(),
   }), { min: 0, max: 60, itemTitle: 'title' }),
+
+  /** Original names of uploaded PDFs ({ "<file reference>": "my-cv.pdf" }), shown in the dashboard. */
+  fileNames: { type: 'filenames', label: 'Uploaded file names', hidden: true },
 });
+// Removed sections: kept in storage untouched, hidden everywhere (see text.mind / text.proof).
+schema.fields.mind.hidden = true;
+schema.fields.testimonials.hidden = true;
 
 // ─────────────────────────────────────────────────────────────
 //  Validation
@@ -557,6 +570,19 @@ function vField(f, v, path, errs) {
       }
       if (!isSafeUrl(s, 'file')) return err('url'), '';
       return s;
+    }
+    case 'filenames': {
+      // Only names of files that are actually used, as plain short strings.
+      const out = {};
+      const src = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+      for (const [ref, name] of Object.entries(src)) {
+        if (typeof ref !== 'string' || typeof name !== 'string') continue;
+        if (!/^(private:[a-f0-9]{64}\.pdf|https?:\/\/\S+\.pdf|\/uploads\/[a-f0-9]{64}\.pdf)$/.test(ref)) continue;
+        const n = clean(name).replace(/[\\/<>"]/g, '').trim().slice(0, 160);
+        if (n) out[ref] = n;
+        if (Object.keys(out).length >= 200) break;
+      }
+      return out;
     }
     case 'uitexts': {
       const out = {};
@@ -740,9 +766,12 @@ export function collectUrls(content) {
 export function publicView(content) {
   const projects = content.projects.filter((p) => p.published && !p.archived);
   const live = new Set(projects.map((p) => p.slug));
-  const { ads, ...rest } = content; // ad budget alerts stay in the dashboard
+  // ad budget alerts stay in the dashboard; removed sections and PDF file names are not sent
+  const { ads, mind, testimonials, fileNames, ...rest } = content;
+  const { mind: _m, proof: _p, ...text } = content.text || {};
   return {
     ...rest,
+    text,
     projects: projects.map((p) => ({ ...p, related: (p.related || []).filter((s) => live.has(s)) })),
     expertise: content.expertise.map((e) => ({ ...e, proof: e.proof.filter((s) => live.has(s)) })),
     products: (content.products || []).filter((p) => p.published).map(({ file, ...p }) => ({ ...p, hasFile: !!file })),

@@ -75,29 +75,6 @@
   .logos__group[aria-hidden="true"]:not(.logos__measure) { display: none; }
 }
 
-/* ═════════════ 03 MIND ═════════════ */
-.mind__title { margin-bottom: clamp(40px, 5vw, 72px); }
-.mind { display: flex; flex-wrap: wrap; gap: clamp(32px, 5vw, 72px); align-items: stretch; }
-.mind__words { flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; }
-.mind__word {
-  display: flex; align-items: baseline; gap: 18px; padding: 4px 0; border: 0; border-bottom: 1px solid rgba(32, 32, 51, 0.14);
-  background: transparent; cursor: pointer; text-align: left;
-  font-family: var(--f-cond); font-weight: 800; font-size: clamp(64px, 8.6vw, 136px); line-height: 1; text-transform: uppercase;
-  color: transparent; -webkit-text-stroke: 1.5px var(--ink);
-  transition: color 0.35s ease, -webkit-text-stroke-color 0.35s ease, translate 0.45s var(--ease);
-}
-.mind__word:hover { translate: 10px 0; }
-.mind__word.is-on { color: var(--blue); -webkit-text-stroke-color: var(--blue); }
-.mind__n { font-family: var(--f-ui); font-size: 13px; font-weight: 800; -webkit-text-stroke: 0; color: var(--blue); letter-spacing: 0.1em; }
-.mind__panel { flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
-.mind__media { border: 1px solid rgba(32, 32, 51, 0.1); animation: fadeIn 0.5s ease both; }
-.mind__media .media__art > span { animation: blurIn 0.6s var(--ease) both; }
-.mind__text { display: flex; flex-direction: column; gap: 20px; animation: blurIn 0.5s var(--ease) both; }
-.mind__text p { margin: 0; }
-.mind__q { font-family: var(--f-display); font-style: italic; font-size: clamp(28px, 2.8vw, 40px); line-height: 1.15; color: var(--blue); }
-.mind__links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
-.mind__links > span:first-child { color: var(--muted); }
-.mind__links .chip { padding: 4px 12px; font-size: 13px; }
 
 /* ═════════════ 04 JOURNEY ═════════════ */
 .journey { background: var(--sand); --p: 1; }
@@ -319,25 +296,9 @@
 .prod__link:hover { color: var(--blue); }
 
 /* ═════════════ 12 PROOF ═════════════ */
-.proof { background: var(--sand); }
-.proof__nav { display: flex; align-items: center; gap: 10px; }
-.proof__nav > span { font-size: 13px; font-weight: 800; letter-spacing: 0.1em; }
 .round-btn { width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; font-size: 17px; transition: transform 0.3s var(--ease), background-color 0.3s ease, color 0.3s ease; }
 .round-btn:hover { transform: scale(1.08); }
 .round-btn--fill { background: var(--ink); color: var(--ivory); border-color: var(--ink); }
-.proof__card { margin: 0; display: flex; flex-wrap: wrap; background: #fff; border: 1px solid var(--line); min-height: 360px; }
-.proof__side { flex: 1 1 260px; min-width: 0; padding: 28px; display: flex; flex-direction: column; justify-content: space-between; gap: 20px; animation: fadeIn 0.5s ease both; }
-.proof__kind { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; }
-.proof__big { font-family: var(--f-cond); font-weight: 800; font-size: 56px; line-height: 0.9; text-transform: uppercase; }
-.proof__main { flex: 3 1 480px; min-width: 0; padding: clamp(28px, 4vw, 56px); display: flex; flex-direction: column; gap: 22px; animation: blurIn 0.5s var(--ease) both; }
-.proof__main blockquote { margin: 0; font-family: var(--f-display); font-style: italic; font-size: clamp(24px, 2.4vw, 34px); line-height: 1.35; color: var(--muted); }
-.proof__main blockquote.is-real { color: var(--ink); }
-.proof__shot { max-height: 320px; width: auto; border: 1px solid var(--line); }
-.proof__audio { width: 100%; }
-.proof__main figcaption { margin-top: auto; display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--muted); }
-.proof__main figcaption strong { color: var(--ink); }
-.proof__avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--aqua); flex: none; }
-.proof__note { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
 
 /* ═════════════ 13 CONTACT ═════════════ */
 .contact { padding-top: clamp(96px, 11vw, 168px); padding-bottom: clamp(96px, 11vw, 168px); }

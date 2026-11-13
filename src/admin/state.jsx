@@ -136,6 +136,25 @@ export function EditorProvider({ children }) {
     [draft, toast, t]
   );
 
+  /**
+   * Puts a PDF into its field and saves that field on the server at once. Other unsaved edits
+   * stay in the draft. Returns 'saved', or 'draft' when the item itself is not saved yet.
+   */
+  const saveFile = useCallback(async (path, url, name) => {
+    try {
+      const next = await api('/api/admin/content/file', { method: 'POST', json: { path, url, name } });
+      setSaved(next);
+      setDraft((d) => setIn(setIn(d, path, url), ['fileNames'], next.data.fileNames || {}));
+      return 'saved';
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409 && e.body.code === 'NOT_SAVED') {
+        setDraft((d) => setIn(setIn(d, path, url), ['fileNames', url], name));
+        return 'draft';
+      }
+      throw e;
+    }
+  }, []);
+
   const replaceSaved = useCallback((next) => {
     setSaved(next);
     setDraft(next.data);
@@ -143,7 +162,7 @@ export function EditorProvider({ children }) {
     setConflict(false);
   }, []);
 
-  const value = { saved, draft, dirty, saving, errors, conflict, loadError, load, update, updateWith, read, readSaved, save, discard, preview, replaceSaved, setErrors };
+  const value = { saved, draft, dirty, saving, errors, conflict, loadError, load, update, updateWith, read, readSaved, save, saveFile, discard, preview, replaceSaved, setErrors };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

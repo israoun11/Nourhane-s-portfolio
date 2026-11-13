@@ -11,7 +11,3 @@ export const homeGridLayout = [
 
 // Portfolio filters (labels: pf.f.<id> in src/i18n/site/<lang>.js)
 export const filters = ['all', 'marketing', 'branding', 'ecommerce', 'content', 'ux'];
-
-// Frames shown on a project page while it has no gallery images yet
-// (labels: gal.1 … gal.6 and hints gal.1h … gal.6h in src/i18n/site/<lang>.js).
-export const defaultGalleryKeys = [1, 2, 3, 4, 5, 6];
