@@ -6,7 +6,8 @@ const SWIPE = 40; // px of horizontal movement that counts as a swipe
 
 /**
  * “The work” image slider of a project page.
- * One frame, every image at the same size, shown whole (never stretched or cropped).
+ * One fixed frame (16:10, 4:3 on phones): every image fills it the same way (cover, centred),
+ * never stretched; clicking an image opens it whole.
  * Arrows, thumbnails (dots on phones), swipe and keyboard ← →. Slides automatically every
  * few seconds; pauses while the visitor hovers, focuses, touches or uses the controls, when it
  * is off-screen or the tab is hidden, and with the pause button. Visitors who ask their device

@@ -93,7 +93,7 @@ export function SiteInfo() {
         <ObjectFields def={F.site} path={['site']} only={['codastudioUrl']} />
       </Card>
       <Card title={t('ad.site.photos')}>
-        <ObjectFields def={F.site} path={['site']} only={['codastudio', 'training']} />
+        <ObjectFields def={F.site} path={['site']} only={['training']} />
       </Card>
       <Card title={t('ad.site.seo')} intro={t('ad.site.seoIntro')}>
         <ObjectFields def={F.site} path={['site']} only={['seoTitle', 'seoDescription']} />
@@ -123,7 +123,7 @@ export function Texts() {
 
 // ═════════════ Section lists ═════════════
 // Sections without a page of their own (story, products, contact cards… have their own module).
-export const SECTION_PAGES = ['logos', 'method', 'expertise', 'codaServices', 'learning', 'series'];
+export const SECTION_PAGES = ['logos', 'method', 'expertise', 'learning', 'series'];
 const OTHER_SECTIONS = ['timeline', 'products', 'contactPaths'];
 
 export function SectionPage({ k }) {
@@ -176,7 +176,7 @@ export function Projects() {
               {p.cover ? <img src={p.cover} alt="" /> : <span style={{ color: p.fg }}>{p.mono || p.title.slice(0, 2)}</span>}
             </div>
             <div className="ad-proj__main">
-              <span className="ad-proj__n">{String(i + 1).padStart(2, '0')}{i === 0 ? t('ad.pr.featured') : ''} · {t('ad.pr.images', { n: (p.gallery || []).filter((g) => g.src).length })}</span>
+              <span className="ad-proj__n">{String(i + 1).padStart(2, '0')} · {t('ad.pr.images', { n: (p.gallery || []).filter((g) => g.src).length })}</span>
               <Link to={`/admin/projects/${i}`} className="ad-proj__t">{p.title || t('ad.pr.untitled')}</Link>
               <span className="ad-proj__meta" dir="ltr">/work/{p.slug}</span>
               {p.archived && <span className="ad-badge ad-badge--muted ad-badge--xs">{t('ad.pr.archived')}</span>}

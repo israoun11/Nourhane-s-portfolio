@@ -40,16 +40,18 @@
 .filter:hover { border-color: var(--ink); }
 .filter.is-on { background: var(--ink); color: var(--ivory); border-color: var(--ink); }
 .filter span { opacity: 0.6; font-weight: 500; }
-.pf-grid { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.pf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 3vw, 44px) 22px; align-items: start; }
+@media (max-width: 1024px) { .pf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .pf-grid { grid-template-columns: minmax(0, 1fr); } }
 .pf-card { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
-.pf-card__media { border-radius: 18px; }
+.pf-card__media { width: 100%; border-radius: 16px; }
+.pf-card__media .media__img { object-fit: cover; object-position: center; }
 .pf-card__media .ph-label { left: 14px; top: 14px; border-radius: 6px; }
 .pf-card__meta { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-top: 4px; border-top: 1px solid rgba(32, 32, 51, 0.2); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--muted); }
 .pf-card__meta span:last-child { font-size: 12px; letter-spacing: 0; font-weight: 500; }
 .pf-card h3 { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-family: var(--f-display); font-weight: 500; font-size: clamp(26px, 2.4vw, 36px); line-height: 1.1; }
 .pf-card h3 .ar { font-family: var(--f-ui); font-size: 18px; color: var(--blue); }
 .pf-card p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--body); max-width: 520px; }
-@media (max-width: 900px) { .pf-card { margin-top: 0 !important; } }
 .pf-empty { margin: 0; padding: 40px; border: 1px dashed rgba(32, 32, 51, 0.3); border-radius: 18px; text-align: center; color: var(--muted); }
 
 .pf-index { background: #F7EFEA; padding-bottom: clamp(80px, 9vw, 140px); }
@@ -212,18 +214,20 @@
 .cs-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-weight: 700; }
 .cs-related__grid { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 32px; }
 .cs-related__grid > .work-card { flex: 1 1 260px; max-width: 420px; }
+.cs-related__grid .work-card__media { width: 100%; }
 
 
 
 /* ═════════════ Project page · “The work” slider ═════════════ */
-.wsl { position: relative; }
-.wsl__frame { position: relative; overflow: hidden; height: min(640px, 72vh, 50vw); min-height: 360px; border-radius: 22px; background: var(--sand); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.wsl { position: relative; max-width: min(100%, calc((100svh - 220px) * 1.6)); margin-inline: auto; }
+/* one fixed frame for every image: 16:10 (4:3 on phones), image fills it (cover, centred) */
+.wsl__frame { position: relative; overflow: hidden; aspect-ratio: 16 / 10; border-radius: 22px; background: var(--sand); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .wsl__track { display: flex; height: 100%; margin: 0; padding: 0; list-style: none; transition: transform 0.85s cubic-bezier(0.65, 0, 0.35, 1); will-change: transform; }
 .wsl.is-still .wsl__track { transition: none; }
-.wsl__slide { flex: 0 0 100%; min-width: 0; height: 100%; padding: clamp(14px, 2.6vw, 36px); }
-.wsl__open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 12px; }
-.wsl__open:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; }
-.wsl__open img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.wsl__slide { flex: 0 0 100%; min-width: 0; height: 100%; }
+.wsl__open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.wsl__open:focus-visible { outline: 3px solid var(--blue); outline-offset: -4px; }
+.wsl__open img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; pointer-events: none; }
 .wsl__arrow { position: absolute; top: 50%; z-index: 2; display: grid; place-items: center; width: 52px; height: 52px; margin-top: -26px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 249, 245, 0.94); color: var(--ink); font-size: 20px; box-shadow: 0 10px 24px -14px rgba(32, 32, 51, 0.55); cursor: pointer; transition: background 0.25s ease, color 0.25s ease, scale 0.25s var(--ease); }
 .wsl__arrow:hover { background: var(--blue); color: #fff; scale: 1.06; }
 .wsl__arrow:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
@@ -239,16 +243,15 @@
 .wsl__play:hover { background: var(--ink); color: var(--ivory); }
 .wsl__play:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 .wsl__thumbs { display: flex; gap: 10px; margin: 16px 0 0; padding: 2px 2px 6px; list-style: none; overflow-x: auto; scrollbar-width: thin; }
-.wsl__thumb { position: relative; display: block; width: 88px; height: 62px; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: var(--sand); opacity: 0.5; cursor: pointer; transition: opacity 0.25s ease, box-shadow 0.25s ease; }
+.wsl__thumb { position: relative; display: block; width: 88px; height: 55px; /* 16:10 like the frame */ padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: var(--sand); opacity: 0.5; cursor: pointer; transition: opacity 0.25s ease, box-shadow 0.25s ease; }
 .wsl__thumb img { width: 100%; height: 100%; object-fit: cover; }
 .wsl__thumb:hover { opacity: 0.85; }
 .wsl__thumb.is-on { opacity: 1; box-shadow: 0 0 0 2px var(--ivory), 0 0 0 4px var(--blue); }
 .wsl__thumb:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 .wsl__dot { display: none; }
-@media (max-width: 900px) { .wsl__frame { height: auto; min-height: 0; aspect-ratio: 4 / 3; } }
+
 @media (max-width: 560px) {
-  .wsl__frame { aspect-ratio: 1 / 1; border-radius: 16px; }
-  .wsl__slide { padding: 10px; }
+  .wsl__frame { aspect-ratio: 4 / 3; border-radius: 16px; }
   .wsl__arrow { width: 42px; height: 42px; margin-top: -21px; font-size: 17px; }
   .wsl__thumbs { justify-content: center; gap: 4px; overflow: visible; flex-wrap: wrap; }
   .wsl__thumb { width: 24px; height: 24px; background: none; opacity: 1; border-radius: 50%; box-shadow: none !important; }

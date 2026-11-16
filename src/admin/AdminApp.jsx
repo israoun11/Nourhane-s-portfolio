@@ -6,7 +6,7 @@ import { ConfirmProvider, Modal, useConfirm } from './ui.jsx';
 import { History, Overview, ProjectEdit, Projects, SECTION_PAGES, SectionPage, SiteInfo, Texts } from './pages.jsx';
 import { Inbox } from './Inbox.jsx';
 import { Translations, useMissingCounts } from './Translations.jsx';
-import { AdsPage, AiPage, AnalyticsPage, BookingPage, ContactPage, FilesPage, IntegrationsPage, LeadsPage, ProductsPage, SeoPage, StatsPage, StoryPage, ToolsPage, UiTextsPage } from './modules.jsx';
+import { AdsPage, AiPage, AnalyticsPage, BookingPage, ContactPage, FilesPage, IntegrationsPage, LeadsPage, ProductsPage, SeoPage, StatsPage, StoryPage, UiTextsPage } from './modules.jsx';
 import { AdminI18n, EditLangProvider, LANGS, inputLangProps, useAdminT, useEditLang, useErrorText } from './i18n.jsx';
 import LangSwitcher from '../components/LangSwitcher.jsx';
 import './admin.css';
@@ -84,7 +84,6 @@ function useNav() {
     { to: '/admin/projects', label: t('ad.nav.projects') },
     { to: '/admin/products', label: t('ad.mod.products') },
     { to: '/admin/story', label: t('ad.mod.story') },
-    { to: '/admin/tools', label: t('ad.mod.tools') },
     { to: '/admin/stats', label: t('ad.mod.stats') },
     { to: '/admin/texts', label: t('ad.nav.texts') },
     { group: t('ad.nav.g.relations') },
@@ -153,7 +152,7 @@ function SaveBar() {
   );
 }
 
-const EDITING = /^\/admin\/(projects\/\d+|texts|site|sections\/|products|story|tools|stats|contact|booking|files|seo|leads|interface|ads)/;
+const EDITING = /^\/admin\/(projects\/\d+|texts|site|sections\/|products|story|stats|contact|booking|files|seo|leads|interface|ads)/;
 
 function Route({ path, status, email, unread, setUnread }) {
   const t = useAdminT();
@@ -168,7 +167,7 @@ function Route({ path, status, email, unread, setUnread }) {
   if (clean === '/admin/site') return <SiteInfo />;
   if (clean === '/admin/history') return <History />;
   const MODULES = {
-    '/admin/story': StoryPage, '/admin/stats': StatsPage, '/admin/tools': ToolsPage, '/admin/products': ProductsPage,
+    '/admin/story': StoryPage, '/admin/stats': StatsPage, '/admin/products': ProductsPage,
     '/admin/leads': LeadsPage, '/admin/contact': ContactPage, '/admin/booking': BookingPage, '/admin/files': FilesPage,
     '/admin/seo': SeoPage, '/admin/interface': UiTextsPage, '/admin/integrations': IntegrationsPage,
     '/admin/analytics': AnalyticsPage, '/admin/ads': AdsPage, '/admin/ai': AiPage,

@@ -45,36 +45,20 @@ export default {
   // ways of thinking
 
   // my story
-  'journey.illustrative': 'ILLUSTRATIVE · ADD REAL WORK FROM {year}',
   'journey.photos': 'Photos from {year}',
   'journey.photoAlt': 'Photo {n} from {year}',
   'journey.slot': 'Photo {n}',
   'journey.slotHint': 'to add',
-  'journey.v.lead': 'LEAD\nDESIGN',
-  'journey.v.independent': 'going independent →',
-  'journey.v.store': 'STORE · CAMPAIGNS · OPS',
-  'journey.v.trained': 'PEOPLE TRAINED',
 
   // selected work
-  'work.featuredPh': 'FEATURED · IMAGE PLACEHOLDER',
   'work.imagePh': 'IMAGE PLACEHOLDER',
   'work.coverAlt': '{title} — cover',
-  'work.myRole': 'MY ROLE',
-  'work.challenge': 'CHALLENGE',
-  'work.toVerify': '[To verify]',
-  'work.oneLine': '[One line]',
   'work.industryPh': '[INDUSTRY]',
   'work.yearPh': '[YEAR]',
-  'work.readCase': 'READ THE CASE STUDY',
 
   // expertise
   'expertise.evidence': 'Evidence:',
 
-  // CodaStudio
-  'coda.logoAlt': 'CodaStudio logo',
-  'coda.logoPh': 'STUDIO IDENTITY PLACEHOLDER',
-  'coda.projectAlt': 'CodaStudio client project',
-  'coda.projectPh': 'Client project — to add',
 
   // training
   'learning.photo1Alt': 'Digital marketing training session',
@@ -336,9 +320,4 @@ export default {
   'cs.ctaA': "Have a similar project?",
   'cs.ctaB': "Let's talk.",
   'cs.ctaBtn': "LET'S WORK TOGETHER",
-  'tools.filter': "Filter by category",
-  'tools.all': "All",
-  'tools.list': "Tools",
-  'tools.mine': "My toolkit",
-  'tools.visit': "Official website",
 };

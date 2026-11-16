@@ -5,6 +5,7 @@ import WorkSlider from '../components/WorkSlider.jsx';
 import { Link } from '../router.jsx';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Media, orPlaceholder } from '../components/ui.jsx';
+import { PROJECT_RATIO } from '../data/layout.js';
 import { useMeta, useScrollVar } from '../hooks/motion.js';
 import { useT } from '../i18n/index.jsx';
 
@@ -220,7 +221,7 @@ export default function CaseStudy({ project }) {
               <div className="cs-related__grid">
                 {related.map((r) => (
                   <Link key={r.slug} to={`/work/${r.slug}`} className="card work-card" data-cursor={t('cursor.view')}>
-                    <Media src={r.cover} alt={r.coverAlt || t('work.coverAlt', { title: r.title })} bg={r.bg} art={r.art} ratio="4 / 3" label={t('work.imagePh')} framed />
+                    <Media className="work-card__media" src={r.cover} alt={r.coverAlt || t('work.coverAlt', { title: r.title })} bg={r.bg} art={r.art} ratio={PROJECT_RATIO} label={t('work.imagePh')} />
                     <span className="meta">{t('cs.case', { n: r.n })}</span>
                     <h3>{r.title} <span className="ar" aria-hidden="true">↗</span></h3>
                   </Link>

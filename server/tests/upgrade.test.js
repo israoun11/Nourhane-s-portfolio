@@ -12,9 +12,14 @@ test('v4 content: valid after migration (dashboard can save), new sections fille
   const v = validateContent(migrateContent(old));
   assert.deepEqual(v.errors, []);
   const pub = publicView(v.value);
-  assert.equal(pub.tools.length, 9, 'the 9 categories of the owner’s table');
-  assert.equal(pub.tools.reduce((n, c) => n + c.tools.length, 0), 24, 'the 24 tools to display');
-  assert.ok(!pub.tools.flatMap((c) => c.tools).some((t) => t.name === 'YouTube Studio'), 'YouTube Studio was crossed out');
+  // “Tools, platforms & technologies” and “Then I built my own studio” are no longer on the website:
+  // nothing of them is sent to visitors, but the saved data is kept.
+  for (const k of ['tools', 'codaServices']) assert.equal(pub[k], undefined, k);
+  assert.equal(pub.text.tools, undefined);
+  assert.equal(pub.text.coda, undefined);
+  assert.equal(pub.site.codastudio, undefined);
+  assert.equal(v.value.tools.filter((c) => c.visible).length, 9, 'stored tools list kept');
+  assert.ok(v.value.codaServices.length > 0, 'stored studio capabilities kept');
   assert.deepEqual(pub.contactPaths.map((c) => c.id), ['work', 'collab', 'share', 'booking']);
   assert.equal(pub.booking.provider, 'builtin');
   assert.equal(pub.booking.open, false, 'bookings stay closed until the owner opens them');

@@ -34,33 +34,18 @@ export default {
   'logos.label': 'Marques avec lesquelles j’ai travaillé',
   'logos.newTab': '{name} (s’ouvre dans un nouvel onglet)',
 
-  'journey.illustrative': 'ILLUSTRATION · AJOUTER UN VRAI TRAVAIL DE {year}',
   'journey.photos': 'Photos de {year}',
   'journey.photoAlt': 'Photo {n} de {year}',
   'journey.slot': 'Photo {n}',
   'journey.slotHint': 'à ajouter',
-  'journey.v.lead': 'DESIGN\nPRINCIPAL',
-  'journey.v.independent': 'devenir indépendante →',
-  'journey.v.store': 'BOUTIQUE · CAMPAGNES · OPÉRATIONS',
-  'journey.v.trained': 'PERSONNES FORMÉES',
 
-  'work.featuredPh': 'À LA UNE · IMAGE À VENIR',
   'work.imagePh': 'IMAGE À VENIR',
   'work.coverAlt': '{title} — couverture',
-  'work.myRole': 'MON RÔLE',
-  'work.challenge': 'ENJEU',
-  'work.toVerify': '[À vérifier]',
-  'work.oneLine': '[Une ligne]',
   'work.industryPh': '[SECTEUR]',
   'work.yearPh': '[ANNÉE]',
-  'work.readCase': 'LIRE L’ÉTUDE DE CAS',
 
   'expertise.evidence': 'Preuves :',
 
-  'coda.logoAlt': 'Logo CodaStudio',
-  'coda.logoPh': 'IDENTITÉ DU STUDIO À VENIR',
-  'coda.projectAlt': 'Projet client CodaStudio',
-  'coda.projectPh': 'Projet client — à ajouter',
 
   'learning.photo1Alt': 'Session de formation en marketing digital',
   'learning.photo2Alt': 'Support d’atelier',
@@ -312,9 +297,4 @@ export default {
   'cs.ctaA': "Un projet similaire ?",
   'cs.ctaB': "Parlons-en.",
   'cs.ctaBtn': "TRAVAILLONS ENSEMBLE",
-  'tools.filter': "Filtrer par catégorie",
-  'tools.all': "Tous",
-  'tools.list': "Outils",
-  'tools.mine': "Ma boîte à outils",
-  'tools.visit': "Site officiel",
 };

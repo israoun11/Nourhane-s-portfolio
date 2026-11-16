@@ -713,7 +713,8 @@ export function GalleryField({ def, path }) {
           const progress = busy[i];
           return (
             <li key={i} className={`ad-gcard${src ? '' : ' is-empty'}`}>
-              <div className="ad-gcard__img">
+              {/* same frame as on the website (def.previewRatio), image cropped the same way */}
+              <div className="ad-gcard__img" style={def.previewRatio ? { aspectRatio: def.previewRatio } : undefined}>
                 {src ? <img src={src} alt="" /> : <span>{t('ad.g.empty')}</span>}
                 <span className="ad-gcard__n">{t('ad.g.n', { n: i + 1 })}</span>
                 {progress !== undefined && (

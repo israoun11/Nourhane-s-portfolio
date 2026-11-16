@@ -24,8 +24,10 @@ const ListCard = ({ k }) => (
 );
 
 // ═════════════ My story ═════════════
+// Same slides as the website (src/sections/Journey.jsx → yearSlides): real photos only.
 function slidesOf(m) {
   const photos = (m.photos || []).filter((p) => p.src);
+  if (!m.cover) return photos;
   const cover = { cover: true, src: m.cover };
   return m.coverPosition === 'last' ? [...photos, cover] : [cover, ...photos];
 }
@@ -45,14 +47,18 @@ export function StoryPage() {
               <button key={i} type="button" className={`ad-chip${i === y ? ' is-on' : ''}`} aria-pressed={i === y} onClick={() => setY(i)}>{m.y}</button>
             ))}
           </div>
-          <ol className="ad-slides">
-            {slidesOf(year).map((s, i) => (
-              <li key={i} className={`ad-slide${s.cover ? ' is-cover' : ''}`}>
-                {s.src ? <img src={s.src} alt="" /> : <span>{t('ad.story.illustration')}</span>}
-                <b>{i + 1}{s.cover ? ` · ${t('ad.story.cover')}` : ''}</b>
-              </li>
-            ))}
-          </ol>
+          {slidesOf(year).length ? (
+            <ol className="ad-slides">
+              {slidesOf(year).map((s, i) => (
+                <li key={i} className={`ad-slide${s.cover ? ' is-cover' : ''}`}>
+                  <img src={s.src} alt="" />
+                  <b>{i + 1}{s.cover ? ` · ${t('ad.story.cover')}` : ''}</b>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="ad-help">{t('ad.story.noPhotos', { year: year.y })}</p>
+          )}
         </Card>
       )}
       <Card title={t('ad.story.settings')}>
@@ -74,68 +80,6 @@ export function StatsPage() {
       <PageHead title={t('ad.mod.stats')} intro={t('ad.mod.statsIntro')} />
       <div className="ad-alert ad-alert--warn" role="note">{t('ad.stats.integrity')}</div>
       <ListCard k="stats" />
-    </>
-  );
-}
-
-// ═════════════ Tools ═════════════
-/** Moves one tool to another category (the tool keeps its name, logo, link and visibility). */
-function MoveTool() {
-  const t = useAdminT();
-  const toast = useToast();
-  const { draft, update } = useEditor();
-  const cats = draft.tools || [];
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [ci, ti] = from ? from.split(':').map(Number) : [-1, -1];
-  const move = () => {
-    const target = Number(to);
-    if (ci < 0 || Number.isNaN(target) || target === ci || !cats[ci] || !cats[target]) return;
-    const next = structuredClone(cats);
-    const [tool] = next[ci].tools.splice(ti, 1);
-    next[target].tools.push(tool);
-    update(['tools'], next);
-    setFrom('');
-    toast(t('ad.tools.moved', { tool: tool.name, cat: next[target].title }));
-  };
-  return (
-    <Card title={t('ad.tools.move')} intro={t('ad.tools.moveIntro')}>
-      <div className="ad-filterbar">
-        <select className="ad-input" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={t('ad.tools.tool')}>
-          <option value="">{t('ad.tools.pickTool')}</option>
-          {cats.map((c, i) => (
-            <optgroup key={i} label={c.title}>
-              {(c.tools || []).map((x, k) => <option key={k} value={`${i}:${k}`}>{x.name}</option>)}
-            </optgroup>
-          ))}
-        </select>
-        <select className="ad-input" value={to} onChange={(e) => setTo(e.target.value)} aria-label={t('ad.tools.target')}>
-          <option value="">{t('ad.tools.pickCat')}</option>
-          {cats.map((c, i) => <option key={i} value={i} disabled={i === ci}>{c.title}</option>)}
-        </select>
-        <button type="button" className="ad-btn ad-btn--primary" onClick={move} disabled={!from || to === '' || Number(to) === ci}>{t('ad.tools.moveBtn')}</button>
-      </div>
-    </Card>
-  );
-}
-
-export function ToolsPage() {
-  const t = useAdminT();
-  const { draft } = useEditor();
-  const n = (draft.tools || []).reduce((k, c) => k + (c.tools || []).length, 0);
-  return (
-    <>
-      <PageHead title={t('ad.mod.tools')} intro={t('ad.mod.toolsIntro')}>
-        <a className="ad-btn ad-btn--ghost" href="/#tools" target="_blank" rel="noreferrer">{t('ad.nav.view')}</a>
-      </PageHead>
-      <p className="ad-help">{t('ad.tools.count', { c: (draft.tools || []).length, n })}</p>
-      <Card title={t('ad.tools.heading')}>
-        <ObjectFields def={F.text.fields.tools} path={['text', 'tools']} />
-      </Card>
-      <Card title={t('ad.tools.list')} intro={t('ad.tools.listIntro')}>
-        <ListField def={F.tools} path={['tools']} flat />
-      </Card>
-      <MoveTool />
     </>
   );
 }

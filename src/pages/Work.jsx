@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Header from '../components/Header.jsx';
 import { Link } from '../router.jsx';
-import { filters } from '../data/layout.js';
+import { PROJECT_RATIO, filters } from '../data/layout.js';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Button, Media, Words, countWords, orPlaceholder } from '../components/ui.jsx';
 import { isReduced, useMeta, useScrollVar } from '../hooks/motion.js';
 import { useT } from '../i18n/index.jsx';
-
-const layout = [
-  { flex: '2 1 560px', ratio: '16 / 10', offset: '0px' },
-  { flex: '1 1 340px', ratio: '4 / 5', offset: 'clamp(0px, 6vw, 96px)' },
-  { flex: '1 1 340px', ratio: '4 / 5', offset: '0px' },
-  { flex: '2 1 560px', ratio: '16 / 10', offset: 'clamp(0px, 4vw, 64px)' },
-];
 
 /** Drag-to-orbit project stage. Positions are written straight to the DOM for smooth 60fps motion. */
 function Orbit({ projects }) {
@@ -172,10 +165,9 @@ export default function Work() {
             </div>
             <div className="pf-grid">
               {shown.map((p, i) => {
-                const l = layout[i % layout.length];
                 return (
-                  <Link key={`${filter}-${p.slug}`} to={`/work/${p.slug}`} className="card pf-card" data-cursor={tr("cursor.view")} data-reveal style={{ flex: l.flex, marginTop: l.offset }}>
-                    <Media src={p.cover} alt={p.coverAlt || tr('work.coverAlt', { title: p.title })} bg={p.bg} art={p.art} framed ratio={l.ratio} label={tr('work.imagePh')} className="pf-card__media" reveal parallax />
+                  <Link key={`${filter}-${p.slug}`} to={`/work/${p.slug}`} className="card pf-card" data-cursor={tr("cursor.view")} data-reveal style={{ '--d': `${(i % 3) * 0.08}s` }}>
+                    <Media src={p.cover} alt={p.coverAlt || tr('work.coverAlt', { title: p.title })} bg={p.bg} art={p.art} ratio={PROJECT_RATIO} label={tr('work.imagePh')} className="pf-card__media" reveal />
                     <div className="pf-card__meta">
                       <span>{p.n} · {p.tags.join(' · ').toUpperCase()}</span>
                       <span>{orPlaceholder(p.year, tr('cs.yearPh'))}</span>

@@ -111,10 +111,11 @@ export const schema = obj('Website', {
       instagram: link('Instagram'),
       youtube: link('YouTube'),
     }, { help: 'Links only appear on the website once filled in.' }),
-    codastudio: obj('CodaStudio visuals', {
+    // “Then I built my own studio” section removed: its saved images are kept, not shown.
+    codastudio: { ...obj('CodaStudio visuals', {
       logo: image('Studio logo'),
       work: list('Client project images', image('Image'), { fixed: true, min: 2, max: 2 }),
-    }),
+    }), hidden: true },
     training: list('Training photos', image('Photo'), { fixed: true, min: 2, max: 2 }),
     seoTitle: text('Search engine title', { max: 70, help: 'Shown in Google results and the browser tab.' }),
     seoDescription: area('Search engine description', { max: 200 }),
@@ -153,13 +154,13 @@ export const schema = obj('Website', {
     }),
     method: obj('Method section', heading()),
     expertise: obj('Expertise section', heading()),
-    coda: obj('CodaStudio section', {
+    coda: { ...obj('CodaStudio section', {
       eyebrow: text('Small label', { max: 40 }),
       ...heading('Shown in pink italic after the first part.'),
       text: area('Description', { max: 500 }),
       cta1: text('Main button', { max: 40 }),
       cta2: text('Second button', { max: 40 }),
-    }),
+    }), hidden: true },
     learning: obj('Training section', {
       ...heading(),
       statValue: { type: 'number', label: 'Big number', min: 0, max: 100000 },
@@ -172,7 +173,7 @@ export const schema = obj('Website', {
       ...heading('Shown in pink italic after the first part.'),
       annotation: text('Handwritten note', { max: 60 }),
     }),
-    tools: obj('Tools section', { ...heading(), intro: area('Introduction', { max: 300 }) }),
+    tools: { ...obj('Tools section', { ...heading(), intro: area('Introduction', { max: 300 }) }), hidden: true },
     products: obj('Digital products section', { ...heading(), note: area('Note', { max: 300 }) }),
     proof: { ...obj('Testimonials section', { ...heading(), note: text('Small note', { max: 160 }) }), hidden: true },
     contact: obj('Contact section', heading()),
@@ -222,7 +223,7 @@ export const schema = obj('Website', {
       src: image('Photo'),
       caption: text('Caption', { max: 100, help: 'Optional. Shown under the photo.' }),
       alt: text('Description for screen readers', { max: 160, help: 'Optional. Leave empty to use the caption.' }),
-    }), { min: 0, max: 20, gallery: true, itemTitle: 'caption', help: 'Shown in this year’s slider, after the designed visual of the year, in this order. Use ← → to change the order.' }),
+    }), { min: 0, max: 20, gallery: true, itemTitle: 'caption', help: 'Shown beside the year on the website, in a portrait slider, in this order (all photos at the same size). Use ← → to change the order.', previewRatio: '4 / 5' }),
   }), { min: 1, max: 12, itemTitle: 'y' }),
 
   method: list('Method steps', obj('Step', {
@@ -447,14 +448,14 @@ export const schema = obj('Website', {
     }),
     // “What I took away” is no longer shown on project pages; saved texts are kept, not edited.
     learning: area('What I took away', { max: 600, hidden: true }),
-    cover: image('Cover image', { help: 'Landscape, about 2400 × 1500.' }),
+    cover: image('Cover image', { help: 'Shown on the project cards in the same 4:3 frame as every other project (filled, centred) — the preview shows the same framing. Any size works; keep the subject near the centre.' }),
     coverAlt: text('Cover — description for screen readers', { max: 160 }),
     logo: image('Client logo (optional)', { help: 'Shown on the project card while there is no cover image.' }),
     gallery: list('Project gallery', obj('Image', {
       src: image('Image'),
       label: text('Caption', { max: 80 }),
       hint: text('Placeholder hint', { max: 120, help: 'Shown only while no image is uploaded.' }),
-    }), { min: 0, max: 24, gallery: true, itemTitle: 'label', help: 'Shown in the “The work” slider on the project page, in this order. Every image is shown whole (not cropped).' }),
+    }), { min: 0, max: 24, gallery: true, itemTitle: 'label', previewRatio: '16 / 10', help: 'Shown in the “The work” slider on the project page, in this order. Every image fills the same 16:10 frame (centred) — the previews below show the same framing. Any size works; keep the subject near the centre.' }),
     mono: text('Placeholder initials', { max: 20, noTranslate: true, help: 'Big letters shown on the card while no cover image is uploaded.' }),
     bg: color('Card colour (without image)'),
     fg: color('Card text colour'),
@@ -467,6 +468,9 @@ export const schema = obj('Website', {
 // Removed sections: kept in storage untouched, hidden everywhere (see text.mind / text.proof).
 schema.fields.mind.hidden = true;
 schema.fields.testimonials.hidden = true;
+// “Tools, platforms & technologies” and “Then I built my own studio” removed (data kept in storage).
+schema.fields.tools.hidden = true;
+schema.fields.codaServices.hidden = true;
 
 // ─────────────────────────────────────────────────────────────
 //  Validation
@@ -767,17 +771,18 @@ export function publicView(content) {
   const projects = content.projects.filter((p) => p.published && !p.archived);
   const live = new Set(projects.map((p) => p.slug));
   // ad budget alerts stay in the dashboard; removed sections and PDF file names are not sent
-  const { ads, mind, testimonials, fileNames, ...rest } = content;
-  const { mind: _m, proof: _p, ...text } = content.text || {};
+  const { ads, mind, testimonials, fileNames, tools: _tools, codaServices, ...rest } = content;
+  const { mind: _m, proof: _p, tools: _tt, coda: _c, ...text } = content.text || {};
+  const { codastudio: _cs, ...site } = rest.site || {};
   return {
     ...rest,
+    site,
     text,
     projects: projects.map((p) => ({ ...p, related: (p.related || []).filter((s) => live.has(s)) })),
     expertise: content.expertise.map((e) => ({ ...e, proof: e.proof.filter((s) => live.has(s)) })),
     products: (content.products || []).filter((p) => p.published).map(({ file, ...p }) => ({ ...p, hasFile: !!file })),
     contactPaths: (content.contactPaths || []).filter((c) => c.visible),
     stats: (content.stats || []).filter((x) => x.visible),
-    tools: (content.tools || []).filter((c) => c.visible).map((c) => ({ ...c, tools: c.tools.filter((x) => x.visible) })).filter((c) => c.tools.length),
   };
 }
 
