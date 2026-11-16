@@ -357,7 +357,7 @@ export const schema = obj('Website', {
     minNotice: num('Minimum notice (hours)', { min: 0, max: 720, default: 24 }),
     maxDays: num('Bookable up to (days ahead)', { min: 1, max: 365, default: 30 }),
     blocked: tags('Unavailable days (YYYY-MM-DD)', { max: 60, itemMax: 10, noTranslate: true, help: 'Holidays or days off, e.g. 2026-12-25.' }),
-    url: link('Booking page address', { help: 'Only for Calendly or Cal.com: your page, e.g. https://calendly.com/your-name or https://cal.com/your-name.' }),
+    url: link('Booking page address', { help: 'Calendly or Cal.com: your scheduling page, e.g. https://calendly.com/your-name/30min. The “Book a meeting” button opens it in a new tab.' }),
     types: list('Meeting types', obj('Meeting type', {
       name: text('Name', { required: true, max: 60 }),
       duration: num('Duration (minutes)', { min: 5, max: 480, default: 30 }),
@@ -393,6 +393,7 @@ export const schema = obj('Website', {
   ui: { type: 'uitexts', label: 'Interface texts', hidden: true },
   toolsSeed: { type: 'number', label: 'Tools list version', hidden: true, min: 0, max: 1000, default: 0 },
   socialsSeed: { type: 'number', label: 'Social links version', hidden: true, min: 0, max: 1000, default: 0 },
+  bookingSeed: { type: 'number', label: 'Booking setup version', hidden: true, min: 0, max: 1000, default: 0 },
 
   projects: list('Projects', obj('Project', {
     published: { type: 'boolean', label: 'Visible on the website' },

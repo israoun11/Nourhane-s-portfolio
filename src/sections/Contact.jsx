@@ -59,66 +59,21 @@ export function ContactMethods({ site }) {
   );
 }
 
-/** The booking calendar of Calendly / Cal.com, shown inside the page. Bookings are confirmed by that service. */
-function BookingPanel({ onMessage }) {
-  const { booking = {} } = useContent();
-  if (booking.provider === 'builtin' || !booking.provider) return <BuiltinBooking onMessage={onMessage} />;
-  return <ExternalBooking booking={booking} onMessage={onMessage} />;
-}
-
-/** Calendly / Cal.com calendar shown inside the page. */
-function ExternalBooking({ booking, onMessage }) {
-  const { t } = useI18n();
-  const types = (booking.types || []).filter((x) => x.url);
-  const [sel, setSel] = useState(0);
-  const base = (types[sel] && types[sel].url) || booking.url;
-  if (!base) {
-    return (
-      <div className="booking booking--empty" role="status">
-        <p>{t('booking.notSet')}</p>
-        <Button type="button" variant="outline" onClick={onMessage}>{t('booking.sendMessage')}</Button>
-      </div>
-    );
-  }
-  let src = base;
-  try {
-    const u = new URL(base);
-    if (booking.provider === 'cal') u.searchParams.set('embed', 'true');
-    else {
-      u.searchParams.set('embed_domain', window.location.hostname);
-      u.searchParams.set('embed_type', 'Inline');
-      u.searchParams.set('hide_gdpr_banner', '1');
-    }
-    src = u.toString();
-  } catch {
-    /* validated by the server already */
-  }
-  return (
-    <div className="booking">
-      {booking.note && <p className="booking__note">{booking.note}</p>}
-      {types.length > 1 && (
-        <div className="booking__types" role="radiogroup" aria-label={t('booking.types')}>
-          {types.map((x, i) => (
-            <button key={x.url} type="button" role="radio" aria-checked={i === sel} className={`chip${i === sel ? ' chip--blue' : ' chip--line'}`} onClick={() => setSel(i)}>
-              {x.name}{x.duration ? ` · ${t('booking.minutes', { n: x.duration })}` : ''}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="booking__frame">
-        <iframe key={src} src={src} title={t('booking.frameTitle')} loading="lazy" />
-      </div>
-      <p className="booking__foot">
-        {t('booking.tz')}{' '}
-        <a className="ulink" href={base} target="_blank" rel="noreferrer">{t('booking.open')} ↗</a>
-      </p>
-    </div>
-  );
+/**
+ * Where “Book a meeting” leads: the scheduling page of Calendly / Cal.com (opened in a new tab —
+ * dates, availability, the visitor's details, confirmation, emails and calendar sync are all
+ * handled by that service), or '' when the built-in calendar of this website is used.
+ */
+export function bookingLink(booking = {}) {
+  if (!booking.provider || booking.provider === 'builtin') return '';
+  const first = (booking.types || []).find((x) => x && x.url);
+  return booking.url || (first && first.url) || '';
 }
 
 export default function Contact() {
-  const { site, contactPaths, text } = useContent();
+  const { site, contactPaths, text, booking } = useContent();
   const { t, lang } = useI18n();
+  const bookUrl = bookingLink(booking);
   const formPaths = contactPaths.filter((p) => p.kind !== 'booking');
   const [inquiry, setInquiry] = useState(() => (formPaths[0] ? formPaths[0].id : ''));
   const current = contactPaths.find((p) => p.id === inquiry);
@@ -206,6 +161,29 @@ export default function Contact() {
           <legend className="sr-only">{t('contact.paths')}</legend>
           {contactPaths.map((p, i) => {
             const on = inquiry === p.id;
+            // Book a meeting → the real scheduling page (Calendly), in a new tab
+            if (p.kind === 'booking' && bookUrl) {
+              return (
+                <a
+                  key={p.id}
+                  href={bookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="path path--booking"
+                  data-reveal
+                  style={{ '--d': `${i * 0.08}s` }}
+                >
+                  <span className="path__check" aria-hidden="true" />
+                  {p.icon && <img className="path__icon" src={p.icon} alt="" />}
+                  <span className="path__title">{p.title}</span>
+                  <span className="path__text">{p.text}</span>
+                  <span className="path__cta">
+                    {t('contact.bookBtn')}
+                    <span className="sr-only"> {t('contact.newTab')}</span>
+                  </span>
+                </a>
+              );
+            }
             return (
               <button
                 key={p.id}
@@ -232,7 +210,7 @@ export default function Contact() {
 
         <div id="contact-panel" className="contact__panel" />
         {isBooking ? (
-          <BookingPanel onMessage={() => formPaths[0] && choose(formPaths[0].id)} />
+          <BuiltinBooking onMessage={() => formPaths[0] && choose(formPaths[0].id)} />
         ) : (
         <form className="form" noValidate onSubmit={onSubmit} aria-label={t('contact.form')} data-reveal>
           <div className="form__row">

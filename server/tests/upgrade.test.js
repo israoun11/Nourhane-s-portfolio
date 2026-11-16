@@ -21,8 +21,11 @@ test('v4 content: valid after migration (dashboard can save), new sections fille
   assert.equal(v.value.tools.filter((c) => c.visible).length, 9, 'stored tools list kept');
   assert.ok(v.value.codaServices.length > 0, 'stored studio capabilities kept');
   assert.deepEqual(pub.contactPaths.map((c) => c.id), ['work', 'collab', 'share', 'booking']);
-  assert.equal(pub.booking.provider, 'builtin');
-  assert.equal(pub.booking.open, false, 'bookings stay closed until the owner opens them');
+  // “Book a meeting” → Nourhane's Calendly page (set once; built-in calendar settings kept)
+  assert.equal(pub.booking.provider, 'calendly');
+  assert.equal(pub.booking.url, 'https://calendly.com/nourhane-althabet/30min');
+  assert.equal(pub.booking.types[0].url, 'https://calendly.com/nourhane-althabet/30min');
+  assert.equal(pub.booking.open, false, 'built-in calendar stays closed');
   assert.ok(pub.products.every((p) => p.slug));
   assert.equal(pub.stats.length, 2);
 });
@@ -67,4 +70,20 @@ test('social links: filled once where empty, owner changes kept', () => {
   assert.equal(out.site.socials.linkedin, 'https://linkedin.com/in/kept');
   out.site.socials.instagram = '';
   assert.equal(migrateContent(out).site.socials.instagram, '', 'a link removed later is not brought back');
+});
+
+test('Calendly set once: a booking page chosen later in the dashboard is kept', () => {
+  const doc = migrateContent(structuredClone(defaultContent));
+  doc.booking.provider = 'cal';
+  doc.booking.url = 'https://cal.com/someone';
+  const again = migrateContent(doc);
+  assert.equal(again.booking.provider, 'cal');
+  assert.equal(again.booking.url, 'https://cal.com/someone');
+  const older = structuredClone(defaultContent);
+  delete older.bookingSeed;
+  older.booking = { ...older.booking, provider: 'builtin', open: true, url: '' };
+  const up = migrateContent(older);
+  assert.equal(up.booking.provider, 'calendly');
+  assert.equal(up.booking.url, 'https://calendly.com/nourhane-althabet/30min');
+  assert.deepEqual(up.booking.hours, older.booking.hours, 'built-in availability kept');
 });

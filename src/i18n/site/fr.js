@@ -228,9 +228,6 @@ export default {
   'booking.sendMessage': "ENVOYER UN MESSAGE",
   'booking.types': "Type de rendez-vous",
   'booking.minutes': "{n} min",
-  'booking.frameTitle': "Calendrier de réservation",
-  'booking.tz': "Les horaires s’affichent dans votre fuseau horaire. Votre réservation est confirmée par e-mail une fois enregistrée.",
-  'booking.open': "Ouvrir le calendrier dans un nouvel onglet",
   'footer.cvBtn': "TÉLÉCHARGER MON CV",
   'footer.cvAria': "Télécharger le CV de {name} (PDF)",
   'footer.cvNote': "PDF · mis à jour régulièrement",
@@ -246,6 +243,7 @@ export default {
   'cs.relatedB': "liés.",
   // story positions, booking calendar
   'contact.bookBtn': "PRENDRE RENDEZ-VOUS →",
+  'contact.newTab': "(ouvre Calendly dans un nouvel onglet)",
   'journey.more': "{n} autres photos de {year}",
   'journey.pos.frame': "Grand cadre",
   'journey.pos.circle': "Cercle",

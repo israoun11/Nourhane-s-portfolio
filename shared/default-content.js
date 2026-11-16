@@ -18,6 +18,9 @@ const emptyCase = {
   archived: false, client: '', objective: '', strategy: '', execution: '', toolsUsed: [], url: '', sourceUrl: '', links: [], related: [], seoTitle: '', seoDescription: '', results: [], feedback: { quote: '', name: '', role: '' }, learning: '', cover: '', coverAlt: '', logo: '', gallery: [],
 };
 
+/** Nourhane's Calendly scheduling page (given by the owner). */
+export const CALENDLY_URL = 'https://calendly.com/nourhane-althabet/30min';
+
 export const BOOKING_CARD = { id: 'booking', kind: 'booking', title: 'Book a meeting', text: 'Pick a time that suits you for a video call.', icon: '', visible: true };
 export const DEFAULT_TOOLS = TOOLS;
 
@@ -241,12 +244,13 @@ export const defaultContent = {
     BOOKING_CARD,
   ],
 
-  // Built-in calendar: a proposed week (Mon–Fri, 9:00–17:00) — bookings stay closed until the owner switches them on.
+  // Meetings are booked on Nourhane's Calendly page (dates, availability, confirmation, emails and
+  // calendar sync are handled by Calendly). The built-in calendar settings stay available as a fallback.
   booking: {
-    provider: 'builtin', open: false, timezone: 'Africa/Tunis',
+    provider: 'calendly', open: false, timezone: 'Africa/Tunis',
     hours: ['1', '2', '3', '4', '5'].map((day) => ({ day, start: '09:00', end: '17:00' })),
-    interval: 30, buffer: 15, minNotice: 24, maxDays: 30, blocked: [], url: '',
-    types: [{ name: 'Discovery call', duration: 30, url: '' }],
+    interval: 30, buffer: 15, minNotice: 24, maxDays: 30, blocked: [], url: CALENDLY_URL,
+    types: [{ name: 'Discovery call', duration: 30, url: CALENDLY_URL }],
     note: 'Choose a meeting type, a day and a time that suit you. Times are shown in your own time zone.',
   },
 
@@ -257,6 +261,7 @@ export const defaultContent = {
   ui: {},
   toolsSeed: 2,
   socialsSeed: 1,
+  bookingSeed: 1,
   ads: { currency: 'TND', googleMonthly: 0, metaMonthly: 0 },
 
   projects: [

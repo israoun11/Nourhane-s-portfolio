@@ -70,6 +70,7 @@ test('availability is validated in the dashboard', async () => {
 
 test('open: book a free time once; the same time cannot be booked twice; visitor can cancel', async () => {
   await save((d) => {
+    d.booking.provider = 'builtin'; // these tests cover the built-in calendar (the site itself uses Calendly)
     d.booking.open = true;
     d.booking.minNotice = 0;
     d.booking.hours = ['0', '1', '2', '3', '4', '5', '6'].map((day) => ({ day, start: '00:00', end: '23:30' }));

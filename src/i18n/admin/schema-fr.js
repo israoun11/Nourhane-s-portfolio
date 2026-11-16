@@ -355,6 +355,8 @@ export default {
   "Shown beside the year on the website, in a portrait slider, in this order (all photos at the same size). Use ← → to change the order.": "Affichées à côté de l’année sur le site, dans un carrousel en portrait, dans cet ordre (toutes les photos à la même taille). Utilisez ← → pour changer l’ordre.",
   "Shown in the “The work” slider on the project page, in this order. Every image fills the same 16:10 frame (centred) — the previews below show the same framing. Any size works; keep the subject near the centre.": "Affichées dans le diaporama « Le travail » de la page projet, dans cet ordre. Chaque image remplit le même cadre 16:10 (centrée) — les aperçus ci-dessous montrent le même cadrage. Toute taille convient ; gardez le sujet vers le centre.",
   "Shown on the project cards in the same 4:3 frame as every other project (filled, centred) — the preview shows the same framing. Any size works; keep the subject near the centre.": "Affichée sur les cartes projet dans le même cadre 4:3 que tous les autres projets (remplie, centrée) — l’aperçu montre le même cadrage. Toute taille convient ; gardez le sujet vers le centre.",
+  "Booking setup version": "Version de la prise de rendez-vous",
+  "Calendly or Cal.com: your scheduling page, e.g. https://calendly.com/your-name/30min. The “Book a meeting” button opens it in a new tab.": "Calendly ou Cal.com : votre page de réservation, ex. https://calendly.com/votre-nom/30min. Le bouton « Prendre rendez-vous » l’ouvre dans un nouvel onglet.",
   "Uploaded file names": "Noms des fichiers envoyés",
   "Built-in calendar (this website)": "Calendrier intégré (ce site)",
   "Accept bookings on the website": "Accepter les réservations sur le site",

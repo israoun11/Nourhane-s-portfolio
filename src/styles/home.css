@@ -302,14 +302,12 @@
 /* contact: icon on a card, booking calendar, contact methods */
 .path__icon { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; }
 .path--booking .path__title { color: var(--blue); }
+a.path { color: inherit; text-decoration: none; cursor: pointer; }
 .path--booking.is-on .path__title { color: var(--pink); }
 .booking { margin-top: 12px; padding: clamp(18px, 2.6vw, 32px); background: #fff; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 16px; animation: blurIn 0.4s var(--ease) both; }
 .booking__note { margin: 0; color: var(--body); }
 .booking__types { display: flex; flex-wrap: wrap; gap: 8px; }
 .booking__types .chip { cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; }
-.booking__frame { position: relative; height: clamp(620px, 80vh, 760px); border: 1px solid var(--line); background: var(--ivory); }
-.booking__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.booking__foot { margin: 0; font-size: 13px; color: var(--muted); }
 .booking--empty { align-items: flex-start; }
 .booking--empty p { margin: 0; font-weight: 600; }
 .cm { list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }

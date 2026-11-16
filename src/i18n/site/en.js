@@ -251,9 +251,6 @@ export default {
   'booking.sendMessage': "SEND A MESSAGE",
   'booking.types': "Meeting type",
   'booking.minutes': "{n} min",
-  'booking.frameTitle': "Booking calendar",
-  'booking.tz': "Times are shown in your time zone. Your booking is confirmed by email once it is registered.",
-  'booking.open': "Open the calendar in a new tab",
   'footer.cvBtn': "DOWNLOAD MY CV",
   'footer.cvAria': "Download the CV of {name} (PDF)",
   'footer.cvNote': "PDF · updated regularly",
@@ -269,6 +266,7 @@ export default {
   'cs.relatedB': "case studies.",
   // story positions, booking calendar
   'contact.bookBtn': "BOOK A MEETING →",
+  'contact.newTab': "(opens Calendly in a new tab)",
   'journey.more': "{n} more photos from {year}",
   'journey.pos.frame': "Large frame",
   'journey.pos.circle': "Circle",

@@ -3,7 +3,7 @@
 // that are still the original English (shared/i18n/content-*.js).
 // Used by the server whenever content is read, and by the browser for previews.
 import { schema, isTranslatable } from './schema.js';
-import { BOOKING_CARD, defaultContent } from './default-content.js';
+import { BOOKING_CARD, CALENDLY_URL, defaultContent } from './default-content.js';
 import { TRANSLATED } from './i18n/langs.js';
 import fr from './i18n/content-fr.js';
 
@@ -111,6 +111,20 @@ export function migrateContent(input, { translations = true } = {}) {
   doc.toolsSeed = Math.max(doc.toolsSeed || 0, TOOLS_SEED);
   // Social links given by the owner: filled in once, only where the field is still empty
   // (a link changed or removed in the dashboard afterwards is left alone).
+  // Calendly page given by the owner: “Book a meeting” opens it. Applied once; a booking page
+  // already set in the dashboard is kept, and a later change in the dashboard is respected.
+  if (!doc.bookingSeed) {
+    if (isObj(doc.booking)) {
+      const bk = { ...doc.booking };
+      if (!bk.url || bk.provider === 'builtin') {
+        bk.provider = 'calendly';
+        if (!bk.url || !/calendly\.com/.test(bk.url)) bk.url = CALENDLY_URL;
+        bk.types = (Array.isArray(bk.types) && bk.types.length ? bk.types : [{ name: 'Discovery call', duration: 30, url: '' }]).map((x, i) => (i === 0 && isObj(x) && !/calendly\.com/.test(x.url || '') ? { ...x, url: CALENDLY_URL } : x));
+      }
+      doc.booking = bk;
+    }
+    doc.bookingSeed = 1;
+  }
   if (!doc.socialsSeed) {
     if (isObj(doc.site)) {
       const so = isObj(doc.site.socials) ? { ...doc.site.socials } : {};
