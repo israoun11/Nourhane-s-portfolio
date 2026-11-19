@@ -139,7 +139,6 @@ export default {
   'ad.sec.expertise': 'Expertise',
   'ad.sec.expertiseIntro': 'Numbered rows with links to the projects that prove them.',
   'ad.sec.learning': 'Training',
-  'ad.sec.texts': "Texts of this section",
   'ad.sec.learningIntro': 'Training offers with their status.',
   'ad.sec.series': 'Content series',
   'ad.sec.seriesIntro': 'Video series in the personality section. Add a link when episodes are online.',

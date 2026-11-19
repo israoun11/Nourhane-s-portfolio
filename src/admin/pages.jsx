@@ -133,13 +133,6 @@ export function SectionPage({ k }) {
   return (
     <>
       <PageHead title={t(`ad.sec.${k}`)} intro={t(`ad.sec.${k}Intro`)} />
-      {/* Training section: its own texts (big number, “People trained”, small line, title, button) —
-          the same saved fields as on the Texts page */}
-      {k === 'learning' && (
-        <Card title={t('ad.sec.texts')}>
-          <ObjectFields def={F.text.fields.learning} path={['text', 'learning']} />
-        </Card>
-      )}
       <Card>{def.type === 'list' ? <ListField def={def} path={[k]} flat /> : <Field def={def} path={[k]} />}</Card>
     </>
   );
