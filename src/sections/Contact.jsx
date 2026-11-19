@@ -25,40 +25,6 @@ function check(data) {
   return e;
 }
 
-const ICONS = {
-  email: <path d="M3 6h18v12H3z M3 7l9 6 9-6" />,
-  whatsapp: <path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z M9 9.5c0 3 2.5 5.5 5.5 5.5l1.3-1.3-2-1-1 .8a4 4 0 0 1-2.3-2.3l.8-1-1-2z" />,
-  instagram: <><rect x="4" y="4" width="16" height="16" rx="4.5" /><circle cx="12" cy="12" r="3.6" /><circle cx="16.9" cy="7.1" r="0.6" /></>,
-  linkedin: <><rect x="4" y="4" width="16" height="16" rx="2.5" /><path d="M8 10.5V16 M8 8v.01 M11.5 16v-5.5 M11.5 13a2.5 2.5 0 0 1 5 0V16" /></>,
-};
-const Icon = ({ k }) => <svg className="cm__icon" viewBox="0 0 24 24" aria-hidden="true">{ICONS[k]}</svg>;
-
-/** Email, WhatsApp, Instagram, LinkedIn — each shown only once it is set in the dashboard. */
-export function ContactMethods({ site }) {
-  const { t } = useI18n();
-  const digits = String(site.whatsapp || '').replace(/\D/g, '');
-  const items = [
-    site.email && { k: 'email', href: `mailto:${site.email}`, label: t('contact.m.email'), value: site.email },
-    digits && { k: 'whatsapp', href: `https://wa.me/${digits}${site.whatsappMessage ? `?text=${encodeURIComponent(site.whatsappMessage)}` : ''}`, label: t('contact.m.whatsapp'), value: `+${digits}` },
-    site.socials && site.socials.instagram && { k: 'instagram', href: site.socials.instagram, label: t('contact.m.instagram') },
-    site.socials && site.socials.linkedin && { k: 'linkedin', href: site.socials.linkedin, label: t('contact.m.linkedin') },
-  ].filter(Boolean);
-  if (!items.length) return null;
-  return (
-    <ul className="cm" aria-label={t('contact.m.label')}>
-      {items.map((x) => (
-        <li key={x.k}>
-          <a className={`cm__a cm__a--${x.k}`} href={x.href} {...(x.k === 'email' ? {} : { target: '_blank', rel: 'noreferrer' })} aria-label={x.value ? `${x.label}: ${x.value}` : x.label}>
-            <Icon k={x.k} />
-            <span className="cm__label">{x.label}</span>
-            {x.value && <span className="cm__value" dir="ltr">{x.value}</span>}
-          </a>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /**
  * Where “Book a meeting” leads: the scheduling page of Calendly / Cal.com (opened in a new tab —
  * dates, availability, the visitor's details, confirmation, emails and calendar sync are all
@@ -263,7 +229,6 @@ export default function Contact() {
           </div>
         </form>
         )}
-        <ContactMethods site={site} />
       </div>
     </section>
   );

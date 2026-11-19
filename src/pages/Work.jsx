@@ -5,6 +5,7 @@ import { PROJECT_RATIO, filters } from '../data/layout.js';
 import { useContent } from '../content/ContentProvider.jsx';
 import { Button, Media, Words, countWords, orPlaceholder } from '../components/ui.jsx';
 import { isReduced, useMeta, useScrollVar } from '../hooks/motion.js';
+import { cvLink } from '../lib/cv.js';
 import { useT } from '../i18n/index.jsx';
 
 /** Drag-to-orbit project stage. Positions are written straight to the DOM for smooth 60fps motion. */
@@ -216,7 +217,7 @@ export default function Work() {
           <h2 id="cta-title" data-reveal="words"><Words text={t.ctaTitle} /><br /><em><Words text={t.ctaEm} start={countWords(t.ctaTitle)} /></em></h2>
           <div className="pf-cta__btns" data-reveal>
             <Button to="/#contact" variant="ivory" arrow magnetic>{tr('pf.talk')}</Button>
-            {site.cv && <Button href={site.cv} variant="outline-light">{tr('pf.cv')}</Button>}
+            {cvLink(site) && <Button {...cvLink(site)} variant="outline-light">{tr('pf.cv')}</Button>}
           </div>
         </section>
       </main>

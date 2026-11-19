@@ -165,8 +165,8 @@ export const schema = obj('Website', {
       ...heading(),
       statValue: { type: 'number', label: 'Big number', min: 0, max: 100000 },
       statSuffix: text('After the number', { max: 4, keepName: true }),
-      statLabel: text('Label under the number', { max: 40 }),
-      statSub: text('Small line', { max: 80 }),
+      statLabel: text('Label under the number', { max: 40, help: 'e.g. “PEOPLE TRAINED”' }),
+      statSub: text('Small line', { max: 80, help: 'e.g. “in digital marketing.”' }),
       cta: text('Button', { max: 40 }),
     }),
     personality: obj('Personality section', {
