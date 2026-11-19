@@ -357,8 +357,6 @@ export default {
   "Shown on the project cards in the same 4:3 frame as every other project (filled, centred) — the preview shows the same framing. Any size works; keep the subject near the centre.": "Affichée sur les cartes projet dans le même cadre 4:3 que tous les autres projets (remplie, centrée) — l’aperçu montre le même cadrage. Toute taille convient ; gardez le sujet vers le centre.",
   "Booking setup version": "Version de la prise de rendez-vous",
   "Calendly or Cal.com: your scheduling page, e.g. https://calendly.com/your-name/30min. The “Book a meeting” button opens it in a new tab.": "Calendly ou Cal.com : votre page de réservation, ex. https://calendly.com/votre-nom/30min. Le bouton « Prendre rendez-vous » l’ouvre dans un nouvel onglet.",
-  "e.g. “PEOPLE TRAINED”": "ex. « PERSONNES FORMÉES »",
-  "e.g. “in digital marketing.”": "ex. « en marketing digital. »",
   "Uploaded file names": "Noms des fichiers envoyés",
   "Built-in calendar (this website)": "Calendrier intégré (ce site)",
   "Accept bookings on the website": "Accepter les réservations sur le site",

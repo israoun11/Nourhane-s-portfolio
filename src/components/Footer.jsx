@@ -1,7 +1,6 @@
 import { Link } from '../router.jsx';
 import { nav } from '../data/site.js';
 import { useContent } from '../content/ContentProvider.jsx';
-import { cvLink } from '../lib/cv.js';
 import { useT } from '../i18n/index.jsx';
 
 export default function Footer() {
@@ -9,7 +8,7 @@ export default function Footer() {
   const t = useT();
   const f = text.footer;
   // the uploaded CV PDF first, otherwise the CV link
-  const cv = cvLink(site);
+  const cvUrl = site.cvFile || site.cv || '';
   const wa = String(site.whatsapp || '').replace(/\D/g, '');
   const socials = [
     [t('contact.m.email'), site.email ? `mailto:${site.email}` : ''],
@@ -54,9 +53,9 @@ export default function Footer() {
           </div>
         </div>
         <div className="footer__cv">
-          {cv ? (
+          {cvUrl ? (
             <>
-              <a className="btn btn--pink btn--md" {...cv} aria-label={t('footer.cvAria', { name: site.name })}>
+              <a className="btn btn--pink btn--md" href={cvUrl} target="_blank" rel="noreferrer" {...(site.cvFile ? { download: '' } : {})} aria-label={t('footer.cvAria', { name: site.name })}>
                 {site.cvLabel || t('footer.cvBtn')} <span className="ar" aria-hidden="true">↓</span>
               </a>
               <span className="footer__note">{t('footer.cvNote')}</span>
