@@ -216,7 +216,7 @@ export default function Work() {
           <h2 id="cta-title" data-reveal="words"><Words text={t.ctaTitle} /><br /><em><Words text={t.ctaEm} start={countWords(t.ctaTitle)} /></em></h2>
           <div className="pf-cta__btns" data-reveal>
             <Button to="/#contact" variant="ivory" arrow magnetic>{tr('pf.talk')}</Button>
-            {site.cv && <Button href={site.cv} variant="outline-light">{tr('pf.cv')}</Button>}
+            {(site.cvFile || site.cv) && <Button href={site.cvFile || site.cv} target="_blank" {...(site.cvFile ? { download: '' } : {})} variant="outline-light">{tr('pf.cv')}</Button>}
           </div>
         </section>
       </main>

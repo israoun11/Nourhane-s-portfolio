@@ -133,6 +133,7 @@ export default {
   'ad.sec.expertise': 'Expertise',
   'ad.sec.expertiseIntro': 'Lignes numérotées avec des liens vers les projets qui les prouvent.',
   'ad.sec.learning': 'Formation',
+  'ad.sec.texts': "Textes de cette section",
   'ad.sec.learningIntro': 'Les offres de formation et leur statut.',
   'ad.sec.series': 'Séries de contenus',
   'ad.sec.seriesIntro': 'Séries vidéo de la section personnalité. Ajoutez un lien quand les épisodes sont en ligne.',
